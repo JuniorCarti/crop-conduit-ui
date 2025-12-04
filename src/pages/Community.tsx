@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Users, MessageCircle, Calendar, Eye, Plus, Search, BookOpen } from "lucide-react";
+import { Users, MessageCircle, Calendar, Eye, Plus, Search, BookOpen, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { forumPosts, events } from "@/data/dummyData";
+import { useForumPosts, useEvents, useKnowledgeResources, useCreatePost } from "@/hooks/useApi";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCard } from "@/components/shared/AlertCard";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +23,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Community() {
   const [showPostModal, setShowPostModal] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<typeof forumPosts[0] | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<typeof events[0] | null>(null);
+  const [selectedPost, setSelectedPost] = useState<ReturnType<typeof useForumPosts>['data']>[0] | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<ReturnType<typeof useEvents>['data']>[0] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: forumPosts, isLoading: postsLoading, error: postsError } = useForumPosts(searchQuery);
+  const { data: events, isLoading: eventsLoading } = useEvents();
+  const { data: knowledgeResources, isLoading: knowledgeLoading } = useKnowledgeResources();
+  const createPostMutation = useCreatePost();
 
   return (
     <div className="min-h-screen">
@@ -38,10 +46,24 @@ export default function Community() {
       </PageHeader>
 
       <div className="p-4 md:p-6 space-y-6">
+        {/* Error State */}
+        {postsError && (
+          <AlertCard
+            type="danger"
+            title="Error Loading Community Data"
+            message="Failed to load community content. Please try again later."
+          />
+        )}
+
         {/* Search */}
         <div className="relative animate-fade-up">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search discussions..." className="pl-10 bg-card" />
+          <Input 
+            placeholder="Search discussions..." 
+            className="pl-10 bg-card"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <Tabs defaultValue="forum" className="animate-fade-up" style={{ animationDelay: "0.1s" }}>
@@ -53,7 +75,14 @@ export default function Community() {
 
           {/* Forum Tab */}
           <TabsContent value="forum" className="mt-4 space-y-3">
-            {forumPosts.map((post) => (
+            {postsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-24 rounded-xl" />
+                ))}
+              </div>
+            ) : forumPosts && forumPosts.length > 0 ? (
+              forumPosts.map((post) => (
               <button
                 key={post.id}
                 onClick={() => setSelectedPost(post)}
@@ -81,18 +110,25 @@ export default function Community() {
                   </div>
                 </div>
               </button>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery ? `No posts found matching "${searchQuery}"` : "No forum posts available"}
+              </div>
+            )}
           </TabsContent>
 
           {/* Knowledge Tab */}
           <TabsContent value="knowledge" className="mt-4 space-y-3">
-            <div className="grid gap-3">
-              {[
-                { title: "Crop Disease Identification", category: "Guides", icon: "📚" },
-                { title: "Organic Farming Basics", category: "Videos", icon: "🎥" },
-                { title: "Market Pricing Strategies", category: "Articles", icon: "📄" },
-                { title: "Climate-Smart Agriculture", category: "Courses", icon: "🎓" },
-              ].map((item, index) => (
+            {knowledgeLoading ? (
+              <div className="grid gap-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-20 rounded-xl" />
+                ))}
+              </div>
+            ) : knowledgeResources && knowledgeResources.length > 0 ? (
+              <div className="grid gap-3">
+                {knowledgeResources.map((item) => (
                 <div 
                   key={index}
                   className="bg-card rounded-xl p-4 border border-border/50 flex items-center gap-3 hover:shadow-md transition-all duration-200 cursor-pointer"
@@ -106,13 +142,25 @@ export default function Community() {
                   </div>
                   <BookOpen className="h-5 w-5 text-muted-foreground" />
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No knowledge resources available
+              </div>
+            )}
           </TabsContent>
 
           {/* Events Tab */}
           <TabsContent value="events" className="mt-4 space-y-3">
-            {events.map((event) => (
+            {eventsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 rounded-xl" />
+                ))}
+              </div>
+            ) : events && events.length > 0 ? (
+              events.map((event) => (
               <button
                 key={event.id}
                 onClick={() => setSelectedEvent(event)}
@@ -137,7 +185,12 @@ export default function Community() {
                   </div>
                 </div>
               </button>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No events scheduled
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

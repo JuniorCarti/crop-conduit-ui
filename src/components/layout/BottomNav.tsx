@@ -4,6 +4,7 @@ import {
   TrendingUp, 
   Leaf, 
   Package, 
+  Droplets,
   Truck, 
   Wallet, 
   Store, 
@@ -26,6 +27,7 @@ const mainNavItems = [
 ];
 
 const moreNavItems = [
+  { to: "/irrigation", icon: Droplets, label: "Irrigation" },
   { to: "/harvest", icon: Truck, label: "Harvest" },
   { to: "/finance", icon: Wallet, label: "Finance" },
   { to: "/marketplace", icon: Store, label: "Marketplace" },

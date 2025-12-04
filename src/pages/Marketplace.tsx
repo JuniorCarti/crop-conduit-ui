@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Store, Search, MessageSquare, Star, Plus, Filter } from "lucide-react";
+import { Store, Search, MessageSquare, Star, Plus, Filter, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { listings, transactions } from "@/data/dummyData";
+import { useListings, useTransactions, useChatMessages, useCreateListing } from "@/hooks/useApi";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCard } from "@/components/shared/AlertCard";
+import { formatKsh } from "@/lib/currency";
 import {
   Dialog,
   DialogContent,
@@ -27,8 +30,14 @@ const cropEmojis: Record<string, string> = {
 
 export default function Marketplace() {
   const [showListingModal, setShowListingModal] = useState(false);
-  const [selectedListing, setSelectedListing] = useState<typeof listings[0] | null>(null);
+  const [selectedListing, setSelectedListing] = useState<ReturnType<typeof useListings>['data']>[0] | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: listings, isLoading: listingsLoading, error: listingsError } = useListings(searchQuery);
+  const { data: transactions, isLoading: transactionsLoading } = useTransactions();
+  const { data: chatMessages } = useChatMessages(selectedListing?.id || 0);
+  const createListingMutation = useCreateListing();
 
   return (
     <div className="min-h-screen">
@@ -44,11 +53,25 @@ export default function Marketplace() {
       </PageHeader>
 
       <div className="p-4 md:p-6 space-y-6">
+        {/* Error State */}
+        {listingsError && (
+          <AlertCard
+            type="danger"
+            title="Error Loading Listings"
+            message="Failed to load marketplace listings. Please try again later."
+          />
+        )}
+
         {/* Search */}
         <div className="flex gap-2 animate-fade-up">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search crops..." className="pl-10 bg-card" />
+            <Input 
+              placeholder="Search crops..." 
+              className="pl-10 bg-card"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
@@ -64,8 +87,15 @@ export default function Marketplace() {
 
           {/* Browse Tab */}
           <TabsContent value="browse" className="mt-4">
-            <div className="grid grid-cols-2 gap-3">
-              {listings.map((listing) => (
+            {listingsLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-40 rounded-xl" />
+                ))}
+              </div>
+            ) : listings && listings.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {listings.map((listing) => (
                 <button
                   key={listing.id}
                   onClick={() => setSelectedListing(listing)}
@@ -76,7 +106,7 @@ export default function Marketplace() {
                   </div>
                   <div className="p-3">
                     <p className="font-medium text-foreground text-sm line-clamp-1">{listing.title}</p>
-                    <p className="text-lg font-bold text-primary mt-1">${listing.price}</p>
+                    <p className="text-lg font-bold text-primary mt-1">{formatKsh(listing.price)}</p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-muted-foreground">{listing.location}</span>
                       <div className="flex items-center gap-1">
@@ -86,8 +116,13 @@ export default function Marketplace() {
                     </div>
                   </div>
                 </button>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery ? `No listings found matching "${searchQuery}"` : "No listings available"}
+              </div>
+            )}
           </TabsContent>
 
           {/* My Listings Tab */}
@@ -107,7 +142,14 @@ export default function Marketplace() {
 
           {/* Transactions Tab */}
           <TabsContent value="transactions" className="mt-4 space-y-3">
-            {transactions.map((tx) => (
+            {transactionsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 rounded-xl" />
+                ))}
+              </div>
+            ) : transactions && transactions.length > 0 ? (
+              transactions.map((tx) => (
               <div 
                 key={tx.id}
                 className="bg-card rounded-xl p-4 border border-border/50"
@@ -119,7 +161,7 @@ export default function Marketplace() {
                     <p className="text-xs text-muted-foreground mt-1">{tx.date}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">${tx.amount}</p>
+                    <p className="text-lg font-bold text-foreground">{formatKsh(tx.amount)}</p>
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       tx.status === "Completed"
                         ? "bg-success/10 text-success"
@@ -130,7 +172,12 @@ export default function Marketplace() {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No transactions yet
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -149,7 +196,7 @@ export default function Marketplace() {
               
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold text-foreground">${selectedListing.price}</p>
+                  <p className="text-2xl font-bold text-foreground">{formatKsh(selectedListing.price)}</p>
                   <p className="text-sm text-muted-foreground">{selectedListing.location}</p>
                 </div>
                 <div className="flex items-center gap-1 bg-secondary px-3 py-1.5 rounded-full">
@@ -203,7 +250,7 @@ export default function Marketplace() {
                 <Input type="number" placeholder="0" className="mt-1" />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Price ($)</label>
+                <label className="text-sm font-medium text-foreground">Price (Ksh)</label>
                 <Input type="number" placeholder="0" className="mt-1" />
               </div>
             </div>
@@ -228,18 +275,26 @@ export default function Marketplace() {
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="h-64 bg-secondary rounded-lg p-4 overflow-y-auto space-y-3">
-              <div className="flex justify-start">
-                <div className="bg-card rounded-lg p-3 max-w-[80%]">
-                  <p className="text-sm">Hello! I'm interested in your crop listing. Is it still available?</p>
-                  <p className="text-xs text-muted-foreground mt-1">10:30 AM</p>
+              {chatMessages && chatMessages.length > 0 ? (
+                chatMessages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`rounded-lg p-3 max-w-[80%] ${
+                      msg.isOwn 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-card'
+                    }`}>
+                      <p className="text-sm">{msg.message}</p>
+                      <p className={`text-xs mt-1 ${msg.isOwn ? 'opacity-70' : 'text-muted-foreground'}`}>
+                        {msg.timestamp}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No messages yet
                 </div>
-              </div>
-              <div className="flex justify-end">
-                <div className="bg-primary text-primary-foreground rounded-lg p-3 max-w-[80%]">
-                  <p className="text-sm">Yes, it's available! The quality is excellent, harvested last week.</p>
-                  <p className="text-xs opacity-70 mt-1">10:32 AM</p>
-                </div>
-              </div>
+              )}
             </div>
             <div className="flex gap-2">
               <Input placeholder="Type a message..." className="flex-1" />

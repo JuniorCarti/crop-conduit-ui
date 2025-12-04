@@ -1,22 +1,28 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { 
   Home, 
   TrendingUp, 
   Leaf, 
   Package, 
+  Droplets,
   Truck, 
   Wallet, 
   Store, 
   Users,
-  Sprout
+  Sprout,
+  User,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { to: "/", icon: Home, label: "Dashboard", description: "Overview" },
   { to: "/market", icon: TrendingUp, label: "Market", description: "Oracle Agent" },
   { to: "/crops", icon: Leaf, label: "Crops", description: "Sentinel Agent" },
   { to: "/resources", icon: Package, label: "Resources", description: "Quartermaster" },
+  { to: "/irrigation", icon: Droplets, label: "Irrigation", description: "Scheduler" },
   { to: "/harvest", icon: Truck, label: "Harvest", description: "Foreman Agent" },
   { to: "/finance", icon: Wallet, label: "Finance", description: "Chancellor" },
   { to: "/marketplace", icon: Store, label: "Marketplace", description: "Buy & Sell" },
@@ -24,6 +30,18 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      // Error already handled in AuthContext
+    }
+  };
+
   return (
     <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col bg-card border-r border-border z-40">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
@@ -75,15 +93,29 @@ export function Sidebar() {
       </nav>
       
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 px-2">
+        <div className="flex items-center gap-3 px-2 mb-3">
           <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
-            <span className="text-sm font-semibold text-foreground">JD</span>
+            <span className="text-sm font-semibold text-foreground">
+              {currentUser?.displayName?.charAt(0).toUpperCase() || currentUser?.email?.charAt(0).toUpperCase() || "U"}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">John Doe</p>
-            <p className="text-xs text-muted-foreground truncate">Sunrise Farm</p>
+            <p className="text-sm font-medium truncate">
+              {currentUser?.displayName || currentUser?.email?.split("@")[0] || "User"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {currentUser?.email || "No email"}
+            </p>
           </div>
         </div>
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
       </div>
     </aside>
   );

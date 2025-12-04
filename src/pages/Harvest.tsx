@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Truck, Users, Calendar, MapPin, CheckCircle, Clock } from "lucide-react";
+import { Truck, Users, Calendar, MapPin, CheckCircle, Clock, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { Button } from "@/components/ui/button";
-import { harvestSchedule, workers, deliverySchedule } from "@/data/dummyData";
+import { useHarvestSchedule, useWorkers, useDeliverySchedule, useStorageRecommendations } from "@/hooks/useApi";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -20,19 +21,33 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Harvest() {
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [selectedHarvest, setSelectedHarvest] = useState<typeof harvestSchedule[0] | null>(null);
+  const [selectedHarvest, setSelectedHarvest] = useState<any | null>(null);
 
-  const readyHarvests = harvestSchedule.filter(h => h.status === "Ready");
+  const { data: harvestSchedule, isLoading: harvestLoading, error: harvestError } = useHarvestSchedule();
+  const { data: workers, isLoading: workersLoading } = useWorkers();
+  const { data: deliverySchedule, isLoading: deliveryLoading } = useDeliverySchedule();
+  const { data: storageRecommendations } = useStorageRecommendations();
+
+  const readyHarvests = (harvestSchedule || []).filter((h: any) => h.status === "Ready");
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <PageHeader 
         title="Harvest & Logistics" 
         subtitle="Foreman Agent • Plan & execute"
         icon={Truck}
       />
 
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        {/* Error State */}
+        {harvestError && (
+          <AlertCard
+            type="danger"
+            title="Error Loading Harvest Data"
+            message="Failed to load harvest schedule. Please try again later."
+          />
+        )}
+
         {/* Ready Alert */}
         {readyHarvests.length > 0 && (
           <div className="animate-fade-up">
@@ -55,7 +70,14 @@ export default function Harvest() {
 
           {/* Schedule Tab */}
           <TabsContent value="schedule" className="mt-4 space-y-3">
-            {harvestSchedule.map((harvest) => (
+            {harvestLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 rounded-xl" />
+                ))}
+              </div>
+            ) : harvestSchedule && harvestSchedule.length > 0 ? (
+              harvestSchedule.map((harvest: any) => (
               <button
                 key={harvest.id}
                 onClick={() => setSelectedHarvest(harvest)}
@@ -99,7 +121,12 @@ export default function Harvest() {
                   </div>
                 </div>
               </button>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No harvest schedule available
+              </div>
+            )}
           </TabsContent>
 
           {/* Workers Tab */}
@@ -110,7 +137,14 @@ export default function Harvest() {
                 Assign Tasks
               </Button>
             </div>
-            {workers.map((worker) => (
+            {workersLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-20 rounded-xl" />
+                ))}
+              </div>
+            ) : workers && workers.length > 0 ? (
+              workers.map((worker: any) => (
               <div 
                 key={worker.id}
                 className="bg-card rounded-xl p-4 border border-border/50 flex items-center justify-between"
@@ -140,7 +174,12 @@ export default function Harvest() {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No workers available
+              </div>
+            )}
           </TabsContent>
 
           {/* Delivery Tab */}
@@ -151,7 +190,14 @@ export default function Harvest() {
                 New Delivery
               </Button>
             </div>
-            {deliverySchedule.map((delivery) => (
+            {deliveryLoading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-24 rounded-xl" />
+                ))}
+              </div>
+            ) : deliverySchedule && deliverySchedule.length > 0 ? (
+              deliverySchedule.map((delivery: any) => (
               <div 
                 key={delivery.id}
                 className="bg-card rounded-xl p-4 border border-border/50"
@@ -181,26 +227,27 @@ export default function Harvest() {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No deliveries scheduled
+              </div>
+            )}
             
             {/* Storage Recommendations */}
-            <div className="bg-secondary rounded-xl p-4 mt-4">
-              <h4 className="font-medium text-foreground mb-2">Storage Recommendations</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                  <span>Store maize at 13% moisture content or below</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                  <span>Use hermetic bags for pest prevention</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                  <span>Check storage temperature weekly</span>
-                </li>
-              </ul>
-            </div>
+            {storageRecommendations && storageRecommendations.length > 0 && (
+              <div className="bg-secondary rounded-xl p-4 mt-4">
+                <h4 className="font-medium text-foreground mb-2">Storage Recommendations</h4>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {storageRecommendations.map((rec: any) => (
+                    <li key={rec.id} className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                      <span>{rec.recommendation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -264,7 +311,7 @@ export default function Harvest() {
             <div>
               <label className="text-sm font-medium text-foreground">Select Task</label>
               <select className="w-full mt-1 h-10 px-3 rounded-lg border border-input bg-background text-sm">
-                {harvestSchedule.map(h => (
+                {(harvestSchedule || []).map((h: any) => (
                   <option key={h.id}>{h.field} - {h.crop}</option>
                 ))}
               </select>
@@ -272,7 +319,7 @@ export default function Harvest() {
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Available Workers</label>
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {workers.filter(w => w.status === "Available").map((worker) => (
+                {(workers || []).filter((w: any) => w.status === "Available").map((worker: any) => (
                   <label 
                     key={worker.id}
                     className="flex items-center gap-3 p-3 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80"
