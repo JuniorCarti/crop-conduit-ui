@@ -292,4 +292,4 @@ For support, please:
 
 ---
 
-*Last updated: December 2024*
+*Last updated: December 2025*
