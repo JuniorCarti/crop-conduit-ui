@@ -1,73 +1,295 @@
-# Welcome to your Lovable project
+# 🌱 **AgriSmart - AI-Powered Agricultural Intelligence Platform**
 
-## Project info
+## 🚀 **Overview**
 
-**URL**: https://lovable.dev/projects/96453b19-d29e-489e-aaf2-bb1db34ec81d
+**AgriSmart** is a revolutionary multi-agent AI platform that transforms smallholder farmers in Africa from vulnerable producers into resilient, data-driven agri-entrepreneurs. Using five specialized AI agents working in concert, we provide predictive market insights, precise yield forecasts, climate resilience, post-harvest optimization, and financial visibility.
 
-## How can I edit this code?
+## 🎯 **Core Features**
 
-There are several ways of editing your application.
+### 🤖 **Multi-Agent AI System**
+- **🌱 Sentinel Agent** - Real-time crop monitoring & yield forecasting via satellite imagery
+- **📊 Oracle Agent** - Market price prediction & demand forecasting
+- **💧 Quartermaster Agent** - Resource optimization & input management
+- **🚚 Foreman Agent** - Harvest scheduling & logistics optimization
+- **💰 Chancellor Agent** - Financial planning & risk assessment
 
-**Use Lovable**
+### 🌍 **Platform Capabilities**
+- **Predictive Analytics**: Forecast crop yields, market prices, and climate impacts
+- **Real-time Monitoring**: Satellite-based field health tracking
+- **Market Intelligence**: Best-price recommendations across regional markets
+- **Resource Optimization**: Smart irrigation, fertilizer, and input management
+- **Financial Tools**: Cash flow projections, loan readiness, and risk scoring
+- **Offline Support**: USSD/SMS fallback for low-connectivity areas
+- **Multi-language**: Swahili-first interface with English support
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/96453b19-d29e-489e-aaf2-bb1db34ec81d) and start prompting.
+## 🏗️ **Technology Stack**
 
-Changes made via Lovable will be committed automatically to this repo.
+### **Frontend**
+- **React** with **TypeScript** for type-safe development
+- **Vite** for fast builds and hot module replacement
+- **shadcn/ui** for beautiful, accessible components
+- **Tailwind CSS** for utility-first styling
+- **React Query** for server state management
+- **Zustand** for client state management
 
-**Use your preferred IDE**
+### **Backend**
+- **Node.js** with **Express** for API services
+- **Firebase** for authentication, Firestore database, and cloud functions
+- **Python FastAPI** for AI agent microservices
+- **Redis** for caching and real-time features
+- **Celery** for background task processing
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### **AI/ML Stack**
+- **TensorFlow/PyTorch** for machine learning models
+- **Sentinel Hub API** for satellite imagery
+- **OpenCV** for image processing
+- **Scikit-learn** for traditional ML algorithms
+- **Prophet** for time-series forecasting
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### **Infrastructure**
+- **Google Cloud Platform** for hosting and scaling
+- **Docker** for containerization
+- **GitHub Actions** for CI/CD
+- **Terraform** for infrastructure as code
+- **Prometheus & Grafana** for monitoring
 
-Follow these steps:
+## 📁 **Project Structure**
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```
+agrismart/
+├── apps/
+│   ├── web/                  # React web application
+│   ├── mobile/               # Flutter mobile app (future)
+│   └── admin/                # Admin dashboard
+├── packages/
+│   ├── api/                  # Backend API
+│   ├── ai-agents/            # AI microservices
+│   └── shared/               # Shared utilities & types
+├── infrastructure/
+│   ├── terraform/            # Infrastructure as Code
+│   └── docker/               # Docker configurations
+└── docs/                     # Documentation
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🚀 **Quick Start**
 
-# Step 3: Install the necessary dependencies.
-npm i
+### **Prerequisites**
+- Node.js 18+ and npm
+- Python 3.10+
+- Firebase CLI
+- Docker (optional)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### **Local Development**
+
+1. **Clone the repository**
+```bash
+git clone <your-repository-url>
+cd agrismart
+```
+
+2. **Install dependencies**
+```bash
+npm install
+```
+
+3. **Set up environment variables**
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. **Start the development server**
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+5. **Access the application**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
+- AI Agents: http://localhost:8000
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🛠️ **Development Scripts**
 
-**Use GitHub Codespaces**
+```bash
+# Install dependencies
+npm install
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Start development servers
+npm run dev
 
-## What technologies are used for this project?
+# Build for production
+npm run build
 
-This project is built with:
+# Run tests
+npm run test
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Run linting
+npm run lint
 
-## How can I deploy this project?
+# Type checking
+npm run type-check
 
-Simply open [Lovable](https://lovable.dev/projects/96453b19-d29e-489e-aaf2-bb1db34ec81d) and click on Share -> Publish.
+# Start AI agents locally
+npm run agents:dev
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 🔧 **Configuration**
 
-Yes, you can!
+### **Environment Variables**
+Create a `.env` file in the root directory:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```env
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+# Backend API
+VITE_API_URL=http://localhost:3000
+
+# AI Services
+VITE_SENTINEL_API_URL=http://localhost:8001
+VITE_ORACLE_API_URL=http://localhost:8002
+
+# External APIs
+SENTINELHUB_CLIENT_ID=your_client_id
+SENTINELHUB_CLIENT_SECRET=your_secret
+WEATHER_API_KEY=your_weather_api_key
+```
+
+## 🧪 **Testing**
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run end-to-end tests
+npm run test:e2e
+```
+
+## 📦 **Deployment**
+
+### **Deploy to Lovable**
+1. Push changes to your repository
+2. Visit [Lovable](https://lovable.dev/projects/96453b19-d29e-489e-aaf2-bb1db34ec81d)
+3. Click on Share → Publish
+
+### **Manual Deployment**
+```bash
+# Build the application
+npm run build
+
+# Deploy to Firebase
+npm run deploy:firebase
+
+# Deploy AI agents
+npm run deploy:agents
+```
+
+## 🔌 **API Integration**
+
+### **Available Endpoints**
+- `GET /api/v1/market-prices` - Current market prices
+- `POST /api/v1/yield-forecast` - Yield prediction
+- `GET /api/v1/field-health/:fieldId` - Field health status
+- `POST /api/v1/recommendations` - AI recommendations
+
+### **AI Agent APIs**
+- Sentinel: `http://localhost:8001/ndvi` - NDVI analysis
+- Oracle: `http://localhost:8002/predict` - Price prediction
+- Quartermaster: `http://localhost:8003/optimize` - Resource optimization
+
+## 🎨 **UI Components**
+
+We use **shadcn/ui** components with custom theming. To add new components:
+
+```bash
+# Add a shadcn/ui component
+npx shadcn-ui add button
+```
+
+Custom components are located in `apps/web/src/components/ui/`
+
+## 📱 **Mobile Responsive**
+
+The application is fully responsive with breakpoints:
+- Mobile: < 768px
+- Tablet: 768px - 1024px
+- Desktop: > 1024px
+
+## 🌐 **Internationalization**
+
+Currently supports:
+- 🇰🇪 Swahili (primary)
+- 🇬🇧 English
+
+To add new translations:
+1. Add language file in `apps/web/src/locales/`
+2. Update `apps/web/src/lib/i18n.ts`
+
+## 🔒 **Security**
+
+- Input validation on all endpoints
+- CORS configuration
+- Rate limiting
+- Firebase security rules
+- HTTPS enforcement in production
+- Regular security audits
+
+## 📈 **Analytics**
+
+- User behavior tracking
+- Feature usage metrics
+- Error reporting with Sentry
+- Performance monitoring
+- A/B testing framework
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+### **Code Style**
+- Use TypeScript for all new code
+- Follow ESLint configuration
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
+
+## 📄 **License**
+
+This project is proprietary and confidential. All rights reserved.
+
+## 🆘 **Support**
+
+For support, please:
+1. Check the [documentation](docs/)
+2. Search existing issues
+3. Create a new issue with detailed information
+
+## 🙏 **Acknowledgments**
+
+- Kenyan farmers for their invaluable insights
+- Agricultural research institutions for data partnerships
+- Open source community for amazing tools
+- Development partners for support and funding
+
+---
+
+**Built with ❤️ for African farmers**
+
+---
+
+*Last updated: December 2024*
