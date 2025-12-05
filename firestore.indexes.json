@@ -1,0 +1,127 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "next_harvest",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "optimalDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "next_harvest",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fieldId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "optimalDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "next_harvest",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "cropName", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "optimalDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "next_harvest",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "optimalDate", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "market_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "commodity", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "market_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "market", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "market_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "county", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "market_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "commodity", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "market_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "commodity", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "market_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "commodity", "order": "ASCENDING" },
+        { "fieldPath": "market", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "field_health",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "lastChecked", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "field_health",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "fieldId", "order": "ASCENDING" },
+        { "fieldPath": "lastChecked", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "field_health",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "lastChecked", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "resources",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

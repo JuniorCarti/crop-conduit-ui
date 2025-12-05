@@ -1,0 +1,27 @@
+{
+  "name": "marketplace-functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions for Marketplace module",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "npm run build && firebase deploy --only functions",
+    "test": "jest"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^4.5.0",
+    "axios": "^1.6.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0"
+  },
+  "engines": {
+    "node": "18"
+  }
+}

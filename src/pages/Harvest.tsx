@@ -3,7 +3,8 @@ import { Truck, Users, Calendar, MapPin, CheckCircle, Clock, Loader2 } from "luc
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { Button } from "@/components/ui/button";
-import { useHarvestSchedule, useWorkers, useDeliverySchedule, useStorageRecommendations } from "@/hooks/useApi";
+import { useWorkers, useDeliverySchedule, useStorageRecommendations, useHarvestSchedule } from "@/hooks/useApi";
+import { useNextHarvest, useCreateNextHarvest, useUpdateNextHarvest } from "@/hooks/useNextHarvest";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,

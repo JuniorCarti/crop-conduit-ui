@@ -8,12 +8,42 @@ import { Badge } from "@/components/ui/badge";
 import { useCrops, useDeleteCrop } from "@/hooks/useCrops";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { Timestamp } from "firebase/firestore";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+/**
+ * Safely format a date, handling invalid dates gracefully
+ */
+const formatDateSafe = (date: Date | Timestamp | string | undefined | null): string => {
+  if (!date) return "Not set";
+  
+  try {
+    let dateObj: Date;
+    if (date instanceof Date) {
+      dateObj = date;
+    } else if (typeof date === "string") {
+      dateObj = new Date(date);
+    } else if (date && typeof date === "object" && "toDate" in date) {
+      dateObj = (date as any).toDate();
+    } else {
+      return "Not set";
+    }
+    
+    if (isNaN(dateObj.getTime())) {
+      return "Not set";
+    }
+    
+    return format(dateObj, "MMM d, yyyy");
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Not set";
+  }
+};
 import {
   Select,
   SelectContent,
@@ -269,7 +299,7 @@ export default function Crops() {
                     <p className="text-sm text-muted-foreground">{crop.type} • Location: {crop.field}</p>
                     {crop.createdAt && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Date Added: {format(new Date(crop.createdAt), "MMM d, yyyy")}
+                        Date Added: {formatDateSafe(crop.createdAt)}
                       </p>
                     )}
                   </div>
@@ -294,7 +324,7 @@ export default function Crops() {
                       Planted
                     </span>
                     <span className="font-medium text-foreground">
-                      {format(new Date(crop.plantingDate), "MMM d, yyyy")}
+                      {formatDateSafe(crop.plantingDate)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -303,7 +333,7 @@ export default function Crops() {
                       Harvest
                     </span>
                     <span className="font-medium text-foreground">
-                      {format(new Date(crop.harvestDate), "MMM d, yyyy")}
+                      {formatDateSafe(crop.harvestDate)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -387,7 +417,7 @@ export default function Crops() {
                       {crop.type} • {crop.field}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Date Added: {format(new Date(crop.createdAt || crop.plantingDate), "MMM d, yyyy")}
+                      Date Added: {formatDateSafe(crop.createdAt || crop.plantingDate)}
                     </p>
                   </div>
                   <CropAnalysisCard crop={crop} />

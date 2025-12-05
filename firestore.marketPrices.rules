@@ -1,0 +1,21 @@
+/**
+ * Firestore Security Rules for Market Prices Collection
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================================================
+    // MARKET PRICES COLLECTION
+    // ============================================================================
+    match /market_prices/{priceId} {
+      // Anyone authenticated can read market prices
+      allow read: if request.auth != null;
+      
+      // Only Cloud Functions can write (via admin SDK)
+      // Users cannot directly write to this collection
+      allow write: if false;
+    }
+  }
+}

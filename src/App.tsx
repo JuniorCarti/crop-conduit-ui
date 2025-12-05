@@ -14,7 +14,8 @@ import Resources from "./pages/Resources";
 import Irrigation from "./pages/Irrigation";
 import Harvest from "./pages/Harvest";
 import Finance from "./pages/Finance";
-import Marketplace from "./pages/Marketplace";
+import MarketplaceEnhanced from "./pages/MarketplaceEnhanced";
+import MarketPrices from "./pages/MarketPrices";
 import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
 import FarmerRegistration from "./pages/FarmerRegistration";
@@ -48,7 +49,8 @@ const App = () => (
                 <Route path="/irrigation" element={<Irrigation />} />
                 <Route path="/harvest" element={<Harvest />} />
                 <Route path="/finance" element={<Finance />} />
-                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/marketplace" element={<MarketplaceEnhanced />} />
+                <Route path="/market-prices" element={<MarketPrices />} />
                 <Route path="/community" element={<Community />} />
               </Route>
             </Route>

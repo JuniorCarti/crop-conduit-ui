@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useListings, useTransactions, useChatMessages, useCreateListing } from "@/hooks/useApi";
+import type { Listing } from "@/services/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { formatKsh } from "@/lib/currency";
@@ -30,7 +31,7 @@ const cropEmojis: Record<string, string> = {
 
 export default function Marketplace() {
   const [showListingModal, setShowListingModal] = useState(false);
-  const [selectedListing, setSelectedListing] = useState<ReturnType<typeof useListings>['data']>[0] | null>(null);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 

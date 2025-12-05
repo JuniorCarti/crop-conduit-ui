@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useCropPrices, usePriceHistory, useRecommendedMarkets } from "@/hooks/useApi";
+import { useSyncMarketPrices } from "@/hooks/useMarketPrices";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { formatKsh, formatPricePerUnit } from "@/lib/currency";
@@ -32,6 +33,7 @@ export default function Market() {
   const { data: cropPrices, isLoading: pricesLoading, error: pricesError } = useCropPrices();
   const { data: priceHistory, isLoading: historyLoading } = usePriceHistory(pricePeriod);
   const { data: recommendedMarkets, isLoading: marketsLoading } = useRecommendedMarkets();
+  const syncPrices = useSyncMarketPrices();
 
   // Filter crops based on search
   const filteredCrops = cropPrices?.filter(crop => 
@@ -45,15 +47,36 @@ export default function Market() {
         subtitle="Oracle Agent • Real-time prices"
         icon={TrendingUp}
       >
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setShowAlertModal(true)}
-          className="gap-2"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="hidden sm:inline">Set Alert</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => syncPrices.mutate()} 
+            disabled={syncPrices.isPending}
+            className="gap-2"
+          >
+            {syncPrices.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="hidden sm:inline">Syncing...</span>
+              </>
+            ) : (
+              <>
+                <TrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">Sync Prices</span>
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowAlertModal(true)}
+            className="gap-2"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Set Alert</span>
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="p-4 md:p-6 space-y-6">
@@ -86,7 +109,7 @@ export default function Market() {
                 <Skeleton key={i} className="h-24 rounded-xl" />
               ))}
             </div>
-          ) : filteredCrops.length > 0 ? (
+          ) : filteredCrops && filteredCrops.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
               {filteredCrops.map((crop) => (
                 <button
@@ -113,8 +136,25 @@ export default function Market() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No crops found matching "{searchQuery}"
+            <div className="text-center py-8 space-y-4">
+              <p className="text-muted-foreground">
+                {searchQuery ? `No crops found matching "${searchQuery}"` : "No market prices available. Click 'Sync Prices' to fetch the latest market data."}
+              </p>
+              {!searchQuery && (
+                <Button onClick={() => syncPrices.mutate()} disabled={syncPrices.isPending} className="gap-2">
+                  {syncPrices.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp className="h-4 w-4" />
+                      Sync Market Prices
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           )}
         </section>

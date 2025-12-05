@@ -320,36 +320,49 @@ function FinanceContent() {
   });
 
   // Build dashboard snapshot with error handling
-  const liveSnapshot = useMemo(() => {
-    try {
-      return buildFinanceDashboardSnapshot({
-        projections: projections || [],
-        expenses: expenses || [],
-        forecasts: forecasts || [],
-        roi: roiCalculations || [],
-        profitLoss: statements || [],
-        loanApplications: applications || [],
-        filters,
-      });
-    } catch (e: any) {
-      console.error("Error building dashboard snapshot:", e);
-      setError(e.message || "Failed to build dashboard");
-      // Return safe default snapshot
-      return {
-        kpis: {
-          projectedRevenue: 0,
-          expenses: 0,
-          netProfit: 0,
-          profitMargin: 0,
-        },
-        revenueSeries: [],
-        expenseSeries: [],
-        cashflowSeries: [],
-        roiLeaders: [],
-        cachedAt: new Date().toISOString(),
-      };
+  const [liveSnapshot, setLiveSnapshot] = useState<FinanceDashboardSnapshot | null>(null);
+  const [snapshotLoading, setSnapshotLoading] = useState(true);
+
+  useEffect(() => {
+    async function buildSnapshot() {
+      try {
+        setSnapshotLoading(true);
+        const snapshot = await buildFinanceDashboardSnapshot({
+          projections: projections || [],
+          expenses: expenses || [],
+          forecasts: forecasts || [],
+          roi: roiCalculations || [],
+          profitLoss: statements || [],
+          loanApplications: applications || [],
+          filters,
+        });
+        setLiveSnapshot(snapshot);
+        setSnapshotLoading(false);
+      } catch (e: any) {
+        console.error("Error building dashboard snapshot:", e);
+        setError(e.message || "Failed to build dashboard");
+        // Set safe default snapshot
+        setLiveSnapshot({
+          kpis: {
+            projectedRevenue: 0,
+            expenses: 0,
+            netProfit: 0,
+            profitMargin: 0,
+          },
+          revenueSeries: [],
+          expenseSeries: [],
+          cashflowSeries: [],
+          roiLeaders: [],
+          cachedAt: new Date().toISOString(),
+        });
+        setSnapshotLoading(false);
+      }
     }
-  }, [applications, expenses, filters, forecasts, projections, roiCalculations, statements]);
+
+    if (!projectionsLoading && !expensesLoading && !forecastsLoading) {
+      buildSnapshot();
+    }
+  }, [applications, expenses, filters, forecasts, projections, roiCalculations, statements, projectionsLoading, expensesLoading, forecastsLoading]);
 
   // Persist snapshot for offline use
   useEffect(() => {

@@ -13,7 +13,7 @@ import { StatCard } from "@/components/shared/StatCard";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCropPrices, useFieldData, useCashflow, useAlerts, useHarvestSchedule } from "@/hooks/useApi";
+import { useFieldHealth } from "@/hooks/useFieldHealth";
+import { useNextHarvest } from "@/hooks/useNextHarvest";
 import { formatKsh } from "@/lib/currency";
 
 const quickActions = [
@@ -36,15 +38,53 @@ export default function Index() {
   const [showAlerts, setShowAlerts] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch data using API hooks
+  // Fetch data using API hooks (now using real-time Firestore data)
   const { data: cropPrices, isLoading: pricesLoading, error: pricesError } = useCropPrices();
   const { data: fieldData, isLoading: fieldsLoading, error: fieldsError } = useFieldData();
   const { data: cashflowData, isLoading: cashflowLoading, error: cashflowError } = useCashflow();
   const { data: alerts, isLoading: alertsLoading } = useAlerts();
   const { data: harvestSchedule, isLoading: harvestLoading } = useHarvestSchedule();
+  
+  // Real-time field health and harvest data (backup to API hooks)
+  const { health: fieldHealthData } = useFieldHealth();
+  const { harvests: nextHarvestData } = useNextHarvest();
+  
+  // Merge real-time data with API data for fieldData
+  const enhancedFieldData = useMemo(() => {
+    if (fieldData && fieldData.length > 0) return fieldData;
+    // Fallback to field health data if API data not available
+    return fieldHealthData.map((h) => ({
+      id: h.fieldId,
+      name: h.fieldName,
+      crop: h.cropName || "Unknown",
+      area: "N/A",
+      ndvi: h.ndvi || 0.7,
+      moisture: h.moisture || 60,
+      health: h.health,
+      lastUpdated: h.lastChecked instanceof Date 
+        ? h.lastChecked.toISOString() 
+        : new Date(h.lastChecked).toISOString(),
+    }));
+  }, [fieldData, fieldHealthData]);
+  
+  // Merge real-time harvest data
+  const enhancedHarvestSchedule = useMemo(() => {
+    if (harvestSchedule && harvestSchedule.length > 0) return harvestSchedule;
+    // Fallback to next harvest data
+    return nextHarvestData.map((h) => ({
+      id: h.id || h.fieldId,
+      field: h.fieldName,
+      crop: h.cropName,
+      optimalDate: h.optimalDate instanceof Date 
+        ? format(h.optimalDate, "MMM dd, yyyy")
+        : format(new Date(h.optimalDate), "MMM dd, yyyy"),
+      workers: h.workers || 0,
+      status: h.status,
+    }));
+  }, [harvestSchedule, nextHarvestData]);
 
   const totalRevenue = cashflowData?.reduce((sum, m) => sum + m.income, 0) || 0;
-  const healthyFields = fieldData?.filter(f => f.health === "Good" || f.health === "Excellent").length || 0;
+  const healthyFields = enhancedFieldData?.filter(f => f.health === "Good" || f.health === "Excellent").length || 0;
   
   const isLoading = pricesLoading || fieldsLoading || cashflowLoading || harvestLoading;
 
@@ -115,20 +155,20 @@ export default function Index() {
         )}
 
         {/* Stats Overview */}
-        {!isLoading && cropPrices && fieldData && cashflowData && harvestSchedule && (
+        {!isLoading && (
           <section className="animate-fade-up" style={{ animationDelay: "0.1s" }}>
             <div className="grid grid-cols-2 gap-3">
               <StatCard
                 title="Today's Best Price"
-                value={formatKsh(cropPrices[0]?.price || 0)}
-                change={`${cropPrices[0]?.name || ""} ${cropPrices[0]?.change ? (cropPrices[0].change > 0 ? "+" : "") + cropPrices[0].change + "%" : ""}`}
-                changeType={cropPrices[0]?.trend === "up" ? "positive" : "negative"}
+                value={cropPrices && cropPrices.length > 0 ? formatKsh(cropPrices[0]?.price || 0) : "N/A"}
+                change={cropPrices && cropPrices.length > 0 ? `${cropPrices[0]?.name || ""} ${cropPrices[0]?.change ? (cropPrices[0].change > 0 ? "+" : "") + cropPrices[0].change + "%" : ""}` : cropPrices && cropPrices.length === 0 ? "Sync prices" : "No data"}
+                changeType={cropPrices && cropPrices.length > 0 && cropPrices[0]?.trend === "up" ? "positive" : "neutral"}
                 icon={TrendingUp}
                 iconColor="text-primary"
               />
               <StatCard
                 title="Field Health"
-                value={`${healthyFields}/${fieldData.length}`}
+                value={enhancedFieldData && enhancedFieldData.length > 0 ? `${healthyFields}/${enhancedFieldData.length}` : "0/0"}
                 change="Fields healthy"
                 changeType="positive"
                 icon={Leaf}
@@ -136,16 +176,16 @@ export default function Index() {
               />
               <StatCard
                 title="Revenue (6mo)"
-                value={formatKsh(totalRevenue / 1000000) + "M"}
-                change="+18% vs last period"
+                value={cashflowData && cashflowData.length > 0 ? formatKsh(totalRevenue / 1000000) + "M" : "N/A"}
+                change={cashflowData && cashflowData.length > 0 ? "+18% vs last period" : "No data"}
                 changeType="positive"
                 icon={DollarSign}
                 iconColor="text-warning"
               />
               <StatCard
                 title="Next Harvest"
-                value={harvestSchedule[0]?.optimalDate.split(",")[0] || "N/A"}
-                change={harvestSchedule[0]?.field || ""}
+                value={enhancedHarvestSchedule && enhancedHarvestSchedule.length > 0 ? enhancedHarvestSchedule[0]?.optimalDate.split(",")[0] || "N/A" : "N/A"}
+                change={enhancedHarvestSchedule && enhancedHarvestSchedule.length > 0 ? enhancedHarvestSchedule[0]?.field || "" : ""}
                 changeType="neutral"
                 icon={Calendar}
                 iconColor="text-info"
@@ -242,7 +282,7 @@ export default function Index() {
         )}
 
         {/* Field Status */}
-        {fieldData && (
+        {enhancedFieldData && enhancedFieldData.length > 0 && (
           <section className="animate-fade-up" style={{ animationDelay: "0.25s" }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-foreground">Field Status</h3>
@@ -258,7 +298,7 @@ export default function Index() {
               </div>
             ) : (
               <div className="space-y-2">
-                {fieldData.slice(0, 3).map((field) => (
+                {enhancedFieldData.slice(0, 3).map((field) => (
                   <div 
                     key={field.id}
                     className="bg-card rounded-xl p-4 border border-border/50 flex items-center justify-between hover:shadow-md transition-all duration-200 cursor-pointer"
@@ -299,7 +339,7 @@ export default function Index() {
         )}
 
         {/* Upcoming Harvests */}
-        {harvestSchedule && (
+        {enhancedHarvestSchedule && enhancedHarvestSchedule.length > 0 && (
           <section className="animate-fade-up" style={{ animationDelay: "0.3s" }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-foreground">Upcoming Harvests</h3>
@@ -315,7 +355,7 @@ export default function Index() {
               </div>
             ) : (
               <div className="space-y-2">
-                {harvestSchedule.map((harvest) => (
+                {enhancedHarvestSchedule.map((harvest) => (
                   <div 
                     key={harvest.id}
                     className="bg-card rounded-xl p-4 border border-border/50 flex items-center justify-between cursor-pointer hover:shadow-md transition-all duration-200"

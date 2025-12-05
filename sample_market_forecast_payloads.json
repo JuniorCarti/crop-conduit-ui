@@ -1,0 +1,146 @@
+[
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Wakulima",
+    "commodity": "tomatoes",
+    "pricetype": "retail",
+    "previous_month_price": 58.2
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Wakulima",
+    "commodity": "tomatoes",
+    "pricetype": "wholesale",
+    "previous_month_price": 49.5
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Marikiti (Nairobi)",
+    "commodity": "onions",
+    "pricetype": "retail",
+    "previous_month_price": 65.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Marikiti (Nairobi)",
+    "commodity": "onions",
+    "pricetype": "wholesale",
+    "previous_month_price": 55.25
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Mombasa",
+    "market": "Mombasa Market",
+    "commodity": "avocado",
+    "pricetype": "retail",
+    "previous_month_price": 85.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Mombasa",
+    "market": "Mombasa Market",
+    "commodity": "avocado",
+    "pricetype": "wholesale",
+    "previous_month_price": 72.25
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Kisumu",
+    "market": "Kisumu Market",
+    "commodity": "mango",
+    "pricetype": "retail",
+    "previous_month_price": 75.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Kisumu",
+    "market": "Kisumu Market",
+    "commodity": "mango",
+    "pricetype": "wholesale",
+    "previous_month_price": 63.75
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nakuru",
+    "market": "Nakuru Market",
+    "commodity": "potatoes",
+    "pricetype": "retail",
+    "previous_month_price": 42.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nakuru",
+    "market": "Nakuru Market",
+    "commodity": "potatoes",
+    "pricetype": "wholesale",
+    "previous_month_price": 35.7
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Wakulima",
+    "commodity": "maize",
+    "pricetype": "retail",
+    "previous_month_price": 48.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Wakulima",
+    "commodity": "maize",
+    "pricetype": "wholesale",
+    "previous_month_price": 40.8
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Marikiti (Nairobi)",
+    "commodity": "wheat",
+    "pricetype": "retail",
+    "previous_month_price": 52.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Nairobi",
+    "market": "Marikiti (Nairobi)",
+    "commodity": "wheat",
+    "pricetype": "wholesale",
+    "previous_month_price": 44.2
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Mombasa",
+    "market": "Mombasa Market",
+    "commodity": "sorghum",
+    "pricetype": "retail",
+    "previous_month_price": 47.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Mombasa",
+    "market": "Mombasa Market",
+    "commodity": "sorghum",
+    "pricetype": "wholesale",
+    "previous_month_price": 39.95
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Kisumu",
+    "market": "Kisumu Market",
+    "commodity": "beans",
+    "pricetype": "retail",
+    "previous_month_price": 95.0
+  },
+  {
+    "date": "2025-12-01",
+    "admin1": "Kisumu",
+    "market": "Kisumu Market",
+    "commodity": "beans",
+    "pricetype": "wholesale",
+    "previous_month_price": 80.75
+  }
+]
