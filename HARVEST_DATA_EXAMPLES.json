@@ -1,0 +1,314 @@
+{
+    "documentation": "Firestore Harvest Module - Real Data Examples",
+    "collection_path": "users/{userId}/harvest",
+    "last_updated": "2026-01-18",
+    "schedules_example": {
+        "path": "users/user-123/harvest/schedules",
+        "documents": [
+            {
+                "id": "schedule-corn-2025-01",
+                "userId": "user-123",
+                "cropId": "crop-corn-001",
+                "farmId": "farm-nairobi-01",
+                "cropName": "Corn",
+                "field": "Field A (North Sector)",
+                "plantedDate": "2025-05-01T00:00:00Z",
+                "estimatedReadyDate": "2025-09-15T00:00:00Z",
+                "optimalDate": "2025-09-20",
+                "status": "Ready",
+                "expectedYield": 450,
+                "yieldUnit": "kg",
+                "notes": "Early season crop, excellent soil moisture this year",
+                "createdAt": "2026-01-15T08:30:00Z",
+                "updatedAt": "2026-01-18T14:22:00Z"
+            },
+            {
+                "id": "schedule-maize-2025-02",
+                "userId": "user-123",
+                "cropId": "crop-maize-001",
+                "farmId": "farm-nairobi-01",
+                "cropName": "Maize",
+                "field": "Field B (South Sector)",
+                "plantedDate": "2025-06-01T00:00:00Z",
+                "estimatedReadyDate": "2025-10-15T00:00:00Z",
+                "optimalDate": "2025-10-22",
+                "status": "Pending",
+                "expectedYield": 600,
+                "yieldUnit": "kg",
+                "notes": "Second harvest with improved fertilizer regimen",
+                "createdAt": "2026-01-15T09:00:00Z",
+                "updatedAt": "2026-01-15T09:00:00Z"
+            }
+        ],
+        "query_examples": {
+            "all_for_user": "query(collection(db, 'users', 'user-123', 'harvest', 'schedules'))",
+            "ready_schedules": "query(collection(...), where('status', '==', 'Ready'))",
+            "subscribed": "onSnapshot(query(...), callback)"
+        }
+    },
+    "workers_example": {
+        "path": "users/user-123/harvest/workers",
+        "documents": [
+            {
+                "id": "worker-john-001",
+                "userId": "user-123",
+                "name": "John Omondi",
+                "role": "Supervisor",
+                "phone": "+254712345678",
+                "email": "john.omondi@farm.local",
+                "status": "Active",
+                "assignedScheduleIds": [
+                    "schedule-corn-2025-01",
+                    "schedule-maize-2025-02"
+                ],
+                "experience": "8 years in farm management",
+                "emergencyContact": {
+                    "name": "Mary Omondi",
+                    "relationship": "Sister",
+                    "phone": "+254712345679"
+                },
+                "createdAt": "2026-01-10T10:15:00Z",
+                "updatedAt": "2026-01-18T09:00:00Z"
+            },
+            {
+                "id": "worker-fatima-002",
+                "userId": "user-123",
+                "name": "Fatima Hassan",
+                "role": "Harvester",
+                "phone": "+254723456789",
+                "email": "fatima.hassan@farm.local",
+                "status": "Active",
+                "assignedScheduleIds": [
+                    "schedule-corn-2025-01"
+                ],
+                "experience": "5 years in field operations",
+                "createdAt": "2026-01-10T10:30:00Z",
+                "updatedAt": "2026-01-10T10:30:00Z"
+            },
+            {
+                "id": "worker-samuel-003",
+                "userId": "user-123",
+                "name": "Samuel Njoroge",
+                "role": "Transporter",
+                "phone": "+254745678901",
+                "email": "samuel.njoroge@farm.local",
+                "status": "Active",
+                "assignedScheduleIds": [],
+                "experience": "6 years in logistics",
+                "emergencyContact": {
+                    "name": "Grace Njoroge",
+                    "relationship": "Wife",
+                    "phone": "+254745678902"
+                },
+                "createdAt": "2026-01-12T14:45:00Z",
+                "updatedAt": "2026-01-12T14:45:00Z"
+            }
+        ],
+        "query_examples": {
+            "all_for_user": "query(collection(db, 'users', 'user-123', 'harvest', 'workers'))",
+            "active_only": "query(collection(...), where('status', '==', 'Active'))",
+            "by_role": "query(collection(...), where('role', '==', 'Harvester'))",
+            "assigned_to_schedule": "workers.filter(w => w.assignedScheduleIds.includes('schedule-id'))"
+        }
+    },
+    "deliveries_example": {
+        "path": "users/user-123/harvest/deliveries",
+        "documents": [
+            {
+                "id": "delivery-corn-market-001",
+                "userId": "user-123",
+                "scheduleId": "schedule-corn-2025-01",
+                "assignedWorkerId": "worker-samuel-003",
+                "destination": "Market",
+                "destinationAddress": "Nairobi Central Market, Main Hall, Stall 45",
+                "quantity": 450,
+                "quantityUnit": "kg",
+                "scheduledDate": "2025-09-21T07:00:00Z",
+                "status": "Pending",
+                "vehicleType": "Truck",
+                "transportCost": 3500,
+                "notes": "Premium grade corn, handle with care - fragile packaging",
+                "createdAt": "2026-01-16T11:20:00Z",
+                "updatedAt": "2026-01-16T11:20:00Z"
+            },
+            {
+                "id": "delivery-corn-warehouse-002",
+                "userId": "user-123",
+                "scheduleId": "schedule-corn-2025-01",
+                "assignedWorkerId": "worker-fatima-002",
+                "destination": "Warehouse",
+                "destinationAddress": "AgriHub Storage Facility, Kitengela Junction",
+                "quantity": 200,
+                "quantityUnit": "kg",
+                "scheduledDate": "2025-09-22T08:00:00Z",
+                "status": "Pending",
+                "vehicleType": "Van",
+                "transportCost": 2500,
+                "notes": "Backup storage for secondary market distribution",
+                "createdAt": "2026-01-16T12:00:00Z",
+                "updatedAt": "2026-01-16T12:00:00Z"
+            },
+            {
+                "id": "delivery-maize-buyer-003",
+                "userId": "user-123",
+                "scheduleId": "schedule-maize-2025-02",
+                "assignedWorkerId": "worker-samuel-003",
+                "destination": "Buyer",
+                "destinationAddress": "Kenya Grain Limited, Embakasi Industrial Park",
+                "quantity": 600,
+                "quantityUnit": "kg",
+                "scheduledDate": "2025-10-25T06:00:00Z",
+                "status": "Pending",
+                "vehicleType": "Truck",
+                "transportCost": 4500,
+                "notes": "B2B bulk order, pre-approved buyer, schedule pickup",
+                "createdAt": "2026-01-17T09:30:00Z",
+                "updatedAt": "2026-01-17T09:30:00Z"
+            },
+            {
+                "id": "delivery-maize-processor-004",
+                "userId": "user-123",
+                "scheduleId": "schedule-maize-2025-02",
+                "assignedWorkerId": "worker-john-001",
+                "destination": "Processor",
+                "destinationAddress": "Upendo Cornmeal Factory, Mombasa Port Road",
+                "quantity": 400,
+                "quantityUnit": "kg",
+                "scheduledDate": "2025-10-26T05:00:00Z",
+                "status": "InTransit",
+                "vehicleType": "Truck",
+                "transportCost": 5000,
+                "notes": "Processing contract with 3-year agreement, expedited delivery",
+                "actualDeliveryDate": "2025-10-26T18:30:00Z",
+                "createdAt": "2026-01-17T10:00:00Z",
+                "updatedAt": "2026-01-18T14:15:00Z"
+            }
+        ],
+        "query_examples": {
+            "all_for_user": "query(collection(db, 'users', 'user-123', 'harvest', 'deliveries'))",
+            "by_status": "query(collection(...), where('status', '==', 'Pending'))",
+            "by_schedule": "query(collection(...), where('scheduleId', '==', 'schedule-id'))",
+            "by_worker": "query(collection(...), where('assignedWorkerId', '==', 'worker-id'))",
+            "pending_only": "deliveries.filter(d => ['Pending', 'InTransit', 'Delayed'].includes(d.status))"
+        }
+    },
+    "firestore_indexes_needed": [
+        {
+            "collection": "users/{userId}/harvest/schedules",
+            "fields": [
+                {
+                    "name": "userId",
+                    "order": "Ascending"
+                },
+                {
+                    "name": "status",
+                    "order": "Ascending"
+                }
+            ],
+            "reason": "Query schedules filtered by status"
+        },
+        {
+            "collection": "users/{userId}/harvest/workers",
+            "fields": [
+                {
+                    "name": "userId",
+                    "order": "Ascending"
+                },
+                {
+                    "name": "status",
+                    "order": "Ascending"
+                }
+            ],
+            "reason": "Query workers filtered by status"
+        },
+        {
+            "collection": "users/{userId}/harvest/deliveries",
+            "fields": [
+                {
+                    "name": "userId",
+                    "order": "Ascending"
+                },
+                {
+                    "name": "status",
+                    "order": "Ascending"
+                }
+            ],
+            "reason": "Query deliveries filtered by status"
+        },
+        {
+            "collection": "users/{userId}/harvest/deliveries",
+            "fields": [
+                {
+                    "name": "scheduleId",
+                    "order": "Ascending"
+                },
+                {
+                    "name": "status",
+                    "order": "Ascending"
+                }
+            ],
+            "reason": "Query deliveries for specific schedule with status"
+        }
+    ],
+    "size_estimates": {
+        "small_farm": {
+            "schedules": 5,
+            "workers": 8,
+            "deliveries": 20,
+            "estimated_storage": "~100 KB per user"
+        },
+        "medium_farm": {
+            "schedules": 15,
+            "workers": 25,
+            "deliveries": 100,
+            "estimated_storage": "~500 KB per user"
+        },
+        "large_farm": {
+            "schedules": 50,
+            "workers": 100,
+            "deliveries": 500,
+            "estimated_storage": "~2-3 MB per user"
+        }
+    },
+    "backup_restore_notes": {
+        "backup_strategy": "Firestore has built-in backup. Enable automatic backups in GCP Console.",
+        "export_data": "Use Firestore export in GCP Console to export JSON/Avro format",
+        "restore_from_export": "Use Firestore import in GCP Console to restore data",
+        "point_in_time_recovery": "Available with daily backups (Enterprise plan)",
+        "retention_policy": "Keep backups for minimum 30 days"
+    },
+    "cost_optimization": {
+        "reads": {
+            "per_month": "Up to 50,000 free reads",
+            "cost_per_100k": "$0.06",
+            "optimization": "Use pagination and indexes for complex queries"
+        },
+        "writes": {
+            "per_month": "Up to 20,000 free writes",
+            "cost_per_100k": "$0.18",
+            "optimization": "Batch operations, avoid unnecessary updates"
+        },
+        "deletes": {
+            "per_month": "Counted as writes",
+            "cost": "$0.18 per 100k",
+            "optimization": "Soft delete (mark as deleted) instead of hard delete"
+        },
+        "storage": {
+            "per_gb": "$0.18/month for stored data",
+            "per_gb_transferred": "$0.12/GB for network egress",
+            "optimization": "Archive old deliveries, compress notes field"
+        }
+    },
+    "migration_notes_from_hardcoded": {
+        "old_pattern": "const workers = [{id: '1', name: 'John', ...}];",
+        "new_pattern": "const {workers} = useWorkers();",
+        "benefits": [
+            "Data persists across sessions",
+            "Multi-tenant isolation",
+            "Realtime sync",
+            "Scalable to 1000s of records",
+            "Proper error handling",
+            "Access control via security rules"
+        ]
+    }
+}
