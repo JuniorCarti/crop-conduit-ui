@@ -1,334 +1,268 @@
 /**
- * React hooks for Firestore Harvest Planner
+ * React Hooks for Harvest Module
+ * 
+ * Provides hooks for fetching, subscribing to, and managing harvest data
+ * with proper loading/error states and realtime updates
  */
 
-import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  subscribeToHarvestPlans,
-  getHarvestPlan,
-  createHarvestPlan,
-  updateHarvestPlan,
-  deleteHarvestPlan,
-  subscribeToHarvestTasks,
-  createHarvestTask,
-  updateHarvestTask,
-  deleteHarvestTask,
-  subscribeToEquipment,
-  createEquipment,
-  updateEquipment,
-  deleteEquipment,
-  type HarvestPlan,
-  type HarvestTask,
-  type EquipmentItem,
+  subscribeToHarvestSchedules,
+  subscribeToWorkers,
+  subscribeToDeliveries,
+  createWorker,
+  updateWorker,
+  deleteWorker,
+  createDelivery,
+  updateDelivery,
+  deleteDelivery,
+  createHarvestSchedule,
+  updateHarvestSchedule,
+  deleteHarvestSchedule,
 } from "@/services/firestore-harvest";
-import { toast } from "sonner";
+import {
+  HarvestSchedule,
+  Worker,
+  Delivery,
+  CreateWorkerInput,
+  CreateDeliveryInput,
+  CreateHarvestScheduleInput,
+  CollectionHookReturn,
+  DocumentHookReturn,
+} from "@/types/harvest";
 
 // ============================================================================
-// HARVEST PLAN HOOKS
+// HARVEST SCHEDULES HOOK
 // ============================================================================
 
-export function useHarvestPlans() {
+/**
+ * Hook to manage harvest schedules with realtime updates
+ * Returns schedules, loading/error states, and CRUD operations
+ */
+export function useHarvestSchedules() {
   const { currentUser } = useAuth();
-  const [plans, setPlans] = useState<HarvestPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [schedules, setSchedules] = useState<HarvestSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!currentUser?.uid) {
-      setIsLoading(false);
+      setLoading(false);
+      setSchedules([]);
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
 
-    const unsubscribe = subscribeToHarvestPlans(
+    // Subscribe to realtime updates
+    const unsubscribe = subscribeToHarvestSchedules(
       currentUser.uid,
       (data) => {
-        setPlans(data);
-        setIsLoading(false);
-      }
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [currentUser?.uid]);
-
-  return { plans, isLoading, error };
-}
-
-export function useHarvestPlan(planId: string | null) {
-  const { currentUser } = useAuth();
-  const [plan, setPlan] = useState<HarvestPlan | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!planId || !currentUser?.uid) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    getHarvestPlan(planId)
-      .then((data) => {
-        setPlan(data);
-        setIsLoading(false);
-      })
-      .catch((err) => {
+        setSchedules(data);
+        setLoading(false);
+      },
+      (err) => {
         setError(err);
-        setIsLoading(false);
-      });
-  }, [planId, currentUser?.uid]);
-
-  return { plan, isLoading, error };
-}
-
-export function useCreateHarvestPlan() {
-  const { currentUser } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (plan: Omit<HarvestPlan, "id" | "createdAt" | "updatedAt" | "userId">) => {
-      if (!currentUser?.uid) {
-        throw new Error("User not authenticated");
-      }
-      return createHarvestPlan({
-        ...plan,
-        userId: currentUser.uid,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["harvestPlans"] });
-      toast.success("Harvest plan created successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to create harvest plan");
-    },
-  });
-}
-
-export function useUpdateHarvestPlan() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<HarvestPlan> }) => {
-      return updateHarvestPlan(id, updates);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["harvestPlans"] });
-      toast.success("Harvest plan updated successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update harvest plan");
-    },
-  });
-}
-
-export function useDeleteHarvestPlan() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      return deleteHarvestPlan(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["harvestPlans"] });
-      toast.success("Harvest plan deleted successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete harvest plan");
-    },
-  });
-}
-
-// ============================================================================
-// HARVEST TASK HOOKS
-// ============================================================================
-
-export function useHarvestTasks(harvestPlanId?: string) {
-  const { currentUser } = useAuth();
-  const [tasks, setTasks] = useState<HarvestTask[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!currentUser?.uid) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    const unsubscribe = subscribeToHarvestTasks(
-      currentUser.uid,
-      harvestPlanId,
-      (data) => {
-        setTasks(data);
-        setIsLoading(false);
+        setLoading(false);
       }
     );
 
-    return () => {
-      unsubscribe();
-    };
-  }, [currentUser?.uid, harvestPlanId]);
-
-  return { tasks, isLoading, error };
-}
-
-export function useCreateHarvestTask() {
-  const { currentUser } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (task: Omit<HarvestTask, "id" | "createdAt" | "updatedAt" | "userId">) => {
-      if (!currentUser?.uid) {
-        throw new Error("User not authenticated");
-      }
-      return createHarvestTask({
-        ...task,
-        userId: currentUser.uid,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["harvestTasks"] });
-      toast.success("Task created successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to create task");
-    },
-  });
-}
-
-export function useUpdateHarvestTask() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<HarvestTask> }) => {
-      return updateHarvestTask(id, updates);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["harvestTasks"] });
-      toast.success("Task updated successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update task");
-    },
-  });
-}
-
-export function useDeleteHarvestTask() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      return deleteHarvestTask(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["harvestTasks"] });
-      toast.success("Task deleted successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete task");
-    },
-  });
-}
-
-// ============================================================================
-// EQUIPMENT HOOKS
-// ============================================================================
-
-export function useEquipment() {
-  const { currentUser } = useAuth();
-  const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!currentUser?.uid) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    const unsubscribe = subscribeToEquipment(
-      currentUser.uid,
-      (data) => {
-        setEquipment(data);
-        setIsLoading(false);
-      }
-    );
-
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [currentUser?.uid]);
 
-  return { equipment, isLoading, error };
+  const add = useCallback(
+    async (data: CreateHarvestScheduleInput): Promise<HarvestSchedule> => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return createHarvestSchedule(currentUser.uid, data);
+    },
+    [currentUser?.uid]
+  );
+
+  const update = useCallback(
+    async (scheduleId: string, data: Partial<CreateHarvestScheduleInput>) => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return updateHarvestSchedule(currentUser.uid, scheduleId, data);
+    },
+    [currentUser?.uid]
+  );
+
+  const remove = useCallback(
+    async (scheduleId: string) => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return deleteHarvestSchedule(currentUser.uid, scheduleId);
+    },
+    [currentUser?.uid]
+  );
+
+  return { schedules, loading, error, add, update, remove };
 }
 
-export function useCreateEquipment() {
+// ============================================================================
+// WORKERS HOOK
+// ============================================================================
+
+/**
+ * Hook to manage workers with realtime updates
+ * Returns workers, loading/error states, and CRUD operations
+ */
+export function useWorkers() {
   const { currentUser } = useAuth();
-  const queryClient = useQueryClient();
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: async (item: Omit<EquipmentItem, "id" | "createdAt" | "updatedAt" | "userId">) => {
-      if (!currentUser?.uid) {
-        throw new Error("User not authenticated");
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setLoading(false);
+      setWorkers([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    // Subscribe to realtime updates
+    const unsubscribe = subscribeToWorkers(
+      currentUser.uid,
+      (data) => {
+        setWorkers(data);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
       }
-      return createEquipment({
-        ...item,
-        userId: currentUser.uid,
-      });
+    );
+
+    return () => unsubscribe();
+  }, [currentUser?.uid]);
+
+  const add = useCallback(
+    async (data: CreateWorkerInput): Promise<Worker> => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return createWorker(currentUser.uid, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast.success("Equipment added successfully");
+    [currentUser?.uid]
+  );
+
+  const update = useCallback(
+    async (workerId: string, data: Partial<CreateWorkerInput>) => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return updateWorker(currentUser.uid, workerId, data);
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add equipment");
+    [currentUser?.uid]
+  );
+
+  const remove = useCallback(
+    async (workerId: string) => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return deleteWorker(currentUser.uid, workerId);
     },
-  });
+    [currentUser?.uid]
+  );
+
+  return { workers, loading, error, add, update, remove };
 }
 
-export function useUpdateEquipment() {
-  const queryClient = useQueryClient();
+// ============================================================================
+// DELIVERIES HOOK
+// ============================================================================
 
-  return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<EquipmentItem> }) => {
-      return updateEquipment(id, updates);
+/**
+ * Hook to manage deliveries with realtime updates
+ * Returns deliveries, loading/error states, and CRUD operations
+ */
+export function useDeliveries() {
+  const { currentUser } = useAuth();
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setLoading(false);
+      setDeliveries([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    // Subscribe to realtime updates
+    const unsubscribe = subscribeToDeliveries(
+      currentUser.uid,
+      (data) => {
+        setDeliveries(data);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser?.uid]);
+
+  const add = useCallback(
+    async (data: CreateDeliveryInput): Promise<Delivery> => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return createDelivery(currentUser.uid, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast.success("Equipment updated successfully");
+    [currentUser?.uid]
+  );
+
+  const update = useCallback(
+    async (deliveryId: string, data: Partial<CreateDeliveryInput> & { status?: Delivery["status"] }) => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return updateDelivery(currentUser.uid, deliveryId, data);
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update equipment");
+    [currentUser?.uid]
+  );
+
+  const remove = useCallback(
+    async (deliveryId: string) => {
+      if (!currentUser?.uid) throw new Error("No user logged in");
+      return deleteDelivery(currentUser.uid, deliveryId);
     },
-  });
+    [currentUser?.uid]
+  );
+
+  return { deliveries, loading, error, add, update, remove };
 }
 
-export function useDeleteEquipment() {
-  const queryClient = useQueryClient();
+// ============================================================================
+// HELPER HOOKS
+// ============================================================================
 
-  return useMutation({
-    mutationFn: async (id: string) => {
-      return deleteEquipment(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast.success("Equipment deleted successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete equipment");
-    },
-  });
+/**
+ * Get workers assigned to a specific schedule
+ */
+export function useScheduleWorkers(scheduleId: string | null) {
+  const { workers } = useWorkers();
+
+  return workers.filter((w) => scheduleId && w.assignedScheduleIds.includes(scheduleId));
+}
+
+/**
+ * Get deliveries for a specific schedule
+ */
+export function useScheduleDeliveries(scheduleId: string | null) {
+  const { deliveries } = useDeliveries();
+
+  return deliveries.filter((d) => scheduleId && d.scheduleId === scheduleId);
+}
+
+/**
+ * Get pending deliveries (not yet delivered)
+ */
+export function usePendingDeliveries() {
+  const { deliveries } = useDeliveries();
+
+  return deliveries.filter(
+    (d) => d.status !== "Delivered" && d.status !== "Cancelled"
+  );
 }
 
