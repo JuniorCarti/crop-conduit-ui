@@ -13,7 +13,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, signInWithGoogle, signInWithPhone, verifyPhoneOTP } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -25,7 +25,7 @@ export default function Login() {
   const [phoneConfirmation, setPhoneConfirmation] = useState<ConfirmationResult | null>(null);
   const [authMethod, setAuthMethod] = useState<"email" | "phone" | "google">("email");
 
-  const from = (location.state as any)?.from?.pathname || "/";
+  const from = (location.state as any)?.from?.pathname || "/dashboard";
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();

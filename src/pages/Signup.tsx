@@ -78,7 +78,7 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const userCredential = await signup(formData.email, formData.password, formData.displayName);
-      
+
       // Save farmer profile to Firestore with Supabase Storage URL
       if (farmerData && userCredential?.user?.uid) {
         try {
@@ -106,7 +106,7 @@ export default function Signup() {
           toast.error("Account created but failed to save profile. Please update it later.");
         }
       }
-      
+
       navigate("/");
     } catch (err: any) {
       // Error is already handled in AuthContext with toast
@@ -119,7 +119,7 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const userCredential = await signInWithGoogle();
-      
+
       // Save farmer profile to Firestore with Supabase Storage URL
       if (farmerData && userCredential?.user?.uid) {
         try {
@@ -147,8 +147,8 @@ export default function Signup() {
           toast.error("Account created but failed to save profile. Please update it later.");
         }
       }
-      
-      navigate("/");
+
+      navigate("/dashboard");
     } catch (err: any) {
       // Error is already handled in AuthContext with toast
     } finally {
@@ -185,7 +185,7 @@ export default function Signup() {
       setIsSubmitting(true);
       try {
         const userCredential = await verifyPhoneOTP(phoneConfirmation, formData.otp);
-        
+
         // Save farmer profile to Firestore with Supabase Storage URL
         if (farmerData && userCredential?.user?.uid) {
           try {
@@ -213,8 +213,8 @@ export default function Signup() {
             toast.error("Account created but failed to save profile. Please update it later.");
           }
         }
-        
-        navigate("/");
+
+        navigate("/dashboard");
       } catch (err: any) {
         // Error is already handled in AuthContext with toast
       } finally {
