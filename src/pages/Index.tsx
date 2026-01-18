@@ -26,6 +26,7 @@ import { useCropPrices, useFieldData, useCashflow, useAlerts, useHarvestSchedule
 import { useFieldHealth } from "@/hooks/useFieldHealth";
 import { useNextHarvest } from "@/hooks/useNextHarvest";
 import { formatKsh } from "@/lib/currency";
+import { format } from "date-fns";
 
 const quickActions = [
   { icon: TrendingUp, label: "Check Prices", color: "text-primary" },

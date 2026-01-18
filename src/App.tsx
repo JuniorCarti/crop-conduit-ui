@@ -38,7 +38,7 @@ const App = () => (
             <Route element={<PublicRoute><Signup /></PublicRoute>} path="/signup" />
             <Route element={<PublicRoute><Login /></PublicRoute>} path="/login" />
             <Route element={<PublicRoute><ResetPassword /></PublicRoute>} path="/reset-password" />
-            
+
             {/* Protected Main App Routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
