@@ -12,8 +12,7 @@ import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
-// Firebase configuration
-// TODO: Replace with your actual Firebase config
+// Firebase configuration from environment variables
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "your-api-key",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "your-project.firebaseapp.com",
@@ -21,10 +20,39 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "your-project.appspot.com",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "your-app-id",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-XXXXXXXXXX"
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-XXXXXXXXXX",
 };
 
+// Check if Firebase is properly configured
+const isFirebaseConfigured = 
+  firebaseConfig.apiKey && 
+  firebaseConfig.apiKey !== "your-api-key" &&
+  firebaseConfig.projectId && 
+  firebaseConfig.projectId !== "your-project-id";
+
+if (!isFirebaseConfigured) {
+  console.warn(
+    "%c⚠️ Firebase Not Configured",
+    "color: orange; font-weight: bold; font-size: 14px;"
+  );
+  console.warn(
+    "Firebase configuration is missing. Please set the following environment variables in your .env file:\n" +
+    "  - VITE_FIREBASE_API_KEY\n" +
+    "  - VITE_FIREBASE_AUTH_DOMAIN\n" +
+    "  - VITE_FIREBASE_PROJECT_ID\n" +
+    "  - VITE_FIREBASE_STORAGE_BUCKET\n" +
+    "  - VITE_FIREBASE_MESSAGING_SENDER_ID\n" +
+    "  - VITE_FIREBASE_APP_ID\n" +
+    "\n" +
+    "Authentication features will not work until Firebase is configured.\n" +
+    "See README_FIREBASE.md for setup instructions.\n" +
+    "\n" +
+    "Note: API errors in the console are expected when Firebase is not configured."
+  );
+}
+
 // Initialize Firebase
+// Note: This may show API errors in console if config is invalid, but won't crash the app
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase Authentication and get a reference to the service

@@ -1,6 +1,8 @@
 /**
  * Firestore Security Rules for Harvest Module
  * 
+ * Location: firestore.harvest.rules
+ * 
  * Features:
  * - Multi-tenant authentication using user.uid
  * - Read/Write access only to authenticated owner
@@ -148,3 +150,4 @@ service cloud.firestore {
     }
   }
 }
+
