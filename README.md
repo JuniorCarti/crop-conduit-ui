@@ -291,4 +291,4 @@ For support, please:
 
 ---
 
-*Last updated: December 2025*
+*Last updated: January 2026*
