@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PremiumRouteGuard } from "@/components/premium/PremiumRouteGuard";
 import Index from "./pages/Index";
 import Market from "./pages/Market";
 import Crops from "./pages/Crops";
@@ -22,6 +23,9 @@ import FarmerRegistration from "./pages/FarmerRegistration";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
+import ClimatePage from "./pages/ClimatePage";
+import Upgrade from "./pages/Upgrade";
+import AshaVoice from "./pages/AshaVoice";
 
 const queryClient = new QueryClient();
 
@@ -44,14 +48,59 @@ const App = () => (
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/market" element={<Market />} />
-                <Route path="/crops" element={<Crops />} />
-                <Route path="/resources" element={<Resources />} />
-                <Route path="/irrigation" element={<Irrigation />} />
+                <Route
+                  path="/crops"
+                  element={
+                    <PremiumRouteGuard featureId="crops">
+                      <Crops />
+                    </PremiumRouteGuard>
+                  }
+                />
+                <Route
+                  path="/resources"
+                  element={
+                    <PremiumRouteGuard featureId="resources">
+                      <Resources />
+                    </PremiumRouteGuard>
+                  }
+                />
+                <Route
+                  path="/irrigation"
+                  element={
+                    <PremiumRouteGuard featureId="irrigation">
+                      <Irrigation />
+                    </PremiumRouteGuard>
+                  }
+                />
                 <Route path="/harvest" element={<Harvest />} />
-                <Route path="/finance" element={<Finance />} />
-                <Route path="/marketplace" element={<MarketplaceEnhanced />} />
+                <Route
+                  path="/finance"
+                  element={
+                    <PremiumRouteGuard featureId="finance">
+                      <Finance />
+                    </PremiumRouteGuard>
+                  }
+                />
+                <Route
+                  path="/marketplace"
+                  element={
+                    <PremiumRouteGuard featureId="marketplace">
+                      <MarketplaceEnhanced />
+                    </PremiumRouteGuard>
+                  }
+                />
                 <Route path="/market-prices" element={<MarketPrices />} />
-                <Route path="/community" element={<Community />} />
+                <Route
+                  path="/community"
+                  element={
+                    <PremiumRouteGuard featureId="community">
+                      <Community />
+                    </PremiumRouteGuard>
+                  }
+                />
+                <Route path="/climate" element={<ClimatePage />} />
+                <Route path="/asha" element={<AshaVoice />} />
+                <Route path="/upgrade" element={<Upgrade />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
