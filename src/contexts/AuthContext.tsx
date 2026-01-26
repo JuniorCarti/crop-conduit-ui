@@ -20,6 +20,9 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { LANGUAGE_STORAGE_KEY } from "@/lib/i18n";
+import { getUserLanguage, setUserLanguage } from "@/services/firestore-users";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -50,34 +53,35 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { t, i18n } = useTranslation();
 
   // Get Firebase error message
   const getErrorMessage = (error: any): string => {
     switch (error.code) {
       case "auth/invalid-email":
-        return "Invalid email address";
+        return t("auth.errors.invalidEmail");
       case "auth/user-disabled":
-        return "This account has been disabled";
+        return t("auth.errors.userDisabled");
       case "auth/user-not-found":
-        return "No account found with this email";
+        return t("auth.errors.userNotFound");
       case "auth/wrong-password":
-        return "Incorrect password";
+        return t("auth.errors.wrongPassword");
       case "auth/email-already-in-use":
-        return "An account with this email already exists";
+        return t("auth.errors.emailInUse");
       case "auth/weak-password":
-        return "Password is too weak. Please use at least 6 characters";
+        return t("auth.errors.weakPassword");
       case "auth/network-request-failed":
-        return "Network error. Please check your connection";
+        return t("auth.errors.network");
       case "auth/too-many-requests":
-        return "Too many failed attempts. Please try again later";
+        return t("auth.errors.tooManyRequests");
       case "auth/invalid-phone-number":
-        return "Invalid phone number format";
+        return t("auth.errors.invalidPhone");
       case "auth/invalid-verification-code":
-        return "Invalid verification code";
+        return t("auth.errors.invalidOtp");
       case "auth/code-expired":
-        return "Verification code has expired";
+        return t("auth.errors.otpExpired");
       default:
-        return error.message || "An error occurred. Please try again";
+        return error.message || t("auth.errors.generic");
     }
   };
 
@@ -91,7 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await updateProfile(userCredential.user, { displayName });
       }
       
-      toast.success("Account created successfully!");
+      toast.success(t("auth.signupSuccess"));
       return { user: userCredential.user };
     } catch (error: any) {
       const errorMessage = getErrorMessage(error);
@@ -104,7 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast.success("Welcome back!");
+      toast.success(t("auth.loginSuccess"));
     } catch (error: any) {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
@@ -116,9 +120,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async () => {
     try {
       await signOut(auth);
-      toast.success("Logged out successfully");
+      toast.success(t("auth.logoutSuccess"));
     } catch (error: any) {
-      toast.error("Failed to log out");
+      toast.error(t("auth.errors.generic"));
       throw error;
     }
   };
@@ -127,7 +131,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const resetPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-      toast.success("Password reset email sent! Check your inbox.");
+      toast.success(t("auth.passwordResetSent"));
     } catch (error: any) {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
@@ -143,7 +147,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         prompt: "select_account",
       });
       const result = await signInWithPopup(auth, provider);
-      toast.success("Signed in with Google!");
+      toast.success(t("auth.loginSuccess"));
       return { user: result.user };
     } catch (error: any) {
       const errorMessage = getErrorMessage(error);
@@ -164,7 +168,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-      toast.success("Verification code sent to your phone!");
+      toast.success(t("auth.phoneOtpSent"));
       return confirmationResult;
     } catch (error: any) {
       const errorMessage = getErrorMessage(error);
@@ -177,7 +181,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const verifyPhoneOTP = async (confirmationResult: ConfirmationResult, otp: string) => {
     try {
       const result = await confirmationResult.confirm(otp);
-      toast.success("Phone verified successfully!");
+      toast.success(t("auth.phoneVerified"));
       return { user: result.user };
     } catch (error: any) {
       const errorMessage = getErrorMessage(error);
@@ -195,6 +199,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const syncLanguage = async () => {
+      try {
+        const storedLanguage =
+          typeof window !== "undefined"
+            ? (window.localStorage.getItem(LANGUAGE_STORAGE_KEY) as "en" | "sw" | null)
+            : null;
+        const userLanguage = await getUserLanguage(currentUser.uid);
+
+        if (userLanguage) {
+          i18n.changeLanguage(userLanguage);
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(LANGUAGE_STORAGE_KEY, userLanguage);
+          }
+          return;
+        }
+
+        const fallbackLanguage = storedLanguage === "sw" ? "sw" : "en";
+        await setUserLanguage(currentUser.uid, fallbackLanguage);
+        i18n.changeLanguage(fallbackLanguage);
+      } catch {
+        // Non-blocking
+      }
+    };
+
+    syncLanguage();
+  }, [currentUser?.uid, i18n]);
 
   const value: AuthContextType = {
     currentUser,
