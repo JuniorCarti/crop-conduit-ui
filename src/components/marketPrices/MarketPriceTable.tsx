@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo } from "react";
-import { Search, Download, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMarketPrices, useSyncMarketPrices } from "@/hooks/useMarketPrices";
 import { formatKsh } from "@/lib/currency";
 import { format } from "date-fns";
-import type { MarketPrice } from "@/services/marketPriceService";
+import { useTranslation } from "react-i18next";
 
 interface MarketPriceTableProps {
   initialFilters?: {
@@ -32,7 +32,13 @@ interface MarketPriceTableProps {
   };
 }
 
-const COMMODITIES = ["Tomato", "Onion", "Avocado", "Mango", "Irish Potato"];
+const COMMODITIES = [
+  { value: "Tomato", labelKey: "commodities.tomato" },
+  { value: "Onion", labelKey: "commodities.onion" },
+  { value: "Avocado", labelKey: "commodities.avocado" },
+  { value: "Mango", labelKey: "commodities.mango" },
+  { value: "Irish Potato", labelKey: "commodities.irishPotato" },
+];
 
 export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,6 +47,7 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
   const [selectedCounty, setSelectedCounty] = useState<string>(initialFilters?.county || "");
   const [sortBy, setSortBy] = useState<"date" | "wholesale" | "retail" | "volume">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const { t } = useTranslation();
 
   const { prices, isLoading } = useMarketPrices({
     commodity: selectedCommodity || undefined,
@@ -50,7 +57,6 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
 
   const syncPrices = useSyncMarketPrices();
 
-  // Get unique markets and counties from prices
   const markets = useMemo(() => {
     const unique = new Set(prices.map((p) => p.market));
     return Array.from(unique).sort();
@@ -61,11 +67,9 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
     return Array.from(unique).sort();
   }, [prices]);
 
-  // Filter and sort prices
   const filteredPrices = useMemo(() => {
     let filtered = [...prices];
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -77,7 +81,6 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
       );
     }
 
-    // Sort
     filtered.sort((a, b) => {
       let aVal: any;
       let bVal: any;
@@ -105,9 +108,8 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
 
       if (sortOrder === "asc") {
         return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
       }
+      return aVal < bVal ? 1 : -1;
     });
 
     return filtered;
@@ -122,13 +124,22 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
     }
   };
 
+  const renderSortLabel = (column: typeof sortBy) => {
+    if (sortBy !== column) return null;
+    return (
+      <span className="ml-1 text-xs text-muted-foreground">
+        {sortOrder === "asc" ? t("marketPrices.table.sort.asc") : t("marketPrices.table.sort.desc")}
+      </span>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Market Prices</CardTitle>
-            <CardDescription>Real-time market price data from Excel</CardDescription>
+            <CardTitle>{t("marketPrices.table.title")}</CardTitle>
+            <CardDescription>{t("marketPrices.table.subtitle")}</CardDescription>
           </div>
           <div className="flex gap-2">
             <Button
@@ -138,18 +149,17 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
               disabled={syncPrices.isPending}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${syncPrices.isPending ? "animate-spin" : ""}`} />
-              Sync
+              {t("marketPrices.table.sync")}
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search..."
+              placeholder={t("marketPrices.table.search")}
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -157,23 +167,23 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
           </div>
           <Select value={selectedCommodity} onValueChange={setSelectedCommodity}>
             <SelectTrigger>
-              <SelectValue placeholder="All Commodities" />
+              <SelectValue placeholder={t("marketPrices.table.allCommodities")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Commodities</SelectItem>
+              <SelectItem value="">{t("marketPrices.table.allCommodities")}</SelectItem>
               {COMMODITIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
+                <SelectItem key={c.value} value={c.value}>
+                  {t(c.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={selectedMarket} onValueChange={setSelectedMarket}>
             <SelectTrigger>
-              <SelectValue placeholder="All Markets" />
+              <SelectValue placeholder={t("marketPrices.table.allMarkets")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Markets</SelectItem>
+              <SelectItem value="">{t("marketPrices.table.allMarkets")}</SelectItem>
               {markets.map((m) => (
                 <SelectItem key={m} value={m}>
                   {m}
@@ -183,10 +193,10 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
           </Select>
           <Select value={selectedCounty} onValueChange={setSelectedCounty}>
             <SelectTrigger>
-              <SelectValue placeholder="All Counties" />
+              <SelectValue placeholder={t("marketPrices.table.allCounties")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Counties</SelectItem>
+              <SelectItem value="">{t("marketPrices.table.allCounties")}</SelectItem>
               {counties.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
@@ -196,7 +206,6 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
           </Select>
         </div>
 
-        {/* Table */}
         {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -212,72 +221,74 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => handleSort("date")}
                   >
-                    Date {sortBy === "date" && (sortOrder === "asc" ? "↑" : "↓")}
+                    {t("marketPrices.table.columns.date")}
+                    {renderSortLabel("date")}
                   </TableHead>
-                  <TableHead>Commodity</TableHead>
-                  <TableHead>Market</TableHead>
-                  <TableHead>County</TableHead>
+                  <TableHead>{t("marketPrices.table.columns.commodity")}</TableHead>
+                  <TableHead>{t("marketPrices.table.columns.market")}</TableHead>
+                  <TableHead>{t("marketPrices.table.columns.county")}</TableHead>
                   <TableHead
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => handleSort("wholesale")}
                   >
-                    Wholesale {sortBy === "wholesale" && (sortOrder === "asc" ? "↑" : "↓")}
+                    {t("marketPrices.table.columns.wholesale")}
+                    {renderSortLabel("wholesale")}
                   </TableHead>
                   <TableHead
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => handleSort("retail")}
                   >
-                    Retail {sortBy === "retail" && (sortOrder === "asc" ? "↑" : "↓")}
+                    {t("marketPrices.table.columns.retail")}
+                    {renderSortLabel("retail")}
                   </TableHead>
-                  <TableHead>Grade</TableHead>
+                  <TableHead>{t("marketPrices.table.columns.grade")}</TableHead>
                   {filteredPrices.some((p) => p.volume) && (
                     <TableHead
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => handleSort("volume")}
                     >
-                      Volume {sortBy === "volume" && (sortOrder === "asc" ? "↑" : "↓")}
+                      {t("marketPrices.table.columns.volume")}
+                      {renderSortLabel("volume")}
                     </TableHead>
                   )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPrices.map((price) => {
-                  const margin = price.retail - price.wholesale;
-                  const marginPercent = price.wholesale > 0 ? (margin / price.wholesale) * 100 : 0;
-
-                  return (
-                    <TableRow key={price.id || `${price.commodity}-${price.market}-${price.date}`}>
-                      <TableCell className="font-medium">
-                        {format(price.date, "MMM dd, yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{price.commodity}</Badge>
-                      </TableCell>
-                      <TableCell>{price.market}</TableCell>
-                      <TableCell>{price.county || "N/A"}</TableCell>
-                      <TableCell className="font-semibold">
-                        {formatKsh(price.wholesale)}
-                      </TableCell>
-                      <TableCell className="font-semibold">{formatKsh(price.retail)}</TableCell>
-                      <TableCell>{price.grade || "N/A"}</TableCell>
-                      {filteredPrices.some((p) => p.volume) && (
-                        <TableCell>{price.volume ? `${price.volume}` : "N/A"}</TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
+                {filteredPrices.map((price) => (
+                  <TableRow key={price.id || `${price.commodity}-${price.market}-${price.date}`}>
+                    <TableCell className="font-medium">
+                      {format(price.date, "MMM dd, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{price.commodity}</Badge>
+                    </TableCell>
+                    <TableCell>{price.market}</TableCell>
+                    <TableCell>{price.county || t("common.na")}</TableCell>
+                    <TableCell className="font-semibold">
+                      {formatKsh(price.wholesale)}
+                    </TableCell>
+                    <TableCell className="font-semibold">{formatKsh(price.retail)}</TableCell>
+                    <TableCell>{price.grade || t("common.na")}</TableCell>
+                    {filteredPrices.some((p) => p.volume) && (
+                      <TableCell>{price.volume ? `${price.volume}` : t("common.na")}</TableCell>
+                    )}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            No market prices found. Try adjusting your filters or sync the data.
+            {t("marketPrices.table.empty")}
           </div>
         )}
 
         {filteredPrices.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground">
-            Showing {filteredPrices.length} of {prices.length} prices
+            {t("marketPrices.table.summary", {
+              shown: filteredPrices.length,
+              total: prices.length,
+            })}
           </div>
         )}
       </CardContent>
