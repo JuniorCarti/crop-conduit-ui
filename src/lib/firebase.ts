@@ -8,7 +8,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from "firebase/firestore";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
@@ -72,9 +71,6 @@ if (typeof window !== "undefined") {
   });
 }
 
-// Initialize Cloud Functions
-export const functions = getFunctions(app);
-
 // Initialize Firebase Storage
 export const storage = getStorage(app);
 
@@ -92,7 +88,6 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true") {
   connectAuthEmulator(auth, "http://localhost:9099");
   connectFirestoreEmulator(db, "localhost", 8080);
-  connectFunctionsEmulator(functions, "localhost", 5001);
 }
 
 export default app;
