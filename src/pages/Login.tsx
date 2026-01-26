@@ -8,11 +8,14 @@ import { AlertCard } from "@/components/shared/AlertCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmationResult } from "firebase/auth";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, signInWithGoogle, signInWithPhone, verifyPhoneOTP } = useAuth();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -32,7 +35,7 @@ export default function Login() {
     setError("");
 
     if (!formData.email || !formData.password) {
-      setError("Please fill in all fields");
+      setError(t("login.errors.required"));
       return;
     }
 
@@ -41,7 +44,7 @@ export default function Login() {
       await login(formData.email, formData.password);
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || "Failed to sign in");
+      setError(err.message || t("login.errors.failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -53,7 +56,7 @@ export default function Login() {
       await signInWithGoogle();
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google");
+      setError(err.message || t("login.errors.googleFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -64,9 +67,8 @@ export default function Login() {
     setError("");
 
     if (!phoneConfirmation) {
-      // Send OTP
       if (!formData.phone) {
-        setError("Please enter your phone number");
+        setError(t("login.errors.phoneRequired"));
         return;
       }
 
@@ -75,14 +77,13 @@ export default function Login() {
         const confirmation = await signInWithPhone(formData.phone);
         setPhoneConfirmation(confirmation);
       } catch (err: any) {
-        setError(err.message || "Failed to send verification code");
+        setError(err.message || t("login.errors.codeFailed"));
       } finally {
         setIsSubmitting(false);
       }
     } else {
-      // Verify OTP
       if (!formData.otp) {
-        setError("Please enter the verification code");
+        setError(t("login.errors.otpRequired"));
         return;
       }
 
@@ -91,7 +92,7 @@ export default function Login() {
         await verifyPhoneOTP(phoneConfirmation, formData.otp);
         navigate(from, { replace: true });
       } catch (err: any) {
-        setError(err.message || "Invalid verification code");
+        setError(err.message || t("login.errors.otpInvalid"));
       } finally {
         setIsSubmitting(false);
       }
@@ -101,55 +102,51 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border/50 p-6 md:p-8">
-        {/* Header */}
+        <div className="flex justify-end mb-4">
+          <LanguageSwitcher />
+        </div>
         <div className="text-center mb-6">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <User className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Welcome Back
+            {t("login.title")}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Sign in to your account
-          </p>
+          <p className="text-sm text-muted-foreground">{t("login.subtitle")}</p>
         </div>
 
-        {/* Error Message */}
         {error && (
           <AlertCard
             type="danger"
-            title="Error"
+            title={t("login.errorTitle")}
             message={error}
             className="mb-4"
             onDismiss={() => setError("")}
           />
         )}
 
-        {/* reCAPTCHA container for phone auth */}
         <div id="recaptcha-container"></div>
 
-        {/* Auth Methods Tabs */}
         <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as "email" | "phone" | "google")} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="phone">Phone</TabsTrigger>
-            <TabsTrigger value="google">Google</TabsTrigger>
+            <TabsTrigger value="email">{t("login.tabs.email")}</TabsTrigger>
+            <TabsTrigger value="phone">{t("login.tabs.phone")}</TabsTrigger>
+            <TabsTrigger value="google">{t("login.tabs.google")}</TabsTrigger>
           </TabsList>
 
-          {/* Email Login */}
           <TabsContent value="email">
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div>
                 <Label htmlFor="email" className="flex items-center gap-2 mb-2">
                   <Mail className="h-4 w-4" />
-                  Email Address
+                  {t("login.emailLabel")}
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your.email@example.com"
+                  placeholder={t("login.emailPlaceholder")}
                   value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                   className="bg-background"
                   required
                 />
@@ -158,14 +155,14 @@ export default function Login() {
               <div>
                 <Label htmlFor="password" className="flex items-center gap-2 mb-2">
                   <Lock className="h-4 w-4" />
-                  Password
+                  {t("login.passwordLabel")}
                 </Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder={t("login.passwordPlaceholder")}
                   value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
                   className="bg-background"
                   required
                 />
@@ -174,30 +171,26 @@ export default function Login() {
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" className="rounded border-input" />
-                  <span className="text-muted-foreground">Remember me</span>
+                  <span className="text-muted-foreground">{t("login.rememberMe")}</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => navigate("/reset-password")}
                   className="text-sm text-primary hover:underline"
                 >
-                  Forgot password?
+                  {t("login.forgotPassword")}
                 </button>
               </div>
 
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full gap-2 mt-6"
-              >
+              <Button type="submit" disabled={isSubmitting} className="w-full gap-2 mt-6">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Signing in...
+                    {t("login.signingIn")}
                   </>
                 ) : (
                   <>
-                    Sign In
+                    {t("login.signIn")}
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -205,7 +198,6 @@ export default function Login() {
             </form>
           </TabsContent>
 
-          {/* Phone Login */}
           <TabsContent value="phone">
             <form onSubmit={handlePhoneLogin} className="space-y-4">
               {!phoneConfirmation ? (
@@ -213,35 +205,29 @@ export default function Login() {
                   <div>
                     <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
                       <Phone className="h-4 w-4" />
-                      Phone Number
+                      {t("login.phoneLabel")}
                     </Label>
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+254 712 345 678"
+                      placeholder={t("login.phonePlaceholder")}
                       value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                       className="bg-background"
                       required
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Enter your phone number with country code
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("login.phoneHint")}</p>
                   </div>
 
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full gap-2"
-                  >
+                  <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
                     {isSubmitting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Sending code...
+                        {t("login.sendingCode")}
                       </>
                     ) : (
                       <>
-                        Send Verification Code
+                        {t("login.sendCode")}
                         <ArrowRight className="h-4 w-4" />
                       </>
                     )}
@@ -252,20 +238,20 @@ export default function Login() {
                   <div>
                     <Label htmlFor="otp" className="flex items-center gap-2 mb-2">
                       <Lock className="h-4 w-4" />
-                      Verification Code
+                      {t("login.otpLabel")}
                     </Label>
                     <Input
                       id="otp"
                       type="text"
-                      placeholder="Enter 6-digit code"
+                      placeholder={t("login.otpPlaceholder")}
                       value={formData.otp}
-                      onChange={(e) => setFormData(prev => ({ ...prev, otp: e.target.value }))}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, otp: e.target.value }))}
                       className="bg-background"
                       maxLength={6}
                       required
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Enter the code sent to {formData.phone}
+                      {t("login.otpHint", { phone: formData.phone })}
                     </p>
                   </div>
 
@@ -275,25 +261,21 @@ export default function Login() {
                       variant="outline"
                       onClick={() => {
                         setPhoneConfirmation(null);
-                        setFormData(prev => ({ ...prev, otp: "" }));
+                        setFormData((prev) => ({ ...prev, otp: "" }));
                       }}
                       className="flex-1"
                     >
-                      Change Number
+                      {t("login.changeNumber")}
                     </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1 gap-2"
-                    >
+                    <Button type="submit" disabled={isSubmitting} className="flex-1 gap-2">
                       {isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Verifying...
+                          {t("login.verifying")}
                         </>
                       ) : (
                         <>
-                          Verify
+                          {t("login.verify")}
                           <ArrowRight className="h-4 w-4" />
                         </>
                       )}
@@ -304,7 +286,6 @@ export default function Login() {
             </form>
           </TabsContent>
 
-          {/* Google Login */}
           <TabsContent value="google">
             <div className="space-y-4">
               <Button
@@ -317,7 +298,7 @@ export default function Login() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Signing in...
+                    {t("login.signingIn")}
                   </>
                 ) : (
                   <>
@@ -339,26 +320,23 @@ export default function Login() {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    Sign in with Google
+                    {t("login.googleSignIn")}
                   </>
                 )}
               </Button>
-              <p className="text-xs text-center text-muted-foreground">
-                Click to sign in with your Google account
-              </p>
+              <p className="text-xs text-center text-muted-foreground">{t("login.googleHint")}</p>
             </div>
           </TabsContent>
         </Tabs>
 
-        {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            {t("login.noAccount")}{" "}
             <button
               onClick={() => navigate("/farmer-registration")}
               className="text-primary hover:underline font-medium"
             >
-              Create account
+              {t("login.createAccount")}
             </button>
           </p>
         </div>
@@ -366,4 +344,3 @@ export default function Login() {
     </div>
   );
 }
-
