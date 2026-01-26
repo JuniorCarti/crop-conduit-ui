@@ -52,8 +52,18 @@ export function useMarketPricesQuery(filters: {
   endDate?: Date;
   limitCount?: number;
 }) {
+  const key = [
+    "marketPrices",
+    filters.commodity || "all",
+    filters.market || "all",
+    filters.county || "all",
+    filters.startDate?.toISOString() || "all",
+    filters.endDate?.toISOString() || "all",
+    filters.limitCount ?? "all",
+  ];
+
   return useQuery({
-    queryKey: ["marketPrices", filters],
+    queryKey: key,
     queryFn: () => MarketPriceService.getMarketPrices(filters),
     staleTime: 30000, // 30 seconds
   });
@@ -95,6 +105,7 @@ export function useSyncMarketPrices() {
       // Invalidate both query keys to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ["marketPrices"] });
       queryClient.invalidateQueries({ queryKey: ["cropPrices"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendedMarkets"] });
       if (result.success > 0) {
         toast.success(`Synced ${result.success} prices. ${result.skipped > 0 ? `${result.skipped} skipped.` : ""}`);
       } else if (result.skipped > 0) {
