@@ -1,7 +1,6 @@
 # 🌱 **AgriSmart - AI-Powered Agricultural Intelligence Platform**
 
 ## 🚀 **Overview**
-
 **AgriSmart** is a revolutionary multi-agent AI platform that transforms smallholder farmers in Africa from vulnerable producers into resilient, data-driven agri-entrepreneurs. Using five specialized AI agents working in concert, we provide predictive market insights, precise yield forecasts, climate resilience, post-harvest optimization, and financial visibility.
 
 ## 🎯 **Core Features**
@@ -292,4 +291,4 @@ For support, please:
 
 ---
 
-*Last updated: December 2025*
+*Last updated: January 2026*
