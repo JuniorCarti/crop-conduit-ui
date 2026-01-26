@@ -1,5 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 
 interface PageHeaderProps {
   title: string;
@@ -29,7 +30,10 @@ export function PageHeader({ title, subtitle, icon: Icon, children, className }:
             )}
           </div>
         </div>
-        {children}
+        <div className="flex items-center gap-2">
+          {children}
+          <LanguageSwitcher />
+        </div>
       </div>
     </header>
   );
