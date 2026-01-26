@@ -10,6 +10,8 @@ import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { useFieldHealth } from './useFieldHealth';
 import { useNextHarvest } from './useNextHarvest';
+import { useMarketPricesQuery } from './useMarketPrices';
+import { getRecommendedMarkets, type MarketRecommendation, type MarketRecommendationFilters } from '@/lib/recommendations/marketRecommendations';
 import {
   oracleApi,
   sentinelApi,
@@ -21,7 +23,6 @@ import {
   dashboardApi,
   type CropPrice,
   type PriceHistory,
-  type RecommendedMarket,
   type FieldData,
   type NDVIHistory,
   type YieldForecast,
@@ -65,12 +66,31 @@ export function usePriceHistory(period: 'daily' | 'weekly' | 'monthly' = 'daily'
   });
 }
 
-export function useRecommendedMarkets(crop?: string) {
-  return useQuery({
-    queryKey: ['recommendedMarkets', crop],
-    queryFn: () => oracleApi.getRecommendedMarkets(crop),
-    staleTime: 30 * 60 * 1000, // 30 minutes
+export function useRecommendedMarkets(filters?: MarketRecommendationFilters) {
+  const todayRange = useMemo(() => {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+    return { startDate, endDate };
+  }, []);
+
+  const pricesQuery = useMarketPricesQuery({
+    startDate: todayRange.startDate,
+    endDate: todayRange.endDate,
+    limitCount: 300,
   });
+
+  const data: MarketRecommendation[] = useMemo(
+    () => getRecommendedMarkets(pricesQuery.data || [], filters || {}),
+    [pricesQuery.data, filters]
+  );
+
+  return {
+    data,
+    isLoading: pricesQuery.isLoading,
+    error: pricesQuery.error,
+  };
 }
 
 export function usePricePredictions(crop?: string) {
