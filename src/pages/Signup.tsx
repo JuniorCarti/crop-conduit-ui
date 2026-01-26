@@ -10,12 +10,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmationResult } from "firebase/auth";
 import { saveFarmerProfile } from "@/services/firestore-farmer";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 
 export default function Signup() {
   const navigate = useNavigate();
   const location = useLocation();
   const farmerData = location.state?.farmerData;
   const { signup, signInWithGoogle, signInWithPhone, verifyPhoneOTP } = useAuth();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -32,10 +35,9 @@ export default function Signup() {
   const [authMethod, setAuthMethod] = useState<"email" | "phone" | "google">("email");
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -43,29 +45,51 @@ export default function Signup() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.email && !formData.phone) {
-      newErrors.email = "Email or phone number is required";
+      newErrors.email = t("signup.errors.emailOrPhone");
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = t("signup.errors.invalidEmail");
     }
 
     if (formData.phone && !/^\+254\s?\d{9}$/.test(formData.phone.replace(/\s/g, ""))) {
-      newErrors.phone = "Please enter a valid Kenyan phone number (+254...)";
+      newErrors.phone = t("signup.errors.invalidPhone");
     }
 
     if (!formData.password) {
-      newErrors.password = "Password is required";
+      newErrors.password = t("signup.errors.passwordRequired");
     } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
+      newErrors.password = t("signup.errors.passwordLength");
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
+      newErrors.confirmPassword = t("signup.errors.passwordMatch");
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const saveProfile = async (userId: string) => {
+    if (!farmerData) return;
+    await saveFarmerProfile({
+      userId,
+      fullName: farmerData.fullName,
+      county: farmerData.county,
+      constituency: farmerData.constituency,
+      ward: farmerData.ward,
+      village: farmerData.village,
+      farmSize: farmerData.farmSize,
+      farmingType: farmerData.farmingType as "Crop" | "Livestock" | "Mixed",
+      crops: farmerData.crops || [],
+      livestock: farmerData.livestock || [],
+      experience: farmerData.experience,
+      tools: farmerData.tools,
+      challenges: farmerData.challenges,
+      monthlyProduction: farmerData.monthlyProduction,
+      phone: farmerData.phone,
+      farmPhotoUrl: farmerData.farmPhotoUrl || undefined,
+    });
   };
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -78,38 +102,16 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const userCredential = await signup(formData.email, formData.password, formData.displayName);
-
-      // Save farmer profile to Firestore with Supabase Storage URL
       if (farmerData && userCredential?.user?.uid) {
         try {
-          await saveFarmerProfile({
-            userId: userCredential.user.uid,
-            fullName: farmerData.fullName,
-            county: farmerData.county,
-            constituency: farmerData.constituency,
-            ward: farmerData.ward,
-            village: farmerData.village,
-            farmSize: farmerData.farmSize,
-            farmingType: farmerData.farmingType as "Crop" | "Livestock" | "Mixed",
-            crops: farmerData.crops || [],
-            livestock: farmerData.livestock || [],
-            experience: farmerData.experience,
-            tools: farmerData.tools,
-            challenges: farmerData.challenges,
-            monthlyProduction: farmerData.monthlyProduction,
-            phone: farmerData.phone,
-            farmPhotoUrl: farmerData.farmPhotoUrl || undefined, // Supabase Storage URL
-          });
-          toast.success("Farmer profile saved successfully");
+          await saveProfile(userCredential.user.uid);
+          toast.success(t("signup.profileSaved"));
         } catch (profileError: any) {
           console.error("Error saving farmer profile:", profileError);
-          toast.error("Account created but failed to save profile. Please update it later.");
+          toast.error(t("signup.profileSaveError"));
         }
       }
-
       navigate("/");
-    } catch (err: any) {
-      // Error is already handled in AuthContext with toast
     } finally {
       setIsSubmitting(false);
     }
@@ -119,38 +121,16 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const userCredential = await signInWithGoogle();
-
-      // Save farmer profile to Firestore with Supabase Storage URL
       if (farmerData && userCredential?.user?.uid) {
         try {
-          await saveFarmerProfile({
-            userId: userCredential.user.uid,
-            fullName: farmerData.fullName,
-            county: farmerData.county,
-            constituency: farmerData.constituency,
-            ward: farmerData.ward,
-            village: farmerData.village,
-            farmSize: farmerData.farmSize,
-            farmingType: farmerData.farmingType as "Crop" | "Livestock" | "Mixed",
-            crops: farmerData.crops || [],
-            livestock: farmerData.livestock || [],
-            experience: farmerData.experience,
-            tools: farmerData.tools,
-            challenges: farmerData.challenges,
-            monthlyProduction: farmerData.monthlyProduction,
-            phone: farmerData.phone,
-            farmPhotoUrl: farmerData.farmPhotoUrl || undefined, // Supabase Storage URL
-          });
-          toast.success("Farmer profile saved successfully");
+          await saveProfile(userCredential.user.uid);
+          toast.success(t("signup.profileSaved"));
         } catch (profileError: any) {
           console.error("Error saving farmer profile:", profileError);
-          toast.error("Account created but failed to save profile. Please update it later.");
+          toast.error(t("signup.profileSaveError"));
         }
       }
-
       navigate("/dashboard");
-    } catch (err: any) {
-      // Error is already handled in AuthContext with toast
     } finally {
       setIsSubmitting(false);
     }
@@ -160,9 +140,8 @@ export default function Signup() {
     e.preventDefault();
 
     if (!phoneConfirmation) {
-      // Send OTP
       if (!formData.phone) {
-        setErrors({ phone: "Please enter your phone number" });
+        setErrors({ phone: t("signup.errors.phoneRequired") });
         return;
       }
 
@@ -170,74 +149,51 @@ export default function Signup() {
       try {
         const confirmation = await signInWithPhone(formData.phone);
         setPhoneConfirmation(confirmation);
-      } catch (err: any) {
-        // Error is already handled in AuthContext with toast
       } finally {
         setIsSubmitting(false);
       }
     } else {
-      // Verify OTP
       if (!formData.otp) {
-        setErrors({ otp: "Please enter the verification code" });
+        setErrors({ otp: t("signup.errors.otpRequired") });
         return;
       }
 
       setIsSubmitting(true);
       try {
         const userCredential = await verifyPhoneOTP(phoneConfirmation, formData.otp);
-
-        // Save farmer profile to Firestore with Supabase Storage URL
         if (farmerData && userCredential?.user?.uid) {
           try {
-            await saveFarmerProfile({
-              userId: userCredential.user.uid,
-              fullName: farmerData.fullName,
-              county: farmerData.county,
-              constituency: farmerData.constituency,
-              ward: farmerData.ward,
-              village: farmerData.village,
-              farmSize: farmerData.farmSize,
-              farmingType: farmerData.farmingType as "Crop" | "Livestock" | "Mixed",
-              crops: farmerData.crops || [],
-              livestock: farmerData.livestock || [],
-              experience: farmerData.experience,
-              tools: farmerData.tools,
-              challenges: farmerData.challenges,
-              monthlyProduction: farmerData.monthlyProduction,
-              phone: farmerData.phone,
-              farmPhotoUrl: farmerData.farmPhotoUrl || undefined, // Supabase Storage URL
-            });
-            toast.success("Farmer profile saved successfully");
+            await saveProfile(userCredential.user.uid);
+            toast.success(t("signup.profileSaved"));
           } catch (profileError: any) {
             console.error("Error saving farmer profile:", profileError);
-            toast.error("Account created but failed to save profile. Please update it later.");
+            toast.error(t("signup.profileSaveError"));
           }
         }
-
         navigate("/dashboard");
-      } catch (err: any) {
-        // Error is already handled in AuthContext with toast
       } finally {
         setIsSubmitting(false);
       }
     }
   };
 
-  // If no farmer data, redirect to farmer registration
   if (!farmerData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border/50 p-6 md:p-8">
+          <div className="flex justify-end mb-4">
+            <LanguageSwitcher />
+          </div>
           <AlertCard
             type="warning"
-            title="Registration Required"
-            message="Please complete farmer registration first"
+            title={t("signup.registrationRequiredTitle")}
+            message={t("signup.registrationRequiredMessage")}
           />
           <Button
             onClick={() => navigate("/farmer-registration")}
             className="w-full mt-4"
           >
-            Go to Registration
+            {t("signup.goToRegistration")}
           </Button>
         </div>
       </div>
@@ -247,53 +203,51 @@ export default function Signup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border/50 p-6 md:p-8">
-        {/* Success Message */}
+        <div className="flex justify-end mb-4">
+          <LanguageSwitcher />
+        </div>
         <div className="mb-6 p-4 bg-success/10 border border-success/30 rounded-lg">
           <div className="flex items-center gap-2 text-success">
             <CheckCircle className="h-5 w-5" />
-            <span className="font-medium">Farmer Registration Complete!</span>
+            <span className="font-medium">{t("signup.registrationComplete")}</span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            Welcome, {farmerData.fullName}! Now create your account to get started.
+            {t("signup.registrationWelcome", { name: farmerData.fullName })}
           </p>
         </div>
 
-        {/* Header */}
         <div className="text-center mb-6">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <User className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Create Your Account
+            {t("signup.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Set up your login credentials
+            {t("signup.subtitle")}
           </p>
         </div>
 
-        {/* reCAPTCHA container for phone auth */}
         <div id="recaptcha-container"></div>
 
-        {/* Auth Methods Tabs */}
         <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as "email" | "phone" | "google")} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="phone">Phone</TabsTrigger>
-            <TabsTrigger value="google">Google</TabsTrigger>
+            <TabsTrigger value="email">{t("signup.tabs.email")}</TabsTrigger>
+            <TabsTrigger value="phone">{t("signup.tabs.phone")}</TabsTrigger>
+            <TabsTrigger value="google">{t("signup.tabs.google")}</TabsTrigger>
           </TabsList>
 
-          {/* Email Signup */}
           <TabsContent value="email">
             <form onSubmit={handleEmailSignup} className="space-y-4">
               <div>
                 <Label htmlFor="email" className="flex items-center gap-2 mb-2">
                   <Mail className="h-4 w-4" />
-                  Email Address
+                  {t("signup.emailLabel")}
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="your.email@example.com"
+                  placeholder={t("signup.emailPlaceholder")}
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className={`bg-background ${errors.email ? "border-destructive" : ""}`}
@@ -306,12 +260,12 @@ export default function Signup() {
               <div>
                 <Label htmlFor="password" className="flex items-center gap-2 mb-2">
                   <Lock className="h-4 w-4" />
-                  Password
+                  {t("signup.passwordLabel")}
                 </Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Create a strong password"
+                  placeholder={t("signup.passwordPlaceholder")}
                   value={formData.password}
                   onChange={(e) => handleInputChange("password", e.target.value)}
                   className={`bg-background ${errors.password ? "border-destructive" : ""}`}
@@ -320,19 +274,19 @@ export default function Signup() {
                   <p className="text-xs text-destructive mt-1">{errors.password}</p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Must be at least 8 characters long
+                  {t("signup.passwordHint")}
                 </p>
               </div>
 
               <div>
                 <Label htmlFor="confirmPassword" className="flex items-center gap-2 mb-2">
                   <Lock className="h-4 w-4" />
-                  Confirm Password
+                  {t("signup.confirmPasswordLabel")}
                 </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="Confirm your password"
+                  placeholder={t("signup.confirmPasswordPlaceholder")}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                   className={`bg-background ${errors.confirmPassword ? "border-destructive" : ""}`}
@@ -342,19 +296,15 @@ export default function Signup() {
                 )}
               </div>
 
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full gap-2 mt-6"
-              >
+              <Button type="submit" disabled={isSubmitting} className="w-full gap-2 mt-6">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating Account...
+                    {t("signup.creatingAccount")}
                   </>
                 ) : (
                   <>
-                    Create Account
+                    {t("signup.createAccount")}
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -362,7 +312,6 @@ export default function Signup() {
             </form>
           </TabsContent>
 
-          {/* Phone Signup */}
           <TabsContent value="phone">
             <form onSubmit={handlePhoneSignup} className="space-y-4">
               {!phoneConfirmation ? (
@@ -370,12 +319,12 @@ export default function Signup() {
                   <div>
                     <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
                       <Phone className="h-4 w-4" />
-                      Phone Number
+                      {t("signup.phoneLabel")}
                     </Label>
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+254 712 345 678"
+                      placeholder={t("signup.phonePlaceholder")}
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       className={`bg-background ${errors.phone ? "border-destructive" : ""}`}
@@ -384,23 +333,19 @@ export default function Signup() {
                       <p className="text-xs text-destructive mt-1">{errors.phone}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      Enter your phone number with country code
+                      {t("signup.phoneHint")}
                     </p>
                   </div>
 
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full gap-2"
-                  >
+                  <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
                     {isSubmitting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Sending code...
+                        {t("signup.sendingCode")}
                       </>
                     ) : (
                       <>
-                        Send Verification Code
+                        {t("signup.sendCode")}
                         <ArrowRight className="h-4 w-4" />
                       </>
                     )}
@@ -411,12 +356,12 @@ export default function Signup() {
                   <div>
                     <Label htmlFor="otp" className="flex items-center gap-2 mb-2">
                       <Lock className="h-4 w-4" />
-                      Verification Code
+                      {t("signup.otpLabel")}
                     </Label>
                     <Input
                       id="otp"
                       type="text"
-                      placeholder="Enter 6-digit code"
+                      placeholder={t("signup.otpPlaceholder")}
                       value={formData.otp}
                       onChange={(e) => handleInputChange("otp", e.target.value)}
                       className={`bg-background ${errors.otp ? "border-destructive" : ""}`}
@@ -426,7 +371,7 @@ export default function Signup() {
                       <p className="text-xs text-destructive mt-1">{errors.otp}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
-                      Enter the code sent to {formData.phone}
+                      {t("signup.otpHint", { phone: formData.phone })}
                     </p>
                   </div>
 
@@ -436,25 +381,21 @@ export default function Signup() {
                       variant="outline"
                       onClick={() => {
                         setPhoneConfirmation(null);
-                        setFormData(prev => ({ ...prev, otp: "" }));
+                        setFormData((prev) => ({ ...prev, otp: "" }));
                       }}
                       className="flex-1"
                     >
-                      Change Number
+                      {t("signup.changeNumber")}
                     </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1 gap-2"
-                    >
+                    <Button type="submit" disabled={isSubmitting} className="flex-1 gap-2">
                       {isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Verifying...
+                          {t("signup.verifying")}
                         </>
                       ) : (
                         <>
-                          Verify & Create Account
+                          {t("signup.verifyCreate")}
                           <ArrowRight className="h-4 w-4" />
                         </>
                       )}
@@ -465,7 +406,6 @@ export default function Signup() {
             </form>
           </TabsContent>
 
-          {/* Google Signup */}
           <TabsContent value="google">
             <div className="space-y-4">
               <Button
@@ -478,7 +418,7 @@ export default function Signup() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating account...
+                    {t("signup.creatingAccount")}
                   </>
                 ) : (
                   <>
@@ -500,26 +440,25 @@ export default function Signup() {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    Sign up with Google
+                    {t("signup.googleSignup")}
                   </>
                 )}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                Click to create an account with Google
+                {t("signup.googleHint")}
               </p>
             </div>
           </TabsContent>
         </Tabs>
 
-        {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("signup.haveAccount")}{" "}
             <button
               onClick={() => navigate("/login")}
               className="text-primary hover:underline font-medium"
             >
-              Sign in
+              {t("signup.signIn")}
             </button>
           </p>
         </div>
@@ -527,4 +466,3 @@ export default function Signup() {
     </div>
   );
 }
-
