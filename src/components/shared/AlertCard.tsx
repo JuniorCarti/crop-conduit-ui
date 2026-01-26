@@ -74,7 +74,7 @@ export function AlertCard({
               className="mt-2 h-8 px-0 text-primary hover:text-primary/80 hover:bg-transparent"
               onClick={onAction}
             >
-              {action} →
+              {action}
             </Button>
           )}
         </div>
