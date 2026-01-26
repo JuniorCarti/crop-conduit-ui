@@ -12,10 +12,10 @@ import {
   query,
   where,
   getDocs,
+  orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import type {
   Transaction,
   TransactionStatus,
@@ -72,14 +72,7 @@ export async function initiateMpesaPayment(
       };
     }
 
-    // Production: Call Cloud Function
-    const initiatePayment = httpsCallable<MpesaSTKPushRequest, MpesaSTKPushResponse>(
-      functions,
-      "marketplace-initiatePayment"
-    );
-
-    const result = await initiatePayment(request);
-    return result.data;
+    throw new Error("M-Pesa payments are not configured.");
   } catch (error: any) {
     console.error("Error initiating M-Pesa payment:", error);
     throw new Error(error.message || "Failed to initiate payment");
