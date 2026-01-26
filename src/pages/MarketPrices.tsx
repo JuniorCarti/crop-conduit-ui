@@ -4,25 +4,31 @@
  */
 
 import { useState } from "react";
-import { TrendingUp, BarChart3 } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarketPriceTable } from "@/components/marketPrices/MarketPriceTable";
 import { PriceChart } from "@/components/marketPrices/PriceChart";
+import { useTranslation } from "react-i18next";
 
 export default function MarketPrices() {
   const [selectedCommodity, setSelectedCommodity] = useState<string>("");
   const [selectedMarket, setSelectedMarket] = useState<string>("");
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen">
-      <PageHeader title="Market Prices" subtitle="Real-time commodity pricing data" icon={TrendingUp} />
+      <PageHeader
+        title={t("marketPrices.title")}
+        subtitle={t("marketPrices.subtitle")}
+        icon={TrendingUp}
+      />
 
       <div className="p-4 md:p-6 space-y-6">
         <Tabs defaultValue="table" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="table">Price Table</TabsTrigger>
-            <TabsTrigger value="charts">Charts & Trends</TabsTrigger>
+            <TabsTrigger value="table">{t("marketPrices.tabs.table")}</TabsTrigger>
+            <TabsTrigger value="charts">{t("marketPrices.tabs.charts")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="table" className="space-y-4">
