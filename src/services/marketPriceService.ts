@@ -39,10 +39,10 @@ export interface MarketPrice {
 const MARKET_PRICES_COLLECTION = "market_prices";
 
 // Render API Configuration
-// Set this in your .env file: VITE_RENDER_API_URL=https://market-forecaster-kenyan-agro-market.onrender.com/predict
+// Set this in your .env file: VITE_RENDER_API_URL=https://market-forecaster-kenyan-agro-market-621a.onrender.com/predict
 // Automatically appends /predict if not present
 const getRenderApiUrl = (): string => {
-  const envUrl = import.meta.env.VITE_RENDER_API_URL || "https://market-forecaster-kenyan-agro-market.onrender.com";
+  const envUrl = import.meta.env.VITE_RENDER_API_URL || "https://market-forecaster-kenyan-agro-market-621a.onrender.com";
   // Ensure URL ends with /predict
   let baseUrl = envUrl.trim();
   // Remove trailing slash if present
@@ -60,9 +60,44 @@ const RENDER_API_URL = getRenderApiUrl();
 /**
  * Render API Request Interface (for POST /predict)
  */
+const REGIONS = ["Central", "Coast", "Eastern", "Nairobi", "North Eastern", "Nyanza", "Rift Valley"] as const;
+type Region = (typeof REGIONS)[number];
+
+const isRegion = (value: string): value is Region => REGIONS.includes(value as Region);
+
+const MARKET_REGION_MAP = {
+  Nairobi: "Nairobi",
+  Mombasa: "Coast",
+  Kisumu: "Nyanza",
+  Nakuru: "Rift Valley",
+} as const satisfies Record<string, Region>;
+
+const resolveAdmin1 = (marketName: string): Region => {
+  const normalized = marketName.toLowerCase();
+  const match = (Object.keys(MARKET_REGION_MAP) as Array<keyof typeof MARKET_REGION_MAP>)
+    .find((city) => normalized.includes(city.toLowerCase()));
+
+  if (!match) {
+    throw new Error(
+      `[MarketPriceService] Invalid region mapping for market "${marketName}". ` +
+      `Expected one of: ${Object.keys(MARKET_REGION_MAP).join(", ")}`
+    );
+  }
+
+  const region = MARKET_REGION_MAP[match];
+  if (!isRegion(region)) {
+    throw new Error(
+      `[MarketPriceService] Invalid region "${region}" derived for market "${marketName}". ` +
+      `Valid regions: ${REGIONS.join(", ")}`
+    );
+  }
+
+  return region;
+};
+
 interface RenderApiRequest {
   date: string;
-  admin1: string; // County/Region
+  admin1: Region; // Region enum (API requires regions)
   market: string;
   commodity: string;
   pricetype: "retail" | "wholesale";
@@ -74,7 +109,7 @@ interface RenderApiRequest {
  */
 interface RenderApiResponse {
   date?: string;
-  admin1?: string; // County/Region
+  admin1?: Region;
   market?: string;
   commodity?: string;
   retail?: number;
@@ -216,28 +251,146 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
   try {
     console.log("[MarketPriceService] Fetching market forecast from Render API /predict endpoint:", RENDER_API_URL);
     
-    // Commodity mapping: internal name -> API name
-    // API valid values (from error messages): ['cabbage', 'potatoes', 'kale', 'tomatoes', 'onion']
-    // Note: API expects lowercase values!
-    const commodityMapping: Record<string, string> = {
-      "tomatoes": "tomatoes", // API expects lowercase
-      "onions": "onion", // API expects lowercase singular "onion", not "Onions (dry)"
-      "irish potato": "potatoes", // API expects lowercase "potatoes", not "Potatoes (Irish)"
-      "potatoes": "potatoes",
-      "kale": "kale",
-      "cabbage": "cabbage",
+    type NormalizedCommodity = "tomatoes" | "onion" | "potatoes" | "kale" | "cabbage";
+
+    const ALLOWED_COMMODITIES: ReadonlySet<NormalizedCommodity> = new Set([
+      "tomatoes",
+      "onion",
+      "potatoes",
+      "kale",
+      "cabbage",
+    ]);
+
+    // Normalize commodity names to API enums.
+    const normalizeApiCommodity = (value: string): NormalizedCommodity | null => {
+      const normalized = value.trim().toLowerCase();
+      switch (normalized) {
+        case "tomato":
+        case "tomatoes":
+          return "tomatoes";
+        case "onion":
+        case "onions":
+        case "onions (dry)":
+          return "onion";
+        case "potato":
+        case "potatoes":
+        case "irish potato":
+          return "potatoes";
+        case "kale":
+          return "kale";
+        case "cabbage":
+          return "cabbage";
+        default:
+          return null;
+      }
+    };
+
+    const assertAllowedCommodity = (value: string): NormalizedCommodity => {
+      const normalized = normalizeApiCommodity(value);
+      if (!normalized || !ALLOWED_COMMODITIES.has(normalized)) {
+        throw new Error(
+          `[MarketPriceService] Invalid commodity "${value}". ` +
+          `Allowed values: ${Array.from(ALLOWED_COMMODITIES).join(", ")}`
+        );
+      }
+      return normalized;
+    };
+
+    const COMMODITY_LABELS: Record<NormalizedCommodity, string> = {
+      tomatoes: "Tomatoes",
+      onion: "Onions (dry)",
+      potatoes: "Potatoes (Irish)",
+      kale: "Kale",
+      cabbage: "Cabbage",
+    };
+
+    type CommodityMode = "lowercase" | "label";
+    let commodityMode: CommodityMode = "lowercase";
+
+    const parseAllowedList = (err: unknown): string[] => {
+      const msg = typeof err === "string" ? err : JSON.stringify(err);
+      const match = msg.match(/\[(.+?)\]/);
+      if (!match) {
+        return [];
+      }
+      return match[1]
+        .split(",")
+        .map((entry) => entry.trim().replace(/^['"]|['"]$/g, ""))
+        .filter(Boolean);
+    };
+
+    const updateCommodityModeFromError = (err: unknown): void => {
+      const allowed = parseAllowedList(err);
+      if (!allowed.length) {
+        return;
+      }
+      const hasLowercase = allowed.some((value) =>
+        ["cabbage", "potatoes", "kale", "onion", "tomatoes"].includes(value)
+      );
+      const hasLabels = allowed.some((value) =>
+        ["Cabbage", "Kale", "Onions (dry)", "Potatoes (Irish)", "Tomatoes"].includes(value)
+      );
+
+      if (hasLowercase && commodityMode !== "lowercase") {
+        commodityMode = "lowercase";
+        console.warn("[Predict] commodity mode set to lowercase based on backend response.");
+      } else if (hasLabels && commodityMode !== "label") {
+        commodityMode = "label";
+        console.warn("[Predict] commodity mode set to label based on backend response.");
+      }
+    };
+
+    const formatCommodityForApi = (value: NormalizedCommodity): string =>
+      commodityMode === "lowercase" ? value : COMMODITY_LABELS[value];
+
+    const postPredict = async (payload: RenderApiRequest): Promise<Response> => {
+      const normalizedCommodity = assertAllowedCommodity(payload.commodity);
+      const fixed: RenderApiRequest = {
+        ...payload,
+        commodity: formatCommodityForApi(normalizedCommodity),
+        admin1: payload.admin1.trim() as Region,
+        market: payload.market?.trim(),
+      };
+
+      console.log("[Predict] sending:", fixed);
+
+      const res = await fetch(RENDER_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fixed),
+      });
+
+      // Always print error body if not OK.
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        let err: any = txt;
+        try {
+          err = JSON.parse(txt);
+        } catch {}
+        console.error("[Predict] API error:", res.status, err);
+        updateCommodityModeFromError(err);
+
+        // Throw so caller can count it as an error.
+        throw new Error(
+          typeof err === "string"
+            ? `Predict API error ${res.status}: ${err}`
+            : `Predict API error ${res.status}: ${JSON.stringify(err)}`
+        );
+      }
+
+      return res;
     };
 
     // Only query commodities supported by the API
     const supportedCommodities = ["tomatoes", "onions", "irish potato"];
     
-    // Market mapping: internal name -> API name and admin1 (county)
+    // Market mapping: internal name -> API name (admin1 resolved via mapping)
     const markets = [
-      { name: "Wakulima", apiName: "Wakulima (Nairobi)", admin1: "Nairobi" },
-      { name: "Marikiti (Nairobi)", apiName: "Dandora (Nairobi)", admin1: "Nairobi" }, // Marikiti not in API, use Dandora
-      { name: "Mombasa Market", apiName: "Kongowea (Mombasa)", admin1: "Coast" }, // Mombasa -> Coast county
-      { name: "Kisumu Market", apiName: "Kisumu", admin1: "Nyanza" }, // Kisumu -> Nyanza county
-      { name: "Nakuru Market", apiName: "Nakuru", admin1: "Rift Valley" }, // Nakuru -> Rift Valley county
+      { name: "Wakulima", apiName: "Wakulima (Nairobi)" },
+      { name: "Marikiti (Nairobi)", apiName: "Dandora (Nairobi)" }, // Marikiti not in API, use Dandora
+      { name: "Mombasa Market", apiName: "Kongowea (Mombasa)" },
+      { name: "Kisumu Market", apiName: "Kisumu" },
+      { name: "Nakuru Market", apiName: "Nakuru" },
     ];
 
     // Use today's date for predictions
@@ -253,15 +406,7 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
       for (const marketInfo of markets) {
         try {
           // Map commodity to API format
-          const apiCommodity = commodityMapping[commodity.toLowerCase()] || commodity.toLowerCase();
-          
-          // Skip if commodity is not supported by API
-          // API valid values (from error messages): ['cabbage', 'potatoes', 'kale', 'tomatoes', 'onion']
-          const supportedApiCommodities = ["tomatoes", "onion", "potatoes", "kale", "cabbage"];
-          if (!supportedApiCommodities.includes(apiCommodity.toLowerCase())) {
-            skipped++;
-            continue;
-          }
+          const normalizedCommodity = assertAllowedCommodity(commodity);
 
           // Get previous month's price from Firestore for this commodity-market combination
           const previousMonthDate = new Date(today);
@@ -290,58 +435,44 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
           // Fallback to default price if not found (use average market price or default)
           if (previousMonthPrice === undefined || previousMonthPrice <= 0) {
             // Default prices per commodity (in KSh per kg/unit) - can be adjusted
-            const defaultPrices: Record<string, number> = {
+            const defaultPrices: Record<NormalizedCommodity, number> = {
               tomatoes: 50,
-              onions: 60,
-              "onion": 60,
-              "irish potato": 40,
+              onion: 60,
               potatoes: 40,
+              kale: 45,
+              cabbage: 35,
             };
-            previousMonthPrice = defaultPrices[commodity.toLowerCase()] || defaultPrices[apiCommodity] || 50;
+            previousMonthPrice = defaultPrices[normalizedCommodity];
             console.log(`[MarketPriceService] Using default previous_month_price ${previousMonthPrice} for ${commodity}`);
           }
 
-          // Fetch retail price prediction
-          // Use apiName for API request, but keep name for Firestore queries
-          const apiMarketName = marketInfo.apiName || marketInfo.name;
-          const retailRequest: RenderApiRequest = {
-            date: dateStr,
-            admin1: marketInfo.admin1,
-            market: apiMarketName,
-            commodity: apiCommodity,
-            pricetype: "retail",
-            previous_month_price: previousMonthPrice,
-          };
+          const admin1 = resolveAdmin1(marketInfo.apiName || marketInfo.name);
 
-          // Fetch wholesale price prediction (use slightly lower price for wholesale)
-          const wholesaleRequest: RenderApiRequest = {
+          const apiMarketName = marketInfo.apiName || marketInfo.name;
+          const baseRequest: Omit<RenderApiRequest, "commodity" | "pricetype"> = {
             date: dateStr,
-            admin1: marketInfo.admin1,
+            admin1,
             market: apiMarketName,
-            commodity: apiCommodity,
-            pricetype: "wholesale",
-            previous_month_price: previousMonthPrice * 0.85, // Wholesale is typically 15% lower
           };
 
           console.log(`[MarketPriceService] Requesting prediction for ${commodity} - ${marketInfo.name} (retail)`);
           console.log(`[MarketPriceService] Requesting prediction for ${commodity} - ${marketInfo.name} (wholesale)`);
+          const retailRequest: RenderApiRequest = {
+            ...baseRequest,
+            commodity: normalizedCommodity,
+            pricetype: "retail",
+            previous_month_price: previousMonthPrice,
+          };
+          const wholesaleRequest: RenderApiRequest = {
+            ...baseRequest,
+            commodity: normalizedCommodity,
+            pricetype: "wholesale",
+            previous_month_price: previousMonthPrice * 0.85, // Wholesale is typically 15% lower
+          };
 
-          // Make parallel requests for retail and wholesale
           const [retailResponse, wholesaleResponse] = await Promise.allSettled([
-            fetch(RENDER_API_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(retailRequest),
-            }),
-            fetch(RENDER_API_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(wholesaleRequest),
-            }),
+            postPredict(retailRequest),
+            postPredict(wholesaleRequest),
           ]);
 
           // Process retail response
@@ -361,9 +492,6 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
             }
           } else if (retailResponse.status === "rejected") {
             console.warn(`[MarketPriceService] Retail request failed for ${commodity} - ${marketInfo.name}:`, retailResponse.reason);
-          } else if (retailResponse.status === "fulfilled" && !retailResponse.value.ok) {
-            const errorText = await retailResponse.value.text().catch(() => "Unknown error");
-            console.warn(`[MarketPriceService] Retail API error for ${commodity}: ${retailResponse.value.status} - ${errorText}`);
           }
 
           // Process wholesale response
@@ -383,9 +511,6 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
             }
           } else if (wholesaleResponse.status === "rejected") {
             console.warn(`[MarketPriceService] Wholesale request failed for ${commodity} - ${marketInfo.name}:`, wholesaleResponse.reason);
-          } else if (wholesaleResponse.status === "fulfilled" && !wholesaleResponse.value.ok) {
-            const errorText = await wholesaleResponse.value.text().catch(() => "Unknown error");
-            console.warn(`[MarketPriceService] Wholesale API error for ${commodity}: ${wholesaleResponse.value.status} - ${errorText}`);
           }
 
           // Skip if both prices are invalid
@@ -408,7 +533,7 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
           const marketPrice: Omit<MarketPrice, "id" | "createdAt" | "updatedAt"> = {
             commodity: commodity.charAt(0).toUpperCase() + commodity.slice(1), // Capitalize first letter
             market: marketInfo.name,
-            county: marketInfo.admin1,
+            county: admin1,
             retail: finalRetail,
             wholesale: finalWholesale,
             date: today,
