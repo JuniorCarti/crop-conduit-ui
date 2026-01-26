@@ -21,6 +21,7 @@ import { useMarketPrices } from "@/hooks/useMarketPrices";
 import { formatKsh } from "@/lib/currency";
 import { format } from "date-fns";
 import type { MarketPrice } from "@/services/marketPriceService";
+import { useTranslation } from "react-i18next";
 
 interface PriceChartProps {
   commodity?: string;
@@ -29,6 +30,7 @@ interface PriceChartProps {
 }
 
 export function PriceChart({ commodity, market, days = 30 }: PriceChartProps) {
+  const { t } = useTranslation();
   const startDate = useMemo(() => {
     const date = new Date();
     date.setDate(date.getDate() - days);
@@ -70,14 +72,20 @@ export function PriceChart({ commodity, market, days = 30 }: PriceChartProps) {
   }, [prices]);
 
   if (isLoading) {
-    return <Card><CardContent className="h-64 flex items-center justify-center">Loading chart...</CardContent></Card>;
+    return (
+      <Card>
+        <CardContent className="h-64 flex items-center justify-center">
+          {t("marketPrices.chart.loading")}
+        </CardContent>
+      </Card>
+    );
   }
 
   if (chartData.length === 0) {
     return (
       <Card>
         <CardContent className="h-64 flex items-center justify-center text-muted-foreground">
-          No data available for the selected period
+          {t("marketPrices.chart.empty")}
         </CardContent>
       </Card>
     );
@@ -86,10 +94,13 @@ export function PriceChart({ commodity, market, days = 30 }: PriceChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Price Trends</CardTitle>
+        <CardTitle>{t("marketPrices.chart.title")}</CardTitle>
         <CardDescription>
-          {commodity ? `${commodity} prices` : "All commodities"} over the last {days} days
-          {market && ` in ${market}`}
+          {t("marketPrices.chart.subtitle", {
+            commodity: commodity || t("marketPrices.chart.allCommodities"),
+            days,
+            marketSuffix: market ? t("marketPrices.chart.inMarket", { market }) : "",
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -97,10 +108,10 @@ export function PriceChart({ commodity, market, days = 30 }: PriceChartProps) {
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
-            <YAxis tickFormatter={(value) => `KSh ${value.toFixed(0)}`} />
+            <YAxis tickFormatter={(value) => formatKsh(Number(value))} />
             <Tooltip
               formatter={(value: number) => formatKsh(value)}
-              labelFormatter={(label) => `Date: ${label}`}
+              labelFormatter={(label) => t("marketPrices.chart.labelDate", { date: label })}
             />
             <Legend />
             <Line
@@ -108,28 +119,30 @@ export function PriceChart({ commodity, market, days = 30 }: PriceChartProps) {
               dataKey="wholesale"
               stroke="#8884d8"
               strokeWidth={2}
-              name="Wholesale"
+              name={t("marketPrices.chart.legend.wholesale")}
             />
             <Line
               type="monotone"
               dataKey="retail"
               stroke="#82ca9d"
               strokeWidth={2}
-              name="Retail"
+              name={t("marketPrices.chart.legend.retail")}
             />
           </LineChart>
         </ResponsiveContainer>
 
         {/* Margin Chart */}
         <div className="mt-6">
-          <h4 className="text-sm font-semibold mb-2">Price Margin (Retail - Wholesale)</h4>
+          <h4 className="text-sm font-semibold mb-2">
+            {t("marketPrices.chart.marginTitle")}
+          </h4>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              <YAxis tickFormatter={(value) => `KSh ${value.toFixed(0)}`} />
+              <YAxis tickFormatter={(value) => formatKsh(Number(value))} />
               <Tooltip formatter={(value: number) => formatKsh(value)} />
-              <Bar dataKey="margin" fill="#ffc658" name="Margin" />
+              <Bar dataKey="margin" fill="#ffc658" name={t("marketPrices.chart.legend.margin")} />
             </BarChart>
           </ResponsiveContainer>
         </div>
