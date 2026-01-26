@@ -1,0 +1,813 @@
+{
+  "common": {
+    "appName": "AgriSmart",
+    "appTagline": "Taarifa za Shamba",
+    "loading": "Inapakia...",
+    "user": "Mtumiaji",
+    "noEmail": "Hakuna barua pepe",
+    "na": "N/A",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "add": "Ongeza",
+    "close": "Funga",
+    "retry": "Jaribu tena",
+    "confirm": "Thibitisha",
+    "yes": "Ndiyo",
+    "no": "Hapana"
+  },
+  "nav": {
+    "dashboard": "Dashibodi",
+    "market": "Soko",
+    "crops": "Mazao",
+    "resources": "Rasilimali",
+    "irrigation": "Umwagiliaji",
+    "climate": "Hali ya Hewa",
+    "asha": "Asha",
+    "harvest": "Mavuno",
+    "finance": "Fedha",
+    "marketplace": "Soko la Wakulima",
+    "community": "Jumuiya",
+    "home": "Nyumbani",
+    "more": "Zaidi",
+    "logout": "Toka"
+  },
+  "navDescriptions": {
+    "dashboard": "Muhtasari",
+    "market": "Mshauri wa Soko",
+    "crops": "Mlinzi wa Mazao",
+    "resources": "Msimamizi wa Rasilimali",
+    "irrigation": "Ratiba",
+    "climate": "Utabiri",
+    "asha": "Msaidizi wa Sauti",
+    "harvest": "Msimamizi wa Mavuno",
+    "finance": "Usimamizi wa Fedha",
+    "marketplace": "Nunua na Uuze",
+    "community": "Unganisha"
+  },
+  "auth": {
+    "logoutSuccess": "Umetoka kwa mafanikio",
+    "loginSuccess": "Karibu tena!",
+    "signupSuccess": "Akaunti imeundwa!",
+    "passwordResetSent": "Barua ya kubadili nenosiri imetumwa. Angalia barua pepe.",
+    "phoneOtpSent": "Msimbo wa uthibitisho umetumwa kwa simu yako!",
+    "phoneVerified": "Simu imethibitishwa!",
+    "errors": {
+      "invalidEmail": "Barua pepe si sahihi",
+      "userDisabled": "Akaunti hii imezimwa",
+      "userNotFound": "Hakuna akaunti yenye barua pepe hii",
+      "wrongPassword": "Nenosiri si sahihi",
+      "emailInUse": "Akaunti yenye barua pepe hii tayari ipo",
+      "weakPassword": "Nenosiri ni dhaifu. Tumia angalau herufi 6",
+      "network": "Mtandao una tatizo. Tafadhali angalia muunganisho",
+      "tooManyRequests": "Majaribio mengi. Jaribu baadaye",
+      "invalidPhone": "Namba ya simu si sahihi",
+      "invalidOtp": "Msimbo wa uthibitisho si sahihi",
+      "otpExpired": "Msimbo wa uthibitisho umeisha",
+      "generic": "Kuna tatizo. Tafadhali jaribu tena"
+    }
+  },
+  "language": {
+    "label": "Lugha",
+    "english": "EN",
+    "swahili": "SW"
+  },
+  "climate": {
+    "title": "Taarifa za Hali ya Hewa",
+    "subtitle": "Utabiri na ushauri wa shamba lako",
+    "overview": {
+      "title": "Muhtasari wa utabiri",
+      "location": "Mahali",
+      "unknown": "Haijulikani",
+      "today": "Leo",
+      "minTemp": "Joto la chini",
+      "maxTemp": "Joto la juu",
+      "rainChance": "Uwezekano wa mvua",
+      "nextDays": "Siku 3 zijazo",
+      "noData": "Hakuna data ya utabiri"
+    },
+    "offline": "Uko nje ya mtandao. Tunatumia data iliyohifadhiwa.",
+    "farmSelector": {
+      "placeholder": "Chagua shamba",
+      "empty": "Hakuna mashamba",
+      "add": "Ongeza",
+      "limit": "Mpango wa bure unaruhusu shamba moja."
+    },
+    "locations": {
+      "title": "Mahali",
+      "premiumHint": "Premium kwa mashamba mengi"
+    },
+    "frostRisk": {
+      "title": "Hatari ya Baridi Kali",
+      "tonight": "Usiku wa leo",
+      "tomorrow": "Kesho",
+      "next72h": "Masaa 72 yajayo",
+      "minTemp": "Joto la chini",
+      "level": "Kiwango cha hatari",
+      "wind": "Upepo",
+      "humidity": "Unyevu",
+      "tipsTitle": "Mambo ya kufanya",
+      "tips": {
+        "high1": "Funika mazao usiku kwa matandazo au kitambaa.",
+        "high2": "Mwagilia maji kidogo kabla ya jioni.",
+        "medium1": "Tumia matandazo kuhifadhi joto la udongo.",
+        "medium2": "Fuatilia maeneo ya mabonde usiku."
+      },
+      "noData": "Hakuna taarifa ya baridi",
+      "premiumLock": "Fungua utabiri wa masaa 72 na arifa za baridi."
+    },
+    "rainfall": {
+      "title": "Utabiri wa Mvua"
+    },
+    "rainOutlook": {
+      "title": "Utabiri wa Mvua",
+      "next7": "Siku 7",
+      "basic": "Leo + kesho",
+      "next14": "Siku 14",
+      "mm": "mm",
+      "total": "Jumla",
+      "noData": "Hakuna utabiri wa mvua",
+      "plantingWindow": "Dirisha bora la kupanda",
+      "premiumLock": "Fungua utabiri wa siku 7 na dirisha la kupanda.",
+      "tabSummary": "Muhtasari",
+      "tabPremium": "Maelezo"
+    },
+    "advisory": {
+      "title": "Ushauri",
+      "context": {
+        "planting": "Kupanda",
+        "spraying": "Kunyunyiza",
+        "harvest": "Kuvuna"
+      },
+      "message": {
+        "planting": "Udongo una unyevunyevu wa kutosha. Dirisha la kupanda ni zuri.",
+        "spraying": "Uwezekano wa mvua ni mkubwa. Ahirisha kunyunyiza.",
+        "harvest": "Hatari ya baridi ni kubwa. Panga uvunaji mapema."
+      },
+      "frost": {
+        "title": "Tahadhari ya baridi",
+        "body": "Funika mazao na mwagilia maji kidogo jioni."
+      },
+      "rain": {
+        "title": "Mvua inatarajiwa",
+        "body": "Ahirisha kunyunyiza na andaa mifereji."
+      },
+      "clear": {
+        "title": "Hali tulivu",
+        "body": "Hali nzuri kwa kazi za kawaida shambani."
+      },
+      "none": "Hakuna ushauri kwa sasa",
+      "recentAlerts": "Arifa za hivi karibuni",
+      "noAlerts": "Hakuna arifa kwa sasa"
+    },
+    "aiAdvisory": {
+      "title": "Ushauri wa AI",
+      "subtitle": "Tengeneza ushauri kulingana na utabiri na masoko.",
+      "generate": "Tengeneza Ushauri",
+      "generating": "Inatengeneza...",
+      "errorTitle": "Imeshindikana kutengeneza ushauri",
+      "summary": "Muhtasari",
+      "actions": "Hatua zinazopendekezwa",
+      "actionsEmpty": "Hakuna hatua zilizorudishwa bado.",
+      "risks": "Hatari",
+      "risksEmpty": "Hakuna hatari zilizorudishwa bado.",
+      "dataUsed": "Data iliyotumika",
+      "noSummary": "Muhtasari haupatikani.",
+      "marketAdvice": "Ushauri wa soko",
+      "disclaimer": "Kanusho",
+      "empty": "Hakuna ushauri uliotengenezwa bado.",
+      "error": "Imeshindikana kutengeneza ushauri.",
+      "why": "Kwa nini",
+      "selectFarm": "Chagua shamba/eneo kwanza.",
+      "cropLabel": "Zao",
+      "cropPlaceholder": "Chagua zao",
+      "stageLabel": "Hatua ya ukuaji",
+      "stagePlaceholder": "Chagua hatua",
+      "locationUnknown": "Mahali haijulikani",
+      "weatherHighlight": "{{date}}: {{min}}-{{max}} deg C, mvua {{chance}}%, {{mm}} mm",
+      "stages": {
+        "seedling": "Chipukizi",
+        "vegetative": "Ukuaji wa majani",
+        "flowering": "Kuchanua",
+        "fruiting": "Kutunga matunda",
+        "harvest": "Mavuno"
+      }
+    },
+    "alerts": {
+      "frost": "Tahadhari ya baridi",
+      "rain": "Tahadhari ya mvua"
+    },
+    "sms": {
+      "title": "Arifa za SMS",
+      "helper": "Arifa za baridi na mvua kwa SMS",
+      "offlineHint": "Uko nje ya mtandao. SMS ni njia ya akiba.",
+      "needsPhone": "Ongeza namba ya simu kwenye wasifu",
+      "premiumLock": "SMS ni ya Premium pekee."
+    },
+    "emailAlerts": {
+      "title": "Arifa za barua pepe",
+      "subtitle": "Pata arifa za baridi na mvua kwa barua pepe.",
+      "statusEnabled": "Arifa za barua pepe zimewezeshwa kwa {{email}}",
+      "statusNone": "Hakuna arifa za barua pepe.",
+      "manage": "Dhibiti arifa",
+      "set": "Weka arifa",
+      "dialogTitle": "Arifa za barua pepe",
+      "dialogDescription": "Sanidi arifa za baridi na mvua kwa eneo hili.",
+      "emailLabel": "Anwani ya barua pepe",
+      "frostLabel": "Arifa za baridi",
+      "rainLabel": "Arifa za mvua",
+      "locationLabel": "Mahali",
+      "coordsLabel": "Koordinati",
+      "enable": "Washa arifa za barua pepe",
+      "disable": "Zima arifa za barua pepe",
+      "disableNote": "Kwa kujiondoa kabisa, fungua Mipangilio -> Arifa (inakuja hivi karibuni).",
+      "configMissing": "Huduma ya arifa haijawekwa.",
+      "errorMissingEmail": "Anwani ya barua pepe inahitajika.",
+      "errorGeneric": "Imeshindikana kuwasha arifa za barua pepe.",
+      "success": "Arifa za barua pepe zimewezeshwa.",
+      "disableSuccess": "Arifa za barua pepe zimezimwa.",
+      "locationUnknown": "Mahali haijulikani",
+      "selectFarm": "Chagua shamba ili kuwasha arifa."
+    },
+    "weatherAlerts": {
+      "title": "Arifa za hali ya hewa",
+      "subtitle": "Washa arifa za baridi na mvua kwa eneo hili.",
+      "locationLabel": "Mahali",
+      "coordsLabel": "Koordinati",
+      "selectLocation": "Chagua shamba/eneo kwanza.",
+      "frostLabel": "Arifa za baridi",
+      "rainLabel": "Arifa za mvua",
+      "emailTab": "Arifa za barua pepe",
+      "whatsappTab": "Arifa za WhatsApp",
+      "emailLabel": "Anwani ya barua pepe",
+      "emailPlaceholder": "jina@mfano.com",
+      "whatsappLabel": "Namba ya WhatsApp",
+      "whatsappPlaceholder": "+254700000000",
+      "enableEmail": "Washa arifa za barua pepe",
+      "enableWhatsApp": "Washa arifa za WhatsApp",
+      "enabled": "Imewezeshwa",
+      "enabling": "Inawezesha...",
+      "errorInvalidEmail": "Weka anwani sahihi ya barua pepe.",
+      "errorInvalidWhatsApp": "Tumia muundo wa kimataifa unaoanza na + na angalau tarakimu 10.",
+      "errorGeneric": "Imeshindikana kuwasha arifa. Tafadhali jaribu tena.",
+      "configMissing": "Huduma ya arifa haijawekwa.",
+      "locationUnknown": "Mahali haijulikani"
+    },
+    "premium": {
+      "lockTitle": "Premium",
+      "lockBody": "Fungua arifa na ushauri wa hali ya hewa wa Premium.",
+      "cta": "Boresha hadi Premium",
+      "upgrade": "Boresha hadi Premium"
+    },
+    "empty": {
+      "title": "Ongeza eneo la shamba",
+      "message": "Ongeza shamba ili uone utabiri wa hali ya hewa.",
+      "cta": "Ongeza shamba"
+    },
+    "errors": {
+      "title": "Imeshindikana kupakia data ya hali ya hewa",
+      "message": "Tafadhali jaribu tena baada ya muda mfupi."
+    },
+    "actions": {
+      "retry": "Jaribu tena"
+    },
+    "error": {
+      "title": "Imeshindikana kupakia",
+      "message": "Tafadhali jaribu tena baada ya muda mfupi.",
+      "retry": "Jaribu tena"
+    },
+    "loading": "Inapakia hali ya hewa...",
+    "risk": {
+      "low": "Hatari Ndogo",
+      "medium": "Hatari ya Kati",
+      "high": "Hatari Kubwa"
+    },
+    "units": {
+      "temp": "nyuzi C",
+      "wind": "m/s"
+    },
+    "form": {
+      "title": "Ongeza shamba",
+      "name": "Jina la shamba",
+      "county": "Kaunti",
+      "ward": "Wadi",
+      "lat": "Latitudo",
+      "lon": "Longitudo",
+      "elevation": "Urefu (hiari)",
+      "useLocation": "Tumia eneo la sasa",
+      "locationDenied": "Ruhusu upatikanaji wa eneo kwenye kivinjari.",
+      "locationUnavailable": "Hatukuweza kupata eneo.",
+      "locationSuccess": "Eneo limejazwa.",
+      "save": "Hifadhi",
+      "errorRequired": "Jaza sehemu zote muhimu.",
+      "errorCoords": "Latitudo na longitudo lazima ziwe nambari.",
+      "success": "Shamba limeongezwa.",
+      "error": "Imeshindikana kuongeza shamba."
+    }
+  },
+  "asha": {
+    "title": "Asha – AgriSmart Voice Assistant",
+    "subtitle": "Uliza maswali ya kilimo kwa sauti au maandishi na usikie jibu la Asha.",
+    "cardTitle": "Asha",
+    "cardSubtitle": "Msaidizi wa sauti wa AgriSmart kwa ushauri wa haraka wa shamba.",
+    "hint": "Bonyeza kipaza sauti kuzungumza au andika swali lako.",
+    "inputPlaceholder": "Andika swali lako kwa Asha...",
+    "send": "Tuma",
+    "micLabel": "Bonyeza kuzungumza",
+    "micStopLabel": "Acha kusikiliza",
+    "listening": "Asha anasikiliza...",
+    "thinking": "Asha anafikiria...",
+    "speaking": "Asha anazungumza...",
+    "error": "Samahani, Asha hawezi kujibu sasa."
+  },
+  "upgrade": {
+    "title": "Boresha hadi Premium",
+    "subtitle": "Arifa za hali ya hewa na mashamba mengi",
+    "cardTitle": "Premium inakuja hivi karibuni",
+    "cardDescription": "Tuachie maelezo yako ili kuanzisha Premium.",
+    "cta": "Niarifu"
+  },
+  "premium": {
+    "badge": "Premium",
+    "lockedLabel": "Imefungwa",
+    "actions": {
+      "open": "Fungua",
+      "unlock": "Fungua"
+    },
+    "sections": {
+      "availableTitle": "Inapatikana sasa (Bure)",
+      "availableSubtitle": "Anza na zana za msingi zilizo kwenye mpango wako.",
+      "premiumTitle": "Vipengele vya Premium",
+      "premiumSubtitle": "Boresha ili kufungua moduli za juu."
+    },
+    "sectionLabel": "Premium (inakuja hivi karibuni)",
+    "modal": {
+      "title": "Boresha hadi Premium",
+      "body": "Kipengele hiki kinahitaji Premium. Tutawezesha usajili baadaye.",
+      "close": "Funga",
+      "continue": "Endelea"
+    }
+  },
+  "features": {
+    "dashboard": {
+      "tagline": "Muhtasari",
+      "description": "Muhtasari wa shamba, arifa, na hatua za haraka."
+    },
+    "market": {
+      "tagline": "Mshauri wa Soko",
+      "description": "Hutabiri bei za soko na kuonyesha mabadiliko ya ajabu ili uamue muda wa kuuza."
+    },
+    "climate": {
+      "tagline": "Utabiri na Arifa",
+      "description": "Utabiri wa siku 7, hatari ya mvua/baridi, na ushauri wa eneo la shamba."
+    },
+    "asha": {
+      "tagline": "Msaidizi wa Sauti",
+      "description": "Zungumza au andika kwa Asha upate ushauri wa haraka wa kilimo kwa sauti."
+    },
+    "harvest": {
+      "tagline": "Msimamizi wa Mavuno",
+      "description": "Panga ratiba za mavuno, ratibu wafanyakazi, na maandalizi ya usafirishaji."
+    },
+    "crops": {
+      "tagline": "Mlinzi wa Mazao",
+      "description": "Hufuatilia afya ya mazao na kupendekeza hatua dhidi ya wadudu, magonjwa, na ukuaji."
+    },
+    "resources": {
+      "tagline": "Msimamizi wa Rasilimali",
+      "description": "Fuatilia pembejeo na zana ili usikose mahitaji muhimu wakati muhimu."
+    },
+    "irrigation": {
+      "tagline": "Ratiba",
+      "description": "Unda ratiba za umwagiliaji kulingana na hali ya hewa na hatua ya zao."
+    },
+    "finance": {
+      "tagline": "Usimamizi wa Fedha",
+      "description": "Kadiria gharama, faida, na mtiririko wa fedha ili maamuzi yawe bora."
+    },
+    "marketplace": {
+      "tagline": "Nunua na Uuze",
+      "description": "Unganisha wanunuzi na wauzaji, linganisha ofa, na dhibiti matangazo."
+    },
+    "community": {
+      "tagline": "Unganisha",
+      "description": "Shiriki uzoefu, jifunze kutoka kwa wakulima wengine, na pata vidokezo vya vitendo."
+    }
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Samahani! Ukurasa haupatikani",
+    "cta": "Rudi Nyumbani"
+  },
+  "marketPrices": {
+    "title": "Bei za Soko",
+    "subtitle": "Taarifa za bei za mazao kwa wakati halisi",
+    "tabs": {
+      "table": "Jedwali la Bei",
+      "charts": "Chati na Mwelekeo"
+    },
+    "table": {
+      "title": "Bei za Soko",
+      "subtitle": "Taarifa za bei za soko",
+      "sync": "Sasisha",
+      "search": "Tafuta...",
+      "allCommodities": "Mazao yote",
+      "allMarkets": "Masoko yote",
+      "allCounties": "Kaunti zote",
+      "empty": "Hakuna bei zilizopatikana. Badili vichujio au sasisha data.",
+      "summary": "Inaonyesha {{shown}} kati ya {{total}}",
+      "sort": {
+        "asc": "kupanda",
+        "desc": "kushuka"
+      },
+      "columns": {
+        "date": "Tarehe",
+        "commodity": "Zao",
+        "market": "Soko",
+        "county": "Kaunti",
+        "wholesale": "Bei ya jumla",
+        "retail": "Bei ya rejareja",
+        "grade": "Daraja",
+        "volume": "Kiasi"
+      }
+    },
+    "chart": {
+      "loading": "Inapakia chati...",
+      "empty": "Hakuna data kwa kipindi kilichochaguliwa",
+      "title": "Mwelekeo wa Bei",
+      "subtitle": "Bei za {{commodity}} kwa siku {{days}} zilizopita{{marketSuffix}}",
+      "allCommodities": "Mazao yote",
+      "inMarket": " katika {{market}}",
+      "labelDate": "Tarehe: {{date}}",
+      "marginTitle": "Tofauti ya Bei (Rejareja - Jumla)",
+      "legend": {
+        "wholesale": "Jumla",
+        "retail": "Rejareja",
+        "margin": "Tofauti"
+      }
+    }
+  },
+  "commodities": {
+    "tomato": "Nyanya",
+    "onion": "Kitunguu",
+    "avocado": "Parachichi",
+    "mango": "Embe",
+    "irishPotato": "Viazi mviringo",
+    "maize": "Mahindi",
+    "wheat": "Ngano",
+    "sorghum": "Mtama"
+  },
+  "market": {
+    "title": "Utabiri wa Soko",
+    "subtitle": "Mshauri wa Soko - Bei za sasa",
+    "syncPrices": "Sasisha Bei",
+    "syncing": "Inasasisha...",
+    "setAlert": "Weka Arifa",
+    "searchPlaceholder": "Tafuta mazao...",
+    "errorTitle": "Imeshindikana Kupakia Bei",
+    "errorMessage": "Imeshindikana kupakia bei za soko. Tafadhali jaribu tena.",
+    "todayPrices": "Bei za Leo",
+    "todayPricesSubtitle": "Bei za leo kwenye masoko",
+    "noResults": "Hakuna mazao yanayolingana na \"{{query}}\"",
+    "emptyMessage": "Hakuna bei za soko kwa sasa. Bonyeza 'Sasisha Bei' kupata data mpya.",
+    "emptyMarkets": "Hakuna bei za soko. Bonyeza Sasisha Bei kupata data mpya.",
+    "syncMarketPrices": "Sasisha Bei za Soko",
+    "priceTrends": "Mwelekeo wa Bei",
+    "period": {
+      "daily": "Kila siku",
+      "weekly": "Kila wiki",
+      "monthly": "Kila mwezi"
+    },
+    "noData": "Hakuna data",
+    "recommendedMarkets": "Masoko Yanayopendekezwa",
+    "marketDistance": "{{distance}} - Bora kwa {{bestFor}}",
+    "avgPrice": "Bei ya wastani",
+    "noRecommendedMarkets": "Hakuna masoko yaliyopendekezwa",
+    "errors": {
+      "pricesTitle": "Imeshindikana kupakia bei",
+      "pricesMessage": "Tafadhali bonyeza Sasisha Bei na ujaribu tena."
+    },
+    "table": {
+      "market": "Soko",
+      "commodity": "Zao",
+      "price": "Bei/kg",
+      "type": "Aina",
+      "updated": "Imesasishwa",
+      "retail": "Rejareja",
+      "wholesale": "Jumla",
+      "updatedUnknown": "Haijulikani"
+    },
+    "recommendations": {
+      "title": "Masoko Yanayopendekezwa",
+      "subtitle": "Bei bora kwa chaguo lako",
+      "priceLabel": "Bei bora",
+      "useMarket": "Tumia soko hili",
+      "updated": "Imesasishwa {{time}}",
+      "updatedUnknown": "Muda wa kusasishwa haujulikani",
+      "empty": "Hakuna masoko yaliyopendekezwa bado. Sasisha bei kwanza.",
+      "badges": {
+        "best": "Bei bora",
+        "fresh": "Mpya",
+        "stable": "Imetulia"
+      },
+      "reasons": {
+        "bestPrice": "Bei ya juu leo",
+        "goodDemand": "Ishara nzuri ya mahitaji"
+      }
+    },
+    "alert": {
+      "title": "Weka Arifa ya Bei",
+      "subtitle": "Pata arifa bei za mazao zikifikia lengo lako",
+      "cropLabel": "Zao",
+      "conditionLabel": "Arifu bei ikiwa",
+      "above": "Juu",
+      "below": "Chini",
+      "pricePlaceholder": "Weka bei",
+      "create": "Tengeneza Arifa"
+    },
+    "cropDetails": {
+      "title": "Maelezo ya Bei ya {{crop}}",
+      "currentPrice": "Bei ya sasa",
+      "change": "Mabadiliko ya saa 24",
+      "chartPlaceholder": "Chati ya kina ya bei"
+    }
+  },
+  "marketOracle": {
+    "title": "Utabiri wa Soko",
+    "subtitle": "Tabiri bei kwa soko na zao",
+    "form": {
+      "dateLabel": "Tarehe",
+      "adminLabel": "Eneo",
+      "marketLabel": "Soko",
+      "commodityLabel": "Zao",
+      "priceTypeLabel": "Aina ya bei",
+      "previousPriceLabel": "Bei ya mwezi uliopita",
+      "predictButton": "Tabiri",
+      "loading": "Inatabiri...",
+      "useBestMarket": "Tumia soko bora",
+      "adminPlaceholder": "Chagua eneo",
+      "marketPlaceholder": "Wakulima (Nairobi)",
+      "marketSearch": "Tafuta masoko...",
+      "marketEmpty": "Hakuna masoko",
+      "marketEmptyHint": "Bonyeza Sasisha Bei ili kupakia masoko.",
+      "marketHint": "Masoko {{count}} yanapatikana",
+      "commodityPlaceholder": "Chagua zao",
+      "priceTypePlaceholder": "Chagua aina",
+      "previousPricePlaceholder": "Weka bei",
+      "supportedHint": "Zilizokubalika: {{commodities}}"
+    },
+    "admin": {
+      "nairobi": "Nairobi",
+      "central": "Kati",
+      "coast": "Pwani",
+      "eastern": "Mashariki",
+      "northEastern": "Kaskazini Mashariki",
+      "nyanza": "Nyanza",
+      "riftValley": "Bonde la Ufa"
+    },
+    "commodities": {
+      "tomatoes": "Nyanya",
+      "cabbage": "Kabichi",
+      "potatoes": "Viazi (Irish)",
+      "onion": "Vitunguu (kavu)",
+      "kale": "Sukuma"
+    },
+    "pricetype": {
+      "retail": "Rejareja",
+      "wholesale": "Jumla"
+    },
+    "errors": {
+      "title": "Hitilafu ya utabiri",
+      "required": "Jaza sehemu zote.",
+      "invalidDate": "Tarehe lazima iwe YYYY-MM-DD.",
+      "invalidPrice": "Bei ya mwezi uliopita lazima iwe nambari.",
+      "unsupportedMarket": "Soko halijaungwa mkono bado. Zilizokubalika: {{markets}}",
+      "unsupportedCommodity": "Zao halijaungwa mkono bado. Zilizokubalika: {{commodities}}",
+      "network": "Huduma haipatikani. Jaribu tena.",
+      "generic": "Imeshindikana kupata utabiri. Tafadhali jaribu tena."
+    },
+    "results": {
+      "title": "Matokeo ya Utabiri",
+      "subtitle": "Utabiri wa sasa kwa taarifa zako",
+      "predictedPrice": "Bei iliyotabiriwa kwa kilo",
+      "confidence": "Uhakika",
+      "range": "Kiwango kinachotarajiwa",
+      "outlier": "Isiyo ya kawaida - kagua data",
+      "noteTitle": "Kumbuka",
+      "empty": "Endesha utabiri ili kuona matokeo.",
+      "na": "Hakuna"
+    }
+  },
+  "community": {
+    "title": "Jumuiya",
+    "subtitle": "Unganisha na kujifunza pamoja",
+    "newPost": "Chapisho Jipya",
+    "errorTitle": "Imeshindikana Kupakia Jamii",
+    "errorMessage": "Imeshindikana kupakia maudhui ya jamii. Tafadhali jaribu tena.",
+    "searchPlaceholder": "Tafuta majadiliano...",
+    "tabs": {
+      "forum": "Jukwaa",
+      "knowledge": "Maarifa",
+      "events": "Matukio"
+    },
+    "postMeta": "na {{author}} - {{time}}",
+    "noPostsMatch": "Hakuna machapisho yanayolingana na \"{{query}}\"",
+    "noPosts": "Hakuna machapisho ya jukwaa",
+    "noKnowledge": "Hakuna rasilimali za maarifa",
+    "eventAttending": "{{count}} wanahudhuria",
+    "noEvents": "Hakuna matukio yaliyopangwa",
+    "samplePost": "Natafuta ushauri kuhusu njia bora za kuhifadhi mahindi ili kuzuia hasara baada ya mavuno. Nini kimewasaidia? Ushauri wa unyevu?",
+    "repliesCount": "{{count}} majibu",
+    "viewsCount": "{{count}} watazamaji",
+    "repliesTitle": "Majibu",
+    "sampleReply": "Natumia mifuko ya hermetic na inasaidia sana! Pia huzuia wadudu.",
+    "replyPlaceholder": "Andika jibu...",
+    "replyButton": "Jibu",
+    "eventDate": "Tarehe",
+    "eventLocation": "Mahali",
+    "eventDescription": "Jiunge na wakulima wengine kwa mafunzo ya vitendo kuhusu mbinu mpya za kilimo na mbinu bora.",
+    "eventPeople": "{{count}} watu wanahudhuria",
+    "eventRegister": "Jisajili kwa Tukio",
+    "createPost": {
+      "title": "Unda Chapisho Jipya",
+      "titlePlaceholder": "Swali au mada yako ni ipi?",
+      "contentPlaceholder": "Shiriki mawazo, maswali au uzoefu wako...",
+      "publish": "Chapisha",
+      "fields": {
+        "title": "Kichwa",
+        "category": "Kategoria",
+        "content": "Maudhui"
+      },
+      "categories": {
+        "general": "Majadiliano ya Jumla",
+        "crop": "Usimamizi wa Mazao",
+        "pest": "Udhibiti wa Wadudu",
+        "marketing": "Uuzaji wa Mazao",
+        "tools": "Vifaa na Zana"
+      }
+    }
+  },
+  "dashboard": {
+    "greeting": "Habari ya asubuhi",
+    "subtitle": "Huu ni muhtasari wa shamba lako",
+    "notifications": "Arifa",
+    "quickActions": {
+      "checkPrices": "Angalia Bei",
+      "fieldStatus": "Hali ya Shamba",
+      "schedule": "Ratiba",
+      "finance": "Fedha"
+    },
+    "errorTitle": "Imeshindikana Kupakia Data",
+    "errorMessage": "Imeshindikana kupakia dashibodi. Tafadhali jaribu tena.",
+    "stats": {
+      "bestPrice": "Bei Bora ya Leo",
+      "fieldHealth": "Afya ya Shamba",
+      "fieldsHealthy": "Mashamba bora",
+      "revenue": "Mapato (miezi 6)",
+      "revenueChange": "+18% dhidi ya kipindi kilichopita",
+      "nextHarvest": "Mavuno Yajayo"
+    },
+    "syncPrices": "Sasisha bei",
+    "noData": "Hakuna data",
+    "viewDetails": "Tazama Maelezo",
+    "revenue": {
+      "title": "Muhtasari wa Mapato",
+      "subtitle": "Miezi 6 iliyopita",
+      "change": "+18%",
+      "income": "Mapato",
+      "expenses": "Gharama"
+    },
+    "fieldStatus": {
+      "title": "Hali ya Shamba",
+      "ndvi": "NDVI"
+    },
+    "viewAll": "Tazama Yote",
+    "upcomingHarvests": {
+      "title": "Mavuno Yanayokuja",
+      "viewSchedule": "Tazama Ratiba",
+      "workers": "Wafanyakazi {{count}}"
+    },
+    "noAlerts": "Hakuna arifa",
+    "unknownCrop": "Haijulikani",
+    "health": {
+      "excellent": "Bora sana",
+      "good": "Nzuri",
+      "moderate": "Wastani",
+      "poor": "Dhaifu"
+    },
+    "harvest": {
+      "ready": "Tayari",
+      "pending": "Inasubiri",
+      "inProgress": "Inaendelea"
+    }
+  },
+  "login": {
+    "title": "Karibu tena",
+    "subtitle": "Ingia kwenye akaunti yako",
+    "errorTitle": "Kosa",
+    "tabs": {
+      "email": "Barua pepe",
+      "phone": "Simu",
+      "google": "Google"
+    },
+    "emailLabel": "Anwani ya barua pepe",
+    "emailPlaceholder": "wewe@example.com",
+    "passwordLabel": "Nenosiri",
+    "passwordPlaceholder": "Weka nenosiri lako",
+    "rememberMe": "Nikumbuke",
+    "forgotPassword": "Umesahau nenosiri?",
+    "signIn": "Ingia",
+    "signingIn": "Inaingia...",
+    "phoneLabel": "Namba ya simu",
+    "phonePlaceholder": "+254 712 345 678",
+    "phoneHint": "Weka namba ya simu na msimbo wa nchi",
+    "sendingCode": "Inatuma msimbo...",
+    "sendCode": "Tuma Msimbo wa Uthibitisho",
+    "otpLabel": "Msimbo wa uthibitisho",
+    "otpPlaceholder": "Weka msimbo wa tarakimu 6",
+    "otpHint": "Weka msimbo uliotumwa kwa {{phone}}",
+    "changeNumber": "Badilisha Namba",
+    "verifying": "Inathibitisha...",
+    "verify": "Thibitisha",
+    "googleSignIn": "Ingia na Google",
+    "googleHint": "Bofya kuingia kwa akaunti ya Google",
+    "noAccount": "Huna akaunti?",
+    "createAccount": "Fungua akaunti",
+    "errors": {
+      "required": "Jaza sehemu zote",
+      "failed": "Imeshindikana kuingia",
+      "googleFailed": "Imeshindikana kuingia kwa Google",
+      "phoneRequired": "Weka namba ya simu",
+      "codeFailed": "Imeshindikana kutuma msimbo",
+      "otpRequired": "Weka msimbo wa uthibitisho",
+      "otpInvalid": "Msimbo wa uthibitisho si sahihi"
+    }
+  },
+  "resetPassword": {
+    "title": "Weka Nenosiri Upya",
+    "subtitle": "Weka barua pepe yako ili tukutumia kiungo cha kurekebisha nenosiri",
+    "successTitle": "Barua pepe imetumwa!",
+    "successMessage": "Angalia kisanduku chako kwa maelekezo ya kurekebisha nenosiri. Kiungo kitaisha baada ya saa 1.",
+    "errorTitle": "Kosa",
+    "emailLabel": "Anwani ya barua pepe",
+    "emailPlaceholder": "wewe@example.com",
+    "sending": "Inatuma...",
+    "sendLink": "Tuma Kiungo cha Kurekebisha",
+    "sentTo": "Tumetuma kiungo cha kurekebisha kwa {{email}}",
+    "backToLogin": "Rudi Kuingia",
+    "errors": {
+      "required": "Weka barua pepe yako",
+      "invalidEmail": "Weka barua pepe sahihi",
+      "failed": "Imeshindikana kutuma barua pepe"
+    }
+  },
+  "signup": {
+    "registrationRequiredTitle": "Usajili Unahitajika",
+    "registrationRequiredMessage": "Tafadhali kamilisha usajili wa mkulima kwanza",
+    "goToRegistration": "Nenda kwenye Usajili",
+    "registrationComplete": "Usajili wa Mkulima Umekamilika!",
+    "registrationWelcome": "Karibu, {{name}}! Sasa unda akaunti yako kuanza.",
+    "title": "Unda Akaunti",
+    "subtitle": "Weka taarifa za kuingia",
+    "tabs": {
+      "email": "Barua pepe",
+      "phone": "Simu",
+      "google": "Google"
+    },
+    "emailLabel": "Anwani ya barua pepe",
+    "emailPlaceholder": "wewe@example.com",
+    "passwordLabel": "Nenosiri",
+    "passwordPlaceholder": "Unda nenosiri imara",
+    "passwordHint": "Lazima liwe na angalau herufi 8",
+    "confirmPasswordLabel": "Thibitisha Nenosiri",
+    "confirmPasswordPlaceholder": "Thibitisha nenosiri lako",
+    "creatingAccount": "Inaunda akaunti...",
+    "createAccount": "Unda Akaunti",
+    "phoneLabel": "Namba ya simu",
+    "phonePlaceholder": "+254 712 345 678",
+    "phoneHint": "Weka namba ya simu na msimbo wa nchi",
+    "sendingCode": "Inatuma msimbo...",
+    "sendCode": "Tuma Msimbo wa Uthibitisho",
+    "otpLabel": "Msimbo wa uthibitisho",
+    "otpPlaceholder": "Weka msimbo wa tarakimu 6",
+    "otpHint": "Weka msimbo uliotumwa kwa {{phone}}",
+    "changeNumber": "Badilisha Namba",
+    "verifying": "Inathibitisha...",
+    "verifyCreate": "Thibitisha na Unda Akaunti",
+    "googleSignup": "Jiunge kwa Google",
+    "googleHint": "Bofya kuunda akaunti kwa Google",
+    "haveAccount": "Tayari una akaunti?",
+    "signIn": "Ingia",
+    "profileSaved": "Wasifu wa mkulima umehifadhiwa",
+    "profileSaveError": "Akaunti imeundwa lakini wasifu haujahifadhiwa. Tafadhali sasisha baadaye.",
+    "errors": {
+      "emailOrPhone": "Barua pepe au namba ya simu inahitajika",
+      "invalidEmail": "Weka barua pepe sahihi",
+      "invalidPhone": "Weka namba ya simu sahihi ya Kenya (+254...)",
+      "passwordRequired": "Nenosiri linahitajika",
+      "passwordLength": "Nenosiri liwe na angalau herufi 8",
+      "passwordMatch": "Nenosiri hazifanani",
+      "phoneRequired": "Weka namba ya simu",
+      "otpRequired": "Weka msimbo wa uthibitisho"
+    }
+  }
+}

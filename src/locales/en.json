@@ -1,0 +1,813 @@
+{
+  "common": {
+    "appName": "AgriSmart",
+    "appTagline": "Farm Intelligence",
+    "loading": "Loading...",
+    "user": "User",
+    "noEmail": "No email",
+    "na": "N/A",
+    "save": "Save",
+    "cancel": "Cancel",
+    "add": "Add",
+    "close": "Close",
+    "retry": "Retry",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "market": "Market",
+    "crops": "Crops",
+    "resources": "Resources",
+    "irrigation": "Irrigation",
+    "climate": "Climate",
+    "asha": "Asha",
+    "harvest": "Harvest",
+    "finance": "Finance",
+    "marketplace": "Marketplace",
+    "community": "Community",
+    "home": "Home",
+    "more": "More",
+    "logout": "Logout"
+  },
+  "navDescriptions": {
+    "dashboard": "Overview",
+    "market": "Oracle Agent",
+    "crops": "Sentinel Agent",
+    "resources": "Quartermaster",
+    "irrigation": "Scheduler",
+    "climate": "Forecasts",
+    "asha": "Voice Assistant",
+    "harvest": "Foreman Agent",
+    "finance": "Chancellor",
+    "marketplace": "Buy & Sell",
+    "community": "Connect"
+  },
+  "auth": {
+    "logoutSuccess": "Logged out successfully",
+    "loginSuccess": "Welcome back!",
+    "signupSuccess": "Account created successfully!",
+    "passwordResetSent": "Password reset email sent! Check your inbox.",
+    "phoneOtpSent": "Verification code sent to your phone!",
+    "phoneVerified": "Phone verified successfully!",
+    "errors": {
+      "invalidEmail": "Invalid email address",
+      "userDisabled": "This account has been disabled",
+      "userNotFound": "No account found with this email",
+      "wrongPassword": "Incorrect password",
+      "emailInUse": "An account with this email already exists",
+      "weakPassword": "Password is too weak. Please use at least 6 characters",
+      "network": "Network error. Please check your connection",
+      "tooManyRequests": "Too many failed attempts. Please try again later",
+      "invalidPhone": "Invalid phone number format",
+      "invalidOtp": "Invalid verification code",
+      "otpExpired": "Verification code has expired",
+      "generic": "An error occurred. Please try again"
+    }
+  },
+  "language": {
+    "label": "Language",
+    "english": "EN",
+    "swahili": "SW"
+  },
+  "climate": {
+    "title": "Climate Insights",
+    "subtitle": "Forecasts and guidance for your farm",
+    "overview": {
+      "title": "Forecast overview",
+      "location": "Location",
+      "unknown": "Unknown",
+      "today": "Today",
+      "minTemp": "Min temp",
+      "maxTemp": "Max temp",
+      "rainChance": "Rain chance",
+      "nextDays": "Next 3 days",
+      "noData": "No forecast data"
+    },
+    "offline": "You are offline. Showing cached data.",
+    "farmSelector": {
+      "placeholder": "Select farm",
+      "empty": "No farms yet",
+      "add": "Add",
+      "limit": "Free plan allows one farm only."
+    },
+    "locations": {
+      "title": "Locations",
+      "premiumHint": "Premium for multiple farms"
+    },
+    "frostRisk": {
+      "title": "Frost Risk",
+      "tonight": "Tonight",
+      "tomorrow": "Tomorrow",
+      "next72h": "Next 72 hours",
+      "minTemp": "Min temp",
+      "level": "Risk level",
+      "wind": "Wind",
+      "humidity": "Humidity",
+      "tipsTitle": "What to do",
+      "tips": {
+        "high1": "Cover crops overnight with mulch or fabric.",
+        "high2": "Lightly irrigate before dusk.",
+        "medium1": "Use mulch to retain soil heat.",
+        "medium2": "Monitor low-lying areas at night."
+      },
+      "noData": "No frost risk data",
+      "premiumLock": "Unlock 72-hour frost view and alerts."
+    },
+    "rainfall": {
+      "title": "Rainfall Outlook"
+    },
+    "rainOutlook": {
+      "title": "Rainfall Outlook",
+      "next7": "7 days",
+      "basic": "Today + tomorrow",
+      "next14": "14 days",
+      "mm": "mm",
+      "total": "Total",
+      "noData": "No rainfall outlook",
+      "plantingWindow": "Best planting window",
+      "premiumLock": "Unlock the full 7-day outlook and planting window.",
+      "tabSummary": "Summary",
+      "tabPremium": "Details"
+    },
+    "advisory": {
+      "title": "Advisory",
+      "context": {
+        "planting": "Planting",
+        "spraying": "Spraying",
+        "harvest": "Harvest"
+      },
+      "message": {
+        "planting": "Soil moisture is favorable. A good window to plant.",
+        "spraying": "Rain chances are high. Delay spraying.",
+        "harvest": "High frost risk. Plan harvest early."
+      },
+      "frost": {
+        "title": "Frost caution",
+        "body": "Cover crops and irrigate lightly this evening."
+      },
+      "rain": {
+        "title": "Rain likely",
+        "body": "Delay spraying and prepare drainage where needed."
+      },
+      "clear": {
+        "title": "Stable conditions",
+        "body": "Good conditions for routine field work."
+      },
+      "none": "No advisory yet",
+      "recentAlerts": "Recent alerts",
+      "noAlerts": "No alerts yet"
+    },
+    "aiAdvisory": {
+      "title": "AI Advisory",
+      "subtitle": "Generate a tailored advisory based on forecast and market signals.",
+      "generate": "Generate Advisory",
+      "generating": "Generating...",
+      "errorTitle": "Unable to generate advisory",
+      "summary": "Summary",
+      "actions": "Recommended actions",
+      "actionsEmpty": "No actions returned yet.",
+      "risks": "Risks",
+      "risksEmpty": "No risks returned yet.",
+      "dataUsed": "Data used",
+      "noSummary": "Summary unavailable.",
+      "marketAdvice": "Market advice",
+      "disclaimer": "Disclaimer",
+      "empty": "No advisory generated yet.",
+      "error": "Unable to generate advisory.",
+      "why": "Why",
+      "selectFarm": "Select a farm/location first.",
+      "cropLabel": "Crop",
+      "cropPlaceholder": "Select crop",
+      "stageLabel": "Growth stage",
+      "stagePlaceholder": "Select stage",
+      "locationUnknown": "Unknown location",
+      "weatherHighlight": "{{date}}: {{min}}-{{max}} deg C, {{chance}}% rain, {{mm}} mm",
+      "stages": {
+        "seedling": "Seedling",
+        "vegetative": "Vegetative",
+        "flowering": "Flowering",
+        "fruiting": "Fruiting",
+        "harvest": "Harvest"
+      }
+    },
+    "alerts": {
+      "frost": "Frost alert",
+      "rain": "Rain alert"
+    },
+    "sms": {
+      "title": "SMS alerts",
+      "helper": "Frost and rain alerts via SMS",
+      "offlineHint": "Offline mode. SMS is the fallback.",
+      "needsPhone": "Add a phone number in profile",
+      "premiumLock": "SMS is Premium only."
+    },
+    "emailAlerts": {
+      "title": "Email alerts",
+      "subtitle": "Get frost and rain alerts by email.",
+      "statusEnabled": "Email alerts enabled for {{email}}",
+      "statusNone": "No email alerts enabled.",
+      "manage": "Manage alerts",
+      "set": "Set alerts",
+      "dialogTitle": "Email alerts",
+      "dialogDescription": "Configure frost and rain alert emails for this location.",
+      "emailLabel": "Email address",
+      "frostLabel": "Frost alerts",
+      "rainLabel": "Rain alerts",
+      "locationLabel": "Location",
+      "coordsLabel": "Coordinates",
+      "enable": "Enable Email Alerts",
+      "disable": "Disable Email Alerts",
+      "disableNote": "To fully unsubscribe, open Settings -> Alerts (coming soon).",
+      "configMissing": "Alerts service is not configured.",
+      "errorMissingEmail": "Email address is required.",
+      "errorGeneric": "Failed to enable email alerts.",
+      "success": "Email alerts enabled.",
+      "disableSuccess": "Email alerts disabled.",
+      "locationUnknown": "Unknown location",
+      "selectFarm": "Select a farm to enable alerts."
+    },
+    "weatherAlerts": {
+      "title": "Weather Alerts",
+      "subtitle": "Enable frost and rain alerts for this location.",
+      "locationLabel": "Location",
+      "coordsLabel": "Coordinates",
+      "selectLocation": "Select a farm/location first.",
+      "frostLabel": "Frost alerts",
+      "rainLabel": "Rain alerts",
+      "emailTab": "Email alerts",
+      "whatsappTab": "WhatsApp alerts",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "name@example.com",
+      "whatsappLabel": "WhatsApp number",
+      "whatsappPlaceholder": "+254700000000",
+      "enableEmail": "Enable Email Alerts",
+      "enableWhatsApp": "Enable WhatsApp Alerts",
+      "enabled": "Enabled",
+      "enabling": "Enabling...",
+      "errorInvalidEmail": "Enter a valid email address.",
+      "errorInvalidWhatsApp": "Use international format starting with + and at least 10 digits.",
+      "errorGeneric": "Could not enable alerts. Please try again.",
+      "configMissing": "Alerts service is not configured.",
+      "locationUnknown": "Unknown location"
+    },
+    "premium": {
+      "lockTitle": "Premium",
+      "lockBody": "Unlock premium climate alerts and guidance.",
+      "cta": "Upgrade to Premium",
+      "upgrade": "Upgrade to Premium"
+    },
+    "empty": {
+      "title": "Add a farm location",
+      "message": "Add a farm to see forecasts.",
+      "cta": "Add farm"
+    },
+    "errors": {
+      "title": "Unable to load climate data",
+      "message": "Please try again in a moment."
+    },
+    "actions": {
+      "retry": "Retry"
+    },
+    "error": {
+      "title": "Failed to load",
+      "message": "Please try again in a moment.",
+      "retry": "Retry"
+    },
+    "loading": "Loading climate data...",
+    "risk": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "units": {
+      "temp": "deg C",
+      "wind": "m/s"
+    },
+    "form": {
+      "title": "Add farm",
+      "name": "Farm name",
+      "county": "County",
+      "ward": "Ward",
+      "lat": "Latitude",
+      "lon": "Longitude",
+      "elevation": "Elevation (optional)",
+      "useLocation": "Use current location",
+      "locationDenied": "Allow location access in your browser.",
+      "locationUnavailable": "Could not get location.",
+      "locationSuccess": "Location filled.",
+      "save": "Save",
+      "errorRequired": "Please fill all required fields.",
+      "errorCoords": "Latitude and longitude must be numbers.",
+      "success": "Farm added.",
+      "error": "Failed to add farm."
+    }
+  },
+  "asha": {
+    "title": "Asha – AgriSmart Voice Assistant",
+    "subtitle": "Ask Asha farming questions by voice or text and hear her reply.",
+    "cardTitle": "Asha",
+    "cardSubtitle": "Your local AgriSmart voice guide for quick farm advice.",
+    "hint": "Press the mic to speak or type your question.",
+    "inputPlaceholder": "Type your question for Asha...",
+    "send": "Send",
+    "micLabel": "Press to talk",
+    "micStopLabel": "Stop listening",
+    "listening": "Asha anasikiliza...",
+    "thinking": "Asha anafikiria...",
+    "speaking": "Asha anazungumza...",
+    "error": "Samahani, Asha hawezi kujibu sasa."
+  },
+  "upgrade": {
+    "title": "Upgrade to Premium",
+    "subtitle": "Climate alerts and multi-farm access",
+    "cardTitle": "Premium is coming soon",
+    "cardDescription": "Leave your details and we will enable premium access.",
+    "cta": "Notify me"
+  },
+  "premium": {
+    "badge": "Premium",
+    "lockedLabel": "Locked",
+    "actions": {
+      "open": "Open",
+      "unlock": "Unlock"
+    },
+    "sections": {
+      "availableTitle": "Available now (Free)",
+      "availableSubtitle": "Start with the core tools included in your plan.",
+      "premiumTitle": "Premium features",
+      "premiumSubtitle": "Upgrade to unlock advanced modules."
+    },
+    "sectionLabel": "Premium (coming soon)",
+    "modal": {
+      "title": "Upgrade to Premium",
+      "body": "This feature requires Premium access. We will enable subscriptions later.",
+      "close": "Close",
+      "continue": "Continue"
+    }
+  },
+  "features": {
+    "dashboard": {
+      "tagline": "Overview",
+      "description": "Your farm summary, alerts, and quick actions in one place."
+    },
+    "market": {
+      "tagline": "Oracle Agent",
+      "description": "Predicts market prices and highlights unusual price movements so you can decide when to sell."
+    },
+    "climate": {
+      "tagline": "Forecasts & Alerts",
+      "description": "7-day forecast, rain/frost risk, and smart guidance tailored to your farm location."
+    },
+    "asha": {
+      "tagline": "Voice Assistant",
+      "description": "Talk or type to Asha for quick, friendly farming guidance delivered by voice."
+    },
+    "harvest": {
+      "tagline": "Foreman Agent",
+      "description": "Plan harvest schedules, coordinate workers, and prepare delivery logistics efficiently."
+    },
+    "crops": {
+      "tagline": "Sentinel Agent",
+      "description": "Monitors crop health signals and suggests actions for pests, disease risks, and growth progress."
+    },
+    "resources": {
+      "tagline": "Quartermaster",
+      "description": "Track farm inputs, tools, and usage so you never run out of essentials at critical times."
+    },
+    "irrigation": {
+      "tagline": "Scheduler",
+      "description": "Build watering routines based on weather and crop stage to reduce waste and boost yield."
+    },
+    "finance": {
+      "tagline": "Chancellor",
+      "description": "Estimate costs, profits, and cash flow to keep farm decisions financially healthy."
+    },
+    "marketplace": {
+      "tagline": "Buy & Sell",
+      "description": "Connect with buyers and sellers, compare offers, and manage listings in one place."
+    },
+    "community": {
+      "tagline": "Connect",
+      "description": "Share experiences, learn from other farmers, and get practical tips from the community."
+    }
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Oops! Page not found",
+    "cta": "Return to Home"
+  },
+  "marketPrices": {
+    "title": "Market Prices",
+    "subtitle": "Real-time commodity pricing data",
+    "tabs": {
+      "table": "Price Table",
+      "charts": "Charts & Trends"
+    },
+    "table": {
+      "title": "Market Prices",
+      "subtitle": "Real-time market price data",
+      "sync": "Sync",
+      "search": "Search...",
+      "allCommodities": "All Commodities",
+      "allMarkets": "All Markets",
+      "allCounties": "All Counties",
+      "empty": "No market prices found. Try adjusting your filters or sync the data.",
+      "summary": "Showing {{shown}} of {{total}} prices",
+      "sort": {
+        "asc": "asc",
+        "desc": "desc"
+      },
+      "columns": {
+        "date": "Date",
+        "commodity": "Commodity",
+        "market": "Market",
+        "county": "County",
+        "wholesale": "Wholesale",
+        "retail": "Retail",
+        "grade": "Grade",
+        "volume": "Volume"
+      }
+    },
+    "chart": {
+      "loading": "Loading chart...",
+      "empty": "No data available for the selected period",
+      "title": "Price Trends",
+      "subtitle": "{{commodity}} prices over the last {{days}} days{{marketSuffix}}",
+      "allCommodities": "All commodities",
+      "inMarket": " in {{market}}",
+      "labelDate": "Date: {{date}}",
+      "marginTitle": "Price Margin (Retail - Wholesale)",
+      "legend": {
+        "wholesale": "Wholesale",
+        "retail": "Retail",
+        "margin": "Margin"
+      }
+    }
+  },
+  "commodities": {
+    "tomato": "Tomato",
+    "onion": "Onion",
+    "avocado": "Avocado",
+    "mango": "Mango",
+    "irishPotato": "Irish Potato",
+    "maize": "Maize",
+    "wheat": "Wheat",
+    "sorghum": "Sorghum"
+  },
+  "market": {
+    "title": "Market Forecasting",
+    "subtitle": "Oracle Agent - Real-time prices",
+    "syncPrices": "Sync Prices",
+    "syncing": "Syncing...",
+    "setAlert": "Set Alert",
+    "searchPlaceholder": "Search crops...",
+    "errorTitle": "Error Loading Prices",
+    "errorMessage": "Failed to load market prices. Please try again later.",
+    "todayPrices": "Today's Prices",
+    "todayPricesSubtitle": "Latest market prices for today",
+    "noResults": "No crops found matching \"{{query}}\"",
+    "emptyMessage": "No market prices available. Click 'Sync Prices' to fetch the latest market data.",
+    "emptyMarkets": "No market prices available. Click Sync Prices to fetch the latest market data.",
+    "syncMarketPrices": "Sync Market Prices",
+    "priceTrends": "Price Trends",
+    "period": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "noData": "No data available",
+    "recommendedMarkets": "Recommended Markets",
+    "marketDistance": "{{distance}} - Best for {{bestFor}}",
+    "avgPrice": "Avg price",
+    "noRecommendedMarkets": "No recommended markets available",
+    "errors": {
+      "pricesTitle": "Failed to load prices",
+      "pricesMessage": "Please click Sync Prices and try again."
+    },
+    "table": {
+      "market": "Market",
+      "commodity": "Commodity",
+      "price": "Price/kg",
+      "type": "Type",
+      "updated": "Updated",
+      "retail": "Retail",
+      "wholesale": "Wholesale",
+      "updatedUnknown": "Unknown"
+    },
+    "recommendations": {
+      "title": "Recommended Markets",
+      "subtitle": "Best prices for your selection",
+      "priceLabel": "Best price",
+      "useMarket": "Use this market",
+      "updated": "Updated {{time}}",
+      "updatedUnknown": "Updated time unknown",
+      "empty": "No recommended markets yet. Sync prices first.",
+      "badges": {
+        "best": "Best price",
+        "fresh": "Fresh",
+        "stable": "Stable"
+      },
+      "reasons": {
+        "bestPrice": "Highest price today",
+        "goodDemand": "Good demand signal"
+      }
+    },
+    "alert": {
+      "title": "Set Price Alert",
+      "subtitle": "Get notified when crop prices reach your target",
+      "cropLabel": "Crop",
+      "conditionLabel": "Alert when price is",
+      "above": "Above",
+      "below": "Below",
+      "pricePlaceholder": "Enter price",
+      "create": "Create Alert"
+    },
+    "cropDetails": {
+      "title": "{{crop}} Price Details",
+      "currentPrice": "Current Price",
+      "change": "24h Change",
+      "chartPlaceholder": "Detailed price chart"
+    }
+  },
+  "marketOracle": {
+    "title": "Market Oracle Prediction",
+    "subtitle": "Predict prices for a specific market and crop",
+    "form": {
+      "dateLabel": "Date",
+      "adminLabel": "Region",
+      "marketLabel": "Market",
+      "commodityLabel": "Commodity",
+      "priceTypeLabel": "Price type",
+      "previousPriceLabel": "Previous month price",
+      "predictButton": "Predict",
+      "loading": "Predicting...",
+      "useBestMarket": "Use best market",
+      "adminPlaceholder": "Select region",
+      "marketPlaceholder": "Wakulima (Nairobi)",
+      "marketSearch": "Search markets...",
+      "marketEmpty": "No markets found",
+      "marketEmptyHint": "Click Sync Prices to load markets.",
+      "marketHint": "{{count}} markets available",
+      "commodityPlaceholder": "Select commodity",
+      "priceTypePlaceholder": "Select price type",
+      "previousPricePlaceholder": "Enter price",
+      "supportedHint": "Supported: {{commodities}}"
+    },
+    "admin": {
+      "nairobi": "Nairobi",
+      "central": "Central",
+      "coast": "Coast",
+      "eastern": "Eastern",
+      "northEastern": "North Eastern",
+      "nyanza": "Nyanza",
+      "riftValley": "Rift Valley"
+    },
+    "commodities": {
+      "tomatoes": "Tomatoes",
+      "cabbage": "Cabbage",
+      "potatoes": "Potatoes (Irish)",
+      "onion": "Onions (dry)",
+      "kale": "Kale"
+    },
+    "pricetype": {
+      "retail": "Retail",
+      "wholesale": "Wholesale"
+    },
+    "errors": {
+      "title": "Prediction error",
+      "required": "All fields are required.",
+      "invalidDate": "Date must be in YYYY-MM-DD format.",
+      "invalidPrice": "Previous month price must be a number.",
+      "unsupportedMarket": "Market not supported yet. Supported: {{markets}}",
+      "unsupportedCommodity": "Commodity not supported yet. Supported: {{commodities}}",
+      "network": "Service unavailable. Try again.",
+      "generic": "Could not fetch prediction. Please try again."
+    },
+    "results": {
+      "title": "Prediction Result",
+      "subtitle": "Latest prediction for your inputs",
+      "predictedPrice": "Predicted price per kg",
+      "confidence": "Confidence",
+      "range": "Expected range",
+      "outlier": "Outlier - check data",
+      "noteTitle": "Note",
+      "empty": "Run a prediction to see results.",
+      "na": "N/A"
+    }
+  },
+  "community": {
+    "title": "Community",
+    "subtitle": "Connect & learn together",
+    "newPost": "New Post",
+    "errorTitle": "Error Loading Community Data",
+    "errorMessage": "Failed to load community content. Please try again later.",
+    "searchPlaceholder": "Search discussions...",
+    "tabs": {
+      "forum": "Forum",
+      "knowledge": "Knowledge",
+      "events": "Events"
+    },
+    "postMeta": "by {{author}} - {{time}}",
+    "noPostsMatch": "No posts found matching \"{{query}}\"",
+    "noPosts": "No forum posts available",
+    "noKnowledge": "No knowledge resources available",
+    "eventAttending": "{{count}} attending",
+    "noEvents": "No events scheduled",
+    "samplePost": "Looking for advice on the best storage methods for maize to prevent post-harvest losses. What has worked well for you? Any tips on moisture control?",
+    "repliesCount": "{{count}} replies",
+    "viewsCount": "{{count}} views",
+    "repliesTitle": "Replies",
+    "sampleReply": "I use hermetic bags and they work great! Keeps pests out too.",
+    "replyPlaceholder": "Write a reply...",
+    "replyButton": "Reply",
+    "eventDate": "Date",
+    "eventLocation": "Location",
+    "eventDescription": "Join fellow farmers for hands-on training sessions covering the latest agricultural techniques and best practices.",
+    "eventPeople": "{{count}} people attending",
+    "eventRegister": "Register for Event",
+    "createPost": {
+      "title": "Create New Post",
+      "titlePlaceholder": "What's your question or topic?",
+      "contentPlaceholder": "Share your thoughts, questions, or experiences...",
+      "publish": "Publish Post",
+      "fields": {
+        "title": "Title",
+        "category": "Category",
+        "content": "Content"
+      },
+      "categories": {
+        "general": "General Discussion",
+        "crop": "Crop Management",
+        "pest": "Pest Control",
+        "marketing": "Marketing Tips",
+        "tools": "Equipment & Tools"
+      }
+    }
+  },
+  "dashboard": {
+    "greeting": "Good morning",
+    "subtitle": "Here's your farm overview",
+    "notifications": "Notifications",
+    "quickActions": {
+      "checkPrices": "Check Prices",
+      "fieldStatus": "Field Status",
+      "schedule": "Schedule",
+      "finance": "Finance"
+    },
+    "errorTitle": "Error Loading Data",
+    "errorMessage": "Failed to load dashboard data. Please try again later.",
+    "stats": {
+      "bestPrice": "Today's Best Price",
+      "fieldHealth": "Field Health",
+      "fieldsHealthy": "Fields healthy",
+      "revenue": "Revenue (6mo)",
+      "revenueChange": "+18% vs last period",
+      "nextHarvest": "Next Harvest"
+    },
+    "syncPrices": "Sync prices",
+    "noData": "No data",
+    "viewDetails": "View Details",
+    "revenue": {
+      "title": "Revenue Overview",
+      "subtitle": "Last 6 months",
+      "change": "+18%",
+      "income": "Income",
+      "expenses": "Expenses"
+    },
+    "fieldStatus": {
+      "title": "Field Status",
+      "ndvi": "NDVI"
+    },
+    "viewAll": "View All",
+    "upcomingHarvests": {
+      "title": "Upcoming Harvests",
+      "viewSchedule": "View Schedule",
+      "workers": "{{count}} workers"
+    },
+    "noAlerts": "No alerts",
+    "unknownCrop": "Unknown",
+    "health": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "moderate": "Moderate",
+      "poor": "Poor"
+    },
+    "harvest": {
+      "ready": "Ready",
+      "pending": "Pending",
+      "inProgress": "In Progress"
+    }
+  },
+  "login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your account",
+    "errorTitle": "Error",
+    "tabs": {
+      "email": "Email",
+      "phone": "Phone",
+      "google": "Google"
+    },
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "your.email@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "+254 712 345 678",
+    "phoneHint": "Enter your phone number with country code",
+    "sendingCode": "Sending code...",
+    "sendCode": "Send Verification Code",
+    "otpLabel": "Verification Code",
+    "otpPlaceholder": "Enter 6-digit code",
+    "otpHint": "Enter the code sent to {{phone}}",
+    "changeNumber": "Change Number",
+    "verifying": "Verifying...",
+    "verify": "Verify",
+    "googleSignIn": "Sign in with Google",
+    "googleHint": "Click to sign in with your Google account",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create account",
+    "errors": {
+      "required": "Please fill in all fields",
+      "failed": "Failed to sign in",
+      "googleFailed": "Failed to sign in with Google",
+      "phoneRequired": "Please enter your phone number",
+      "codeFailed": "Failed to send verification code",
+      "otpRequired": "Please enter the verification code",
+      "otpInvalid": "Invalid verification code"
+    }
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "subtitle": "Enter your email address and we'll send you a link to reset your password",
+    "successTitle": "Email Sent!",
+    "successMessage": "Check your inbox for password reset instructions. The link will expire in 1 hour.",
+    "errorTitle": "Error",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "your.email@example.com",
+    "sending": "Sending...",
+    "sendLink": "Send Reset Link",
+    "sentTo": "We've sent a password reset link to {{email}}",
+    "backToLogin": "Back to Login",
+    "errors": {
+      "required": "Please enter your email address",
+      "invalidEmail": "Please enter a valid email address",
+      "failed": "Failed to send reset email"
+    }
+  },
+  "signup": {
+    "registrationRequiredTitle": "Registration Required",
+    "registrationRequiredMessage": "Please complete farmer registration first",
+    "goToRegistration": "Go to Registration",
+    "registrationComplete": "Farmer Registration Complete!",
+    "registrationWelcome": "Welcome, {{name}}! Now create your account to get started.",
+    "title": "Create Your Account",
+    "subtitle": "Set up your login credentials",
+    "tabs": {
+      "email": "Email",
+      "phone": "Phone",
+      "google": "Google"
+    },
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "your.email@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Create a strong password",
+    "passwordHint": "Must be at least 8 characters long",
+    "confirmPasswordLabel": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "creatingAccount": "Creating Account...",
+    "createAccount": "Create Account",
+    "phoneLabel": "Phone Number",
+    "phonePlaceholder": "+254 712 345 678",
+    "phoneHint": "Enter your phone number with country code",
+    "sendingCode": "Sending code...",
+    "sendCode": "Send Verification Code",
+    "otpLabel": "Verification Code",
+    "otpPlaceholder": "Enter 6-digit code",
+    "otpHint": "Enter the code sent to {{phone}}",
+    "changeNumber": "Change Number",
+    "verifying": "Verifying...",
+    "verifyCreate": "Verify & Create Account",
+    "googleSignup": "Sign up with Google",
+    "googleHint": "Click to create an account with Google",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "profileSaved": "Farmer profile saved successfully",
+    "profileSaveError": "Account created but failed to save profile. Please update it later.",
+    "errors": {
+      "emailOrPhone": "Email or phone number is required",
+      "invalidEmail": "Please enter a valid email address",
+      "invalidPhone": "Please enter a valid Kenyan phone number (+254...)",
+      "passwordRequired": "Password is required",
+      "passwordLength": "Password must be at least 8 characters",
+      "passwordMatch": "Passwords do not match",
+      "phoneRequired": "Please enter your phone number",
+      "otpRequired": "Please enter the verification code"
+    }
+  }
+}
