@@ -14,8 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useInitiatePayment } from "../hooks/useMarketplace";
 import { formatKsh } from "@/lib/currency";
 import type { Order } from "../models/types";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "@/lib/firebase";
 
 type PaymentMethod = "mpesa" | "airtel" | "card";
 
@@ -74,24 +72,20 @@ export function PaymentModal({ order, onSuccess, onCancel }: PaymentModalProps) 
     }
 
     try {
+      if (import.meta.env.VITE_AIRTEL_MOCK_MODE !== "true") {
+        setPaymentStatus("failed");
+        setError("Airtel Money payments are not configured.");
+        return;
+      }
+
       setPaymentStatus("pending");
       setError(null);
 
-      // Call Cloud Function for Airtel Money
-      const initiateAirtel = httpsCallable(functions, "marketplace-initiateAirtelPayment");
-      await initiateAirtel({
-        orderId: order.id,
-        phone: phone.replace(/\s+/g, ""),
-        amount: order.priceTotal,
-      });
-
       // In mock mode, auto-complete
-      if (import.meta.env.VITE_AIRTEL_MOCK_MODE === "true") {
-        setTimeout(() => {
-          setPaymentStatus("success");
-          setTimeout(() => onSuccess?.(), 2000);
-        }, 3000);
-      }
+      setTimeout(() => {
+        setPaymentStatus("success");
+        setTimeout(() => onSuccess?.(), 2000);
+      }, 3000);
     } catch (error: any) {
       setPaymentStatus("failed");
       setError(error.message || "Airtel Money payment failed");
@@ -105,29 +99,19 @@ export function PaymentModal({ order, onSuccess, onCancel }: PaymentModalProps) 
     }
 
     try {
+      if (import.meta.env.VITE_STRIPE_MOCK_MODE !== "true") {
+        setPaymentStatus("failed");
+        setError("Card payments are not configured.");
+        return;
+      }
+
       setPaymentStatus("pending");
       setError(null);
 
-      // Call Cloud Function to create Stripe payment intent
-      const createPaymentIntent = httpsCallable(functions, "marketplace-createStripePaymentIntent");
-      const result = await createPaymentIntent({
-        orderId: order.id,
-        amount: order.priceTotal,
-        currency: order.currency.toLowerCase(),
-      });
-
-      // In production, use Stripe Elements to handle card securely
-      // For now, show success in mock mode
-      if (import.meta.env.VITE_STRIPE_MOCK_MODE === "true") {
-        setTimeout(() => {
-          setPaymentStatus("success");
-          setTimeout(() => onSuccess?.(), 2000);
-        }, 2000);
-      } else {
-        // In production, integrate with Stripe.js
-        setError("Stripe integration requires production setup");
-        setPaymentStatus("failed");
-      }
+      setTimeout(() => {
+        setPaymentStatus("success");
+        setTimeout(() => onSuccess?.(), 2000);
+      }, 2000);
     } catch (error: any) {
       setPaymentStatus("failed");
       setError(error.message || "Card payment failed");
