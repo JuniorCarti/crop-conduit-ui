@@ -22,11 +22,14 @@ export interface FarmLocation {
   uid: string;
   name: string;
   county: string;
+  subCounty?: string;
   ward: string;
   lat: number;
   lon: number;
   elevation?: number;
+  crops?: string[];
   createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface ClimateDailyForecast {
