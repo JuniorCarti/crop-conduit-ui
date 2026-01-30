@@ -45,12 +45,6 @@ export function FrostRiskCard({
   const nextDays = risk?.days || [];
   const tomorrow = nextDays[1];
   const tomorrowSeverity = tomorrow?.risk ?? "Low";
-  const tips =
-    severity === "High"
-      ? [t("climate.frostRisk.tips.high1"), t("climate.frostRisk.tips.high2")]
-      : severity === "Medium"
-      ? [t("climate.frostRisk.tips.medium1"), t("climate.frostRisk.tips.medium2")]
-      : [];
 
   const card = (
     <Card className="border-border/60">
@@ -108,18 +102,6 @@ export function FrostRiskCard({
           </div>
         </div>
 
-        {(severity === "Medium" || severity === "High") && tips.length > 0 && (
-          <div className="rounded-md bg-muted/60 p-3 text-sm">
-            <p className="font-semibold mb-2">{t("climate.frostRisk.tipsTitle")}</p>
-            <ul className="space-y-1">
-              {tips.slice(0, 2).map((tip) => (
-                <li key={tip} className="text-muted-foreground">
-                  {tip}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
