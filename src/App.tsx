@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CartProvider } from "@/contexts/CartContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -16,6 +17,8 @@ import Irrigation from "./pages/Irrigation";
 import Harvest from "./pages/Harvest";
 import Finance from "./pages/Finance";
 import MarketplaceEnhanced from "./pages/MarketplaceEnhanced";
+import ListingDetails from "./pages/ListingDetails";
+import Checkout from "./pages/Checkout";
 import MarketPrices from "./pages/MarketPrices";
 import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
@@ -26,19 +29,21 @@ import ResetPassword from "./pages/ResetPassword";
 import ClimatePage from "./pages/ClimatePage";
 import Upgrade from "./pages/Upgrade";
 import AshaVoice from "./pages/AshaVoice";
+import FarmerProfile from "./pages/FarmerProfile";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+      <CartProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
             {/* Public Auth Routes */}
-            <Route element={<PublicRoute><FarmerRegistration /></PublicRoute>} path="/farmer-registration" />
+            <Route path="/farmer-registration" element={<FarmerRegistration />} />
             <Route element={<PublicRoute><Signup /></PublicRoute>} path="/signup" />
             <Route element={<PublicRoute><Login /></PublicRoute>} path="/login" />
             <Route element={<PublicRoute><ResetPassword /></PublicRoute>} path="/reset-password" />
@@ -89,6 +94,22 @@ const App = () => (
                     </PremiumRouteGuard>
                   }
                 />
+                <Route
+                  path="/marketplace/listings/:id"
+                  element={
+                    <PremiumRouteGuard featureId="marketplace">
+                      <ListingDetails />
+                    </PremiumRouteGuard>
+                  }
+                />
+                <Route
+                  path="/checkout"
+                  element={
+                    <PremiumRouteGuard featureId="marketplace">
+                      <Checkout />
+                    </PremiumRouteGuard>
+                  }
+                />
                 <Route path="/market-prices" element={<MarketPrices />} />
                 <Route
                   path="/community"
@@ -100,13 +121,15 @@ const App = () => (
                 />
                 <Route path="/climate" element={<ClimatePage />} />
                 <Route path="/asha" element={<AshaVoice />} />
+                <Route path="/profile" element={<FarmerProfile />} />
                 <Route path="/upgrade" element={<Upgrade />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CartProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
