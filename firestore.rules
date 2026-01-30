@@ -29,12 +29,60 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+
+    /**
+     * Check if user is admin (best-effort; false if profile missing)
+     */
+    function isAdmin() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
     
     /**
      * Validate common harvest document structure
      */
     function isValidTimestamp(field) {
       return field is timestamp;
+    }
+
+    function isValidListingCreate() {
+      return isAuthenticated()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.phoneNumber is string
+        && request.resource.data.phoneNumber.size() > 0
+        && request.resource.data.status == 'active';
+    }
+
+    function isListingReviewAggregateUpdate() {
+      return isAuthenticated()
+        && request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasOnly(['avgRating', 'reviewCount', 'latestReviewSnippet', 'latestReviewAt'])
+        && request.resource.data.avgRating is number
+        && request.resource.data.reviewCount is number
+        && request.resource.data.latestReviewSnippet is string
+        && request.resource.data.latestReviewSnippet.size() <= 80
+        && isValidTimestamp(request.resource.data.latestReviewAt);
+    }
+
+    function isListingPendingUpdateRequest() {
+      return isAuthenticated()
+        && resource.data.sellerId == request.auth.uid
+        && request.resource.data.sellerId == resource.data.sellerId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'lastEditRequestId', 'updatedAt'])
+        && request.resource.data.status == 'pending_update';
+    }
+
+    function isValidListingEditCreate() {
+      return isAuthenticated()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.listingId is string
+        && request.resource.data.patch is map
+        && isValidTimestamp(request.resource.data.submittedAt)
+        && isValidTimestamp(request.resource.data.reviewAfterAt);
     }
 
     /**
@@ -82,6 +130,18 @@ service cloud.firestore {
     // ========================================================================
 
     match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ========================================================================
+    // FARMER PROFILES
+    // ========================================================================
+
+    match /farmers/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /farmers/{userId}/pendingUpdates/{pendingId} {
       allow read, write: if isOwner(userId);
     }
 
@@ -136,6 +196,24 @@ service cloud.firestore {
         && request.resource.data.userId == resource.data.userId;
       allow delete: if isOwner(resource.data.userId);
       allow list: if isAuthenticated();
+    }
+
+    // ========================================================================
+    // MARKETPLACE LISTINGS
+    // ========================================================================
+
+    match /listings/{listingId} {
+      // Authenticated users can read listings
+      allow read: if isAuthenticated();
+
+      // Only the authenticated seller can create their own listing with phone
+      allow create: if isValidListingCreate();
+
+      // Only allow review aggregate updates or pending edit requests
+      allow update: if isListingReviewAggregateUpdate() || isListingPendingUpdateRequest();
+
+      // Prevent direct deletes from client
+      allow delete: if false;
     }
 
     match /cropActivities/{activityId} {
@@ -261,6 +339,126 @@ service cloud.firestore {
       
       // List
       allow list: if isOwner(userId);
+    }
+
+    // ========================================================================
+    // MARKETPLACE HELPERS
+    // ========================================================================
+
+    function isMarketplaceStatus(status) {
+      return status in ['pending', 'accepted', 'in_transit', 'completed', 'cancelled'];
+    }
+
+    function isPositiveNumber(value) {
+      return value is number && value > 0;
+    }
+
+    function hasOrderItems(data) {
+      return ('items' in data) && data.items is list && data.items.size() > 0;
+    }
+
+    function hasValidOrderTotals(data) {
+      return ('totalAmount' in data) && isPositiveNumber(data.totalAmount);
+    }
+
+    function hasValidOrderQuantity(data) {
+      return !('quantity' in data) || isPositiveNumber(data.quantity);
+    }
+
+    function hasOrderItemsOrQuantity(data) {
+      return hasOrderItems(data) || ('quantity' in data);
+    }
+
+    function hasValidTimestamps(data) {
+      return isValidTimestamp(data.createdAt) && isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidReviewRating(value) {
+      return value is number && value >= 1 && value <= 5;
+    }
+
+    function isValidReviewComment(value) {
+      return value is string && value.size() <= 500;
+    }
+
+    function isValidReviewCreate(listingId, buyerId) {
+      let listing = get(/databases/$(database)/documents/listings/$(listingId)).data;
+      return isAuthenticated()
+        && listing != null
+        && request.resource.data.listingId == listingId
+        && request.resource.data.sellerId == listing.sellerId
+        && request.resource.data.buyerId == buyerId
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.buyerName is string
+        && isValidReviewRating(request.resource.data.rating)
+        && isValidReviewComment(request.resource.data.comment)
+        && isValidTimestamp(request.resource.data.createdAt);
+    }
+
+    // ========================================================================
+    // MARKETPLACE LISTINGS (APPENDED)
+    // ========================================================================
+
+    match /listings/{listingId} {
+      // Authenticated users can read listings
+      allow read: if isAuthenticated();
+
+      // Only authenticated sellers can create their own listing
+      allow create: if isValidListingCreate()
+        && hasValidTimestamps(request.resource.data)
+        && (!('quantity' in request.resource.data) || isPositiveNumber(request.resource.data.quantity));
+
+      // Only allow review aggregate updates or pending edit requests
+      allow update: if isListingReviewAggregateUpdate() || isListingPendingUpdateRequest();
+
+      // Prevent direct deletes from client
+      allow delete: if false;
+
+      match /reviews/{buyerId} {
+        allow read: if isAuthenticated();
+        allow create: if isValidReviewCreate(listingId, buyerId);
+        allow update, delete: if false;
+      }
+    }
+
+    match /listingEdits/{editId} {
+      allow read: if isAuthenticated() && resource.data.sellerId == request.auth.uid;
+      allow create: if isValidListingEditCreate();
+      allow update, delete: if false;
+    }
+
+    // ========================================================================
+    // MARKETPLACE ORDERS (APPENDED)
+    // ========================================================================
+
+    match /orders/{orderId} {
+      // Only buyer or seller can read orders
+      allow read: if isAuthenticated()
+        && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+
+      // Only authenticated buyers can create orders for themselves with valid data
+      allow create: if isAuthenticated()
+        && request.resource.data.buyerId == request.auth.uid
+        && hasValidTimestamps(request.resource.data)
+        && hasValidOrderTotals(request.resource.data)
+        && hasValidOrderQuantity(request.resource.data)
+        && hasOrderItemsOrQuantity(request.resource.data)
+        && isMarketplaceStatus(request.resource.data.status);
+
+      // Buyer or seller can update, but buyerId/sellerId/createdAt are immutable
+      allow update: if isAuthenticated()
+        && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid)
+        && request.resource.data.buyerId == resource.data.buyerId
+        && request.resource.data.sellerId == resource.data.sellerId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && isValidTimestamp(request.resource.data.updatedAt)
+        && hasValidOrderTotals(request.resource.data)
+        && hasValidOrderQuantity(request.resource.data)
+        && hasOrderItemsOrQuantity(request.resource.data)
+        && isMarketplaceStatus(request.resource.data.status);
+
+      // Orders cannot be deleted
+      allow delete: if false;
     }
   }
 }
