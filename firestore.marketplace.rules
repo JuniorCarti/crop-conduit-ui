@@ -23,6 +23,88 @@ service cloud.firestore {
       return isAuthenticated() && 
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
+    function isValidTimestamp(field) {
+      return field is timestamp;
+    }
+
+    function isValidListingCreate() {
+      return isAuthenticated()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.phoneNumber is string
+        && request.resource.data.phoneNumber.size() > 0
+        && request.resource.data.status == 'active';
+    }
+
+    function isListingReviewAggregateUpdate() {
+      return isAuthenticated()
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['avgRating', 'reviewCount', 'latestReviewSnippet', 'latestReviewAt'])
+        && request.resource.data.avgRating is number
+        && request.resource.data.reviewCount is number
+        && request.resource.data.latestReviewSnippet is string
+        && request.resource.data.latestReviewSnippet.size() <= 80
+        && isValidTimestamp(request.resource.data.latestReviewAt);
+    }
+
+    function isListingPendingUpdateRequest() {
+      return isAuthenticated()
+        && resource.data.sellerId == request.auth.uid
+        && request.resource.data.sellerId == resource.data.sellerId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'lastEditRequestId', 'updatedAt'])
+        && request.resource.data.status == 'pending_update';
+    }
+
+    function isValidListingEditCreate() {
+      return isAuthenticated()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.listingId is string
+        && request.resource.data.patch is map
+        && isValidTimestamp(request.resource.data.submittedAt)
+        && isValidTimestamp(request.resource.data.reviewAfterAt);
+    }
+
+    function isValidReviewRating(value) {
+      return value is number && value >= 1 && value <= 5;
+    }
+
+    function isValidReviewComment(value) {
+      return value is string && value.size() <= 500;
+    }
+
+    function isValidReviewCreate(listingId, buyerId) {
+      let listing = get(/databases/$(database)/documents/listings/$(listingId)).data;
+      return isAuthenticated()
+        && listing != null
+        && request.resource.data.listingId == listingId
+        && request.resource.data.sellerId == listing.sellerId
+        && request.resource.data.buyerId == buyerId
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.buyerName is string
+        && isValidReviewRating(request.resource.data.rating)
+        && isValidReviewComment(request.resource.data.comment)
+        && isValidTimestamp(request.resource.data.createdAt);
+    }
+
+    function hasOrderItems(data) {
+      return ('items' in data) && data.items is list && data.items.size() > 0;
+    }
+
+    function hasValidOrderTotals(data) {
+      return ('totalAmount' in data) && data.totalAmount is number && data.totalAmount > 0;
+    }
+
+    function hasValidOrderQuantity(data) {
+      return !('quantity' in data) || (data.quantity is number && data.quantity > 0);
+    }
+
+    function hasOrderItemsOrQuantity(data) {
+      return hasOrderItems(data) || ('quantity' in data);
+    }
     
     // Helper function to check if user owns a document
     function isOwner(userIdField) {
@@ -52,21 +134,27 @@ service cloud.firestore {
     // LISTINGS COLLECTION
     // ============================================================================
     match /listings/{listingId} {
-      // Anyone authenticated can read active listings
-      allow read: if isAuthenticated() && 
-                     (resource.data.status == 'active' || 
-                      resource.data.sellerId == request.auth.uid ||
-                      isAdmin());
+      // Authenticated users can read listings
+      allow read: if isAuthenticated();
       
       // Only listing owner can create/update/delete
-      allow create: if isAuthenticated() && 
-                        request.resource.data.sellerId == request.auth.uid;
+      allow create: if isValidListingCreate();
       
-      allow update: if isAuthenticated() && 
-                       (resource.data.sellerId == request.auth.uid || isAdmin());
+      allow update: if isListingReviewAggregateUpdate() || isListingPendingUpdateRequest();
       
-      allow delete: if isAuthenticated() && 
-                       (resource.data.sellerId == request.auth.uid || isAdmin());
+      allow delete: if false;
+
+      match /reviews/{buyerId} {
+        allow read: if isAuthenticated();
+        allow create: if isValidReviewCreate(listingId, buyerId);
+        allow update, delete: if false;
+      }
+    }
+
+    match /listingEdits/{editId} {
+      allow read: if isAuthenticated() && resource.data.sellerId == request.auth.uid;
+      allow create: if isValidListingEditCreate();
+      allow update, delete: if false;
     }
     
     // ============================================================================
@@ -82,7 +170,10 @@ service cloud.firestore {
       // Only buyer can create order
       allow create: if isAuthenticated() && 
                        request.resource.data.buyerId == request.auth.uid &&
-                       request.resource.data.status == 'pending_payment';
+                       request.resource.data.status in ['pending', 'pending_payment'] &&
+                       hasValidOrderTotals(request.resource.data) &&
+                       hasValidOrderQuantity(request.resource.data) &&
+                       hasOrderItemsOrQuantity(request.resource.data);
       
       // Seller can update order to mark as shipped
       allow update: if isAuthenticated() && 
@@ -100,7 +191,10 @@ service cloud.firestore {
                          request.resource.data.status == 'delivered' &&
                          resource.data.status == 'shipped') ||
                         // Admin can change any status
-                        isAdmin());
+                        isAdmin()) &&
+                       hasValidOrderTotals(request.resource.data) &&
+                       hasValidOrderQuantity(request.resource.data) &&
+                       hasOrderItemsOrQuantity(request.resource.data);
       
       // Only admin can delete orders
       allow delete: if isAdmin();
