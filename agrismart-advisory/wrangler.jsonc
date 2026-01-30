@@ -10,13 +10,14 @@
 	"observability": {
 		"enabled": true
 	},
-	"workflows": [
+	"d1_databases": [
 		{
-			"name": "workflow-agrismart-advisory",
-			"binding": "MY_WORKFLOW",
-			"class_name": "MyWorkflow"
+			"binding": "ASHA_DB",
+			"database_name": "agrismart-ash-memory",
+			"database_id": "6f402e3e-fbfe-4141-af78-0444024ea12e"
 		}
 	]
+	
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
