@@ -30,6 +30,7 @@ function mapFarmDoc(farmDoc: any): FarmLocation {
     id: farmDoc.id,
     ...data,
     createdAt: data.createdAt?.toDate?.() || data.createdAt,
+    updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
   } as FarmLocation;
 }
 
@@ -87,6 +88,7 @@ export async function createFarm(
   const ref = await addDoc(collection(db, FARMS_COLLECTION), {
     ...farm,
     createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   });
   return ref.id;
 }
