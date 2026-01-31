@@ -1,12 +1,22 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { Truck, Users, Calendar, Loader2, Plus } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  Truck,
+  Users,
+  Calendar,
+  Plus,
+  MapPin,
+  AlertTriangle,
+} from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -20,17 +30,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { useHarvestSchedules, useWorkers, useDeliveries } from "@/hooks/useHarvest";
+import { useLogisticsRoute } from "@/hooks/useLogisticsRoute";
 import { useAuth } from "@/contexts/AuthContext";
-import ScheduleTab from "@/components/harvest/ScheduleTab";
-import WorkersTab from "@/components/harvest/WorkersTab";
-import DeliveryTab from "@/components/harvest/DeliveryTab";
+import { formatKsh } from "@/lib/currency";
 import { Delivery, HarvestSchedule, Worker } from "@/types/harvest";
 
 type ScheduleFormState = {
@@ -52,6 +55,7 @@ type WorkerFormState = {
   phone: string;
   email: string;
   experience: string;
+  assignedScheduleIds: string[];
 };
 
 type DeliveryFormState = {
@@ -86,6 +90,7 @@ const defaultWorkerForm: WorkerFormState = {
   phone: "",
   email: "",
   experience: "",
+  assignedScheduleIds: [],
 };
 
 const defaultDeliveryForm: DeliveryFormState = {
@@ -120,6 +125,28 @@ const toInputDate = (value: unknown) => {
   return date.toISOString().slice(0, 10);
 };
 
+const formatDateDisplay = (value: unknown) => {
+  const date = toDate(value);
+  if (!date) return "--";
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const scheduleStatusStyles: Record<HarvestSchedule["status"], string> = {
+  Pending: "bg-warning/10 text-warning border-warning/30",
+  Ready: "bg-success/10 text-success border-success/30",
+  InProgress: "bg-info/10 text-info border-info/30",
+  Harvested: "bg-muted text-muted-foreground border-border",
+  Cancelled: "bg-destructive/10 text-destructive border-destructive/30",
+};
+
+const deliveryStatusStyles: Record<Delivery["status"], string> = {
+  Pending: "bg-warning/10 text-warning border-warning/30",
+  InTransit: "bg-info/10 text-info border-info/30",
+  Delivered: "bg-success/10 text-success border-success/30",
+  Cancelled: "bg-destructive/10 text-destructive border-destructive/30",
+  Delayed: "bg-warning/10 text-warning border-warning/30",
+};
+
 export default function Harvest() {
   const { currentUser, loading: authLoading } = useAuth();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -133,6 +160,8 @@ export default function Harvest() {
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(defaultScheduleForm);
   const [workerForm, setWorkerForm] = useState<WorkerFormState>(defaultWorkerForm);
   const [deliveryForm, setDeliveryForm] = useState<DeliveryFormState>(defaultDeliveryForm);
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
+  const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(null);
 
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [workerError, setWorkerError] = useState<string | null>(null);
@@ -172,6 +201,94 @@ export default function Harvest() {
     [schedules],
   );
 
+
+  useEffect(() => {
+    if (!schedules.length) {
+      setSelectedScheduleId(null);
+      return;
+    }
+    setSelectedScheduleId((prev) =>
+      prev && schedules.some((schedule) => schedule.id === prev) ? prev : schedules[0].id,
+    );
+  }, [schedules]);
+
+  const selectedSchedule = useMemo(
+    () => schedules.find((schedule) => schedule.id === selectedScheduleId) || null,
+    [schedules, selectedScheduleId],
+  );
+
+  const scheduleWorkers = useMemo(
+    () =>
+      selectedScheduleId
+        ? workers.filter((worker) => worker.assignedScheduleIds?.includes(selectedScheduleId))
+        : [],
+    [workers, selectedScheduleId],
+  );
+
+  const scheduleDeliveries = useMemo(
+    () =>
+      selectedScheduleId
+        ? deliveries.filter((delivery) => delivery.scheduleId === selectedScheduleId)
+        : [],
+    [deliveries, selectedScheduleId],
+  );
+
+  const sortedDeliveries = useMemo(() => {
+    return [...scheduleDeliveries].sort((a, b) => {
+      const aDate = toDate(a.scheduledDate)?.getTime() ?? 0;
+      const bDate = toDate(b.scheduledDate)?.getTime() ?? 0;
+      return aDate - bDate;
+    });
+  }, [scheduleDeliveries]);
+
+  useEffect(() => {
+    if (!sortedDeliveries.length) {
+      setSelectedDeliveryId(null);
+      return;
+    }
+    setSelectedDeliveryId((prev) =>
+      prev && sortedDeliveries.some((delivery) => delivery.id === prev)
+        ? prev
+        : sortedDeliveries[0].id,
+    );
+  }, [sortedDeliveries]);
+
+  const activeDelivery = useMemo(
+    () => sortedDeliveries.find((delivery) => delivery.id === selectedDeliveryId) || sortedDeliveries[0] || null,
+    [sortedDeliveries, selectedDeliveryId],
+  );
+
+  const workerGroups = useMemo(() => {
+    const roles: Worker["role"][] = ["Harvester", "Supervisor", "Transporter", "Quality Inspector"];
+    return roles.map((role) => ({
+      role,
+      workers: scheduleWorkers.filter((worker) => worker.role === role),
+    }));
+  }, [scheduleWorkers]);
+
+  const availableWorkersForDelivery = useMemo(() => {
+    if (!deliveryForm.scheduleId) return workers;
+    return workers.filter((worker) => worker.assignedScheduleIds?.includes(deliveryForm.scheduleId));
+  }, [workers, deliveryForm.scheduleId]);
+
+  const logisticsParams = {
+    crop: selectedSchedule?.cropName || "",
+    origin: selectedSchedule?.farmId || selectedSchedule?.field || "",
+    destination: activeDelivery?.destinationAddress || "",
+  };
+
+  const { data: logisticsData, loading: logisticsLoading, error: logisticsError } = useLogisticsRoute(logisticsParams);
+
+  const riskLabel = logisticsData?.riskLevel || "Unknown";
+  const riskBadgeClass =
+    riskLabel === "Low"
+      ? "bg-success/10 text-success border-success/30"
+      : riskLabel === "Medium"
+        ? "bg-warning/10 text-warning border-warning/30"
+        : riskLabel === "High"
+          ? "bg-destructive/10 text-destructive border-destructive/30"
+          : "bg-muted/40 text-muted-foreground border-border";
+
   const openScheduleModal = (schedule?: HarvestSchedule) => {
     if (schedule) {
       setEditingSchedule(schedule);
@@ -204,10 +321,14 @@ export default function Harvest() {
         phone: worker.phone || "",
         email: worker.email || "",
         experience: worker.experience || "",
+        assignedScheduleIds: worker.assignedScheduleIds || [],
       });
     } else {
       setEditingWorker(null);
-      setWorkerForm(defaultWorkerForm);
+      setWorkerForm({
+        ...defaultWorkerForm,
+        assignedScheduleIds: selectedScheduleId ? [selectedScheduleId] : [],
+      });
     }
     setWorkerError(null);
     setShowWorkerModal(true);
@@ -230,7 +351,10 @@ export default function Harvest() {
       });
     } else {
       setEditingDelivery(null);
-      setDeliveryForm(defaultDeliveryForm);
+      setDeliveryForm({
+        ...defaultDeliveryForm,
+        scheduleId: selectedScheduleId || "",
+      });
     }
     setDeliveryError(null);
     setShowDeliveryModal(true);
@@ -305,6 +429,10 @@ export default function Harvest() {
       setWorkerError("Name and phone are required.");
       return;
     }
+    if (!workerForm.assignedScheduleIds.length) {
+      setWorkerError("Assign this worker to at least one schedule.");
+      return;
+    }
 
     setIsSavingWorker(true);
     setWorkerError(null);
@@ -316,6 +444,7 @@ export default function Harvest() {
         phone: workerForm.phone.trim(),
         email: workerForm.email.trim() || undefined,
         experience: workerForm.experience.trim() || undefined,
+        assignedScheduleIds: workerForm.assignedScheduleIds,
       };
 
       if (editingWorker) {
@@ -405,7 +534,7 @@ export default function Harvest() {
     <div className="min-h-screen bg-background">
       <PageHeader title="Harvest & Logistics" subtitle="Foreman Agent" icon={Truck} />
 
-      <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <div className="container mx-auto p-4 md:p-6 space-y-8">
         {(schedulesError || workersError || deliveriesError) && (
           <AlertCard
             type="danger"
@@ -423,111 +552,345 @@ export default function Harvest() {
           />
         )}
 
-        <Tabs defaultValue="schedule">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="schedule">
-              Schedule
-              {schedulesLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-            </TabsTrigger>
-            <TabsTrigger value="workers">
-              Workers
-              {workersLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-            </TabsTrigger>
-            <TabsTrigger value="delivery">
-              Delivery
-              {deliveriesLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <Badge variant="outline">Harvest</Badge>
+          <span>{'>'}</span>
+          <Badge variant="outline">Workers</Badge>
+          <span>{'>'}</span>
+          <Badge variant="outline">Delivery</Badge>
+          <span>{'>'}</span>
+          <Badge variant="outline">Market</Badge>
+        </div>
 
-          <TabsContent value="schedule" className="mt-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Harvest Schedules</h3>
-              <Button size="sm" onClick={() => openScheduleModal()} className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Schedule
-              </Button>
+        <section className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Harvest Schedule</h3>
+              <p className="text-sm text-muted-foreground">
+                Select a schedule to sync workers, deliveries, and transport intelligence.
+              </p>
             </div>
-            {schedulesLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-24 rounded-xl" />
-                ))}
-              </div>
-            ) : schedules.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border/50">
-                <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-                <p className="text-muted-foreground font-medium">No harvest schedules yet</p>
-                <p className="text-sm text-muted-foreground">Create your first schedule to get started</p>
-              </div>
-            ) : (
-              <ScheduleTab
-                schedules={schedules}
-                onDelete={removeSchedule}
-                onEdit={(schedule) => openScheduleModal(schedule)}
-              />
-            )}
-          </TabsContent>
+            <Button size="sm" onClick={() => openScheduleModal()} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New Schedule
+            </Button>
+          </div>
 
-          <TabsContent value="workers" className="mt-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Farm Workers</h3>
-              <Button size="sm" onClick={() => openWorkerModal()} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Worker
-              </Button>
+          {schedulesLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+              ))}
             </div>
-            {workersLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-xl" />
-                ))}
-              </div>
-            ) : workers.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border/50">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-                <p className="text-muted-foreground font-medium">No workers added yet</p>
-                <p className="text-sm text-muted-foreground">Add your first farm worker</p>
-              </div>
-            ) : (
-              <WorkersTab
-                workers={workers}
-                onDelete={removeWorker}
-                onEdit={(worker) => openWorkerModal(worker)}
-              />
-            )}
-          </TabsContent>
+          ) : schedules.length === 0 ? (
+            <div className="text-center py-12 bg-card rounded-xl border border-border/50">
+              <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
+              <p className="text-muted-foreground font-medium">No harvest schedules yet</p>
+              <p className="text-sm text-muted-foreground">Create your first schedule to get started</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {schedules.map((schedule) => (
+                <Card
+                  key={schedule.id}
+                  onClick={() => setSelectedScheduleId(schedule.id)}
+                  className={`border border-border/50 cursor-pointer transition-colors ${
+                    schedule.id === selectedScheduleId
+                      ? "border-primary bg-primary/5"
+                      : "hover:border-primary/40"
+                  }`}
+                >
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {schedule.cropName || "Untitled Crop"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {schedule.field || "Field"} - {schedule.farmId || "Farm"}
+                        </p>
+                      </div>
+                      <Badge className={scheduleStatusStyles[schedule.status]} variant="outline">
+                        {schedule.status}
+                      </Badge>
+                    </div>
+                    <div className="grid gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Harvest date: {formatDateDisplay(schedule.optimalDate || schedule.estimatedReadyDate)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
+                        Quantity: {schedule.expectedYield} {schedule.yieldUnit}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openScheduleModal(schedule);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeSchedule(schedule.id);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
 
-          <TabsContent value="delivery" className="mt-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Deliveries</h3>
-              <Button size="sm" onClick={() => openDeliveryModal()} className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Delivery
-              </Button>
+        <section className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Assigned Workers</h3>
+              <p className="text-sm text-muted-foreground">
+                {selectedSchedule
+                  ? `Linked to ${selectedSchedule.cropName} - ${selectedSchedule.field}`
+                  : "Select a harvest schedule to view assigned workers."}
+              </p>
             </div>
-            {deliveriesLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-xl" />
-                ))}
+            <Button size="sm" onClick={() => openWorkerModal()} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Worker
+            </Button>
+          </div>
+
+          {!selectedScheduleId ? (
+            <div className="rounded-xl border border-border/50 bg-card p-6 text-sm text-muted-foreground">
+              Select a schedule to see assigned workers.
+            </div>
+          ) : workersLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-20 rounded-xl" />
+              ))}
+            </div>
+          ) : scheduleWorkers.length === 0 ? (
+            <div className="text-center py-12 bg-card rounded-xl border border-border/50">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
+              <p className="text-muted-foreground font-medium">No workers assigned</p>
+              <p className="text-sm text-muted-foreground">Assign workers to keep harvest operations in sync.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {workerGroups.map((group) => (
+                <Card key={group.role} className="border border-border/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-foreground">{group.role}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {group.workers.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No {group.role.toLowerCase()} assigned.</p>
+                    ) : (
+                      group.workers.map((worker) => (
+                        <div key={worker.id} className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{worker.name}</p>
+                            <p className="text-xs text-muted-foreground">{worker.phone}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={
+                                worker.status === "Active"
+                                  ? "bg-success/10 text-success border-success/30"
+                                  : "bg-muted/40 text-muted-foreground border-border"
+                              }
+                            >
+                              {worker.status}
+                            </Badge>
+                            <Button size="sm" variant="ghost" onClick={() => openWorkerModal(worker)}>
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Delivery Plan</h3>
+              <p className="text-sm text-muted-foreground">
+                {selectedSchedule
+                  ? `Scheduled deliveries for ${selectedSchedule.cropName}`
+                  : "Select a harvest schedule to view deliveries."}
+              </p>
+            </div>
+            <Button size="sm" onClick={() => openDeliveryModal()} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New Delivery
+            </Button>
+          </div>
+
+          {!selectedScheduleId ? (
+            <div className="rounded-xl border border-border/50 bg-card p-6 text-sm text-muted-foreground">
+              Select a schedule to see delivery plans.
+            </div>
+          ) : deliveriesLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-20 rounded-xl" />
+              ))}
+            </div>
+          ) : sortedDeliveries.length === 0 ? (
+            <div className="text-center py-12 bg-card rounded-xl border border-border/50">
+              <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
+              <p className="text-muted-foreground font-medium">Delivery not scheduled</p>
+              <p className="text-sm text-muted-foreground">Create a delivery to continue the flow.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sortedDeliveries.map((delivery) => (
+                <Card key={delivery.id} className="border border-border/50">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{delivery.destination}</p>
+                        <p className="text-xs text-muted-foreground">{delivery.destinationAddress}</p>
+                      </div>
+                      <Badge className={deliveryStatusStyles[delivery.status]} variant="outline">
+                        {delivery.status}
+                      </Badge>
+                    </div>
+                    <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {formatDateDisplay(delivery.scheduledDate)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
+                        {delivery.quantity} {delivery.quantityUnit}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openDeliveryModal(delivery)}>
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => removeDelivery(delivery.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Transport &amp; Logistics</h3>
+              <p className="text-sm text-muted-foreground">
+                Data-driven transport intelligence powered by Cloudflare D1.
+              </p>
+            </div>
+            {sortedDeliveries.length > 1 && (
+              <div className="w-full sm:w-72 space-y-1">
+                <Label className="text-xs text-muted-foreground">Delivery</Label>
+                <Select value={selectedDeliveryId || ""} onValueChange={(value) => setSelectedDeliveryId(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select delivery" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortedDeliveries.map((delivery) => (
+                      <SelectItem key={delivery.id} value={delivery.id}>
+                        {delivery.destination} - {formatDateDisplay(delivery.scheduledDate)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ) : deliveries.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border/50">
-                <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-                <p className="text-muted-foreground font-medium">No deliveries scheduled</p>
-                <p className="text-sm text-muted-foreground">Create your first delivery</p>
-              </div>
-            ) : (
-              <DeliveryTab
-                deliveries={deliveries}
-                schedules={schedules}
-                workers={workers}
-                onDelete={removeDelivery}
-                onEdit={(delivery) => openDeliveryModal(delivery)}
-              />
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+
+          {!selectedScheduleId ? (
+            <div className="rounded-xl border border-border/50 bg-card p-6 text-sm text-muted-foreground">
+              Select a schedule to see transport recommendations.
+            </div>
+          ) : !activeDelivery ? (
+            <div className="rounded-xl border border-border/50 bg-card p-6 text-sm text-muted-foreground">
+              Delivery not scheduled.
+            </div>
+          ) : logisticsLoading ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+            </div>
+          ) : logisticsData ? (
+            <Card className="border border-border/50">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  {logisticsData.origin} - {logisticsData.destination}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="rounded-lg border border-border/60 bg-background p-3">
+                    <p className="text-xs text-muted-foreground">Recommended vehicle</p>
+                    <p className="font-semibold text-foreground">
+                      {logisticsData.recommendedVehicle || "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-background p-3">
+                    <p className="text-xs text-muted-foreground">Distance</p>
+                    <p className="font-semibold text-foreground">
+                      {logisticsData.distanceKm ? `${logisticsData.distanceKm} km` : "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-background p-3">
+                    <p className="text-xs text-muted-foreground">Estimated cost</p>
+                    <p className="font-semibold text-foreground">
+                      {logisticsData.estimatedCostKes != null ? formatKsh(logisticsData.estimatedCostKes) : "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-background p-3">
+                    <p className="text-xs text-muted-foreground">Risk level</p>
+                    <Badge className={riskBadgeClass} variant="outline">
+                      {riskLabel}
+                    </Badge>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-background p-3">
+                    <p className="text-xs text-muted-foreground">Departure window</p>
+                    <p className="font-semibold text-foreground">
+                      {logisticsData.departureWindow || "-"}
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-sm text-muted-foreground">
+                  {logisticsData.notes || "No transport notes provided for this route."}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-xl border border-border/50 bg-card p-6">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <AlertTriangle className="h-4 w-4" />
+                {logisticsError || "No transport data available for this route."}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
 
       <Dialog open={showScheduleModal} onOpenChange={(open) => !open && closeScheduleModal()}>
@@ -677,6 +1040,37 @@ export default function Harvest() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>Assigned schedules</Label>
+                {schedules.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Create a schedule before assigning workers.</p>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {schedules.map((schedule) => (
+                      <label
+                        key={schedule.id}
+                        className="flex items-center gap-2 rounded-md border border-border/60 bg-background px-2 py-2 text-sm"
+                      >
+                        <Checkbox
+                          checked={workerForm.assignedScheduleIds.includes(schedule.id)}
+                          onCheckedChange={(checked) => {
+                            setWorkerForm((prev) => {
+                              const next = new Set(prev.assignedScheduleIds);
+                              if (checked) {
+                                next.add(schedule.id);
+                              } else {
+                                next.delete(schedule.id);
+                              }
+                              return { ...prev, assignedScheduleIds: Array.from(next) };
+                            });
+                          }}
+                        />
+                        <span className="truncate">{schedule.field} - {schedule.cropName}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="space-y-1">
                 <Label htmlFor="worker-phone">Phone</Label>
                 <Input
@@ -751,7 +1145,7 @@ export default function Harvest() {
                     <SelectValue placeholder="Select worker" />
                   </SelectTrigger>
                   <SelectContent>
-                    {workers.map((worker) => (
+                    {availableWorkersForDelivery.map((worker) => (
                       <SelectItem key={worker.id} value={worker.id}>
                         {worker.name}
                       </SelectItem>
