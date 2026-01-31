@@ -77,6 +77,7 @@ export interface CreateWorkerInput {
     phone: string;
     email?: string;
     experience?: string;
+    assignedScheduleIds?: string[];
     emergencyContact?: {
         name: string;
         relationship: string;
