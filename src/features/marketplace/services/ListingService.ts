@@ -28,6 +28,35 @@ import { uploadImage } from "./StorageService";
 const LISTINGS_COLLECTION = "listings";
 
 /**
+ * Remove undefined values from objects/arrays recursively
+ */
+const stripUndefined = <T,>(value: T): T => {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stripUndefined(item))
+      .filter((item) => item !== undefined) as unknown as T;
+  }
+
+  if (value instanceof Date || value instanceof Timestamp) {
+    return value;
+  }
+
+  if (value && typeof value === "object") {
+    const cleaned: Record<string, unknown> = {};
+    Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {
+      if (val === undefined) return;
+      const nextVal = stripUndefined(val);
+      if (nextVal !== undefined) {
+        cleaned[key] = nextVal;
+      }
+    });
+    return cleaned as T;
+  }
+
+  return value;
+};
+
+/**
  * Convert Firestore timestamp to Date
  */
 const convertTimestamp = (timestamp: any): Date => {
@@ -45,11 +74,19 @@ export async function createListing(
   listing: Omit<Listing, "id" | "createdAt" | "updatedAt">
 ): Promise<string> {
   try {
-    const cleanData: any = {
+    const payload: any = {
       ...listing,
       images: listing.images || [],
       tags: listing.tags || [],
       status: listing.status || "active",
+      phoneNumber: listing.phoneNumber || "",
+      location: {
+        county: listing.location?.county || "",
+        address: listing.location?.address || "",
+        lat: listing.location?.lat ?? null,
+        lng: listing.location?.lng ?? listing.location?.lon ?? null,
+        lon: listing.location?.lon ?? listing.location?.lng ?? null,
+      },
       availability: listing.availability
         ? {
             startDate:
@@ -67,7 +104,12 @@ export async function createListing(
       updatedAt: Timestamp.now(),
     };
 
-    const docRef = await addDoc(collection(db, LISTINGS_COLLECTION), cleanData);
+    const cleanPayload = stripUndefined(payload);
+    if (import.meta.env?.DEV) {
+      console.log("[createListing] payload", cleanPayload);
+    }
+
+    const docRef = await addDoc(collection(db, LISTINGS_COLLECTION), cleanPayload);
     return docRef.id;
   } catch (error) {
     console.error("Error creating listing:", error);
