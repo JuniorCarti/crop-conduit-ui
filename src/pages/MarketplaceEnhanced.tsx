@@ -3,13 +3,15 @@
  * Full-featured marketplace with live ratings, real-time chat, multiple payments, and map
  */
 
-import { useState, useEffect } from "react";
-import { Store, Search, Plus, Filter, MapPin, Star, MessageSquare } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Store, Search, Plus, Filter, MapPin, MessageSquare, ShoppingCart } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCard } from "@/components/shared/AlertCard";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -23,40 +25,63 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useSearchListings, useUserOrders, useCreateOrder } from "@/features/marketplace/hooks/useMarketplace";
-import { useListingRatings, useSellerRatingSummary, useCreateRating } from "@/features/marketplace/hooks/useRatings";
+import { useCreateRating } from "@/features/marketplace/hooks/useRatings";
 import { ListingCard } from "@/features/marketplace/components/ListingCard";
 import { CreateListingForm } from "@/features/marketplace/components/CreateListingForm";
 import { EnhancedChatWindow } from "@/features/marketplace/components/EnhancedChatWindow";
 import { PaymentModal } from "@/features/marketplace/components/PaymentModal";
-import { StarRating, StarRatingInput } from "@/features/marketplace/components/StarRating";
-import { MapView } from "@/features/marketplace/components/MapView";
+import { StarRatingInput } from "@/features/marketplace/components/StarRating";
+import { MarketplaceMap } from "@/features/marketplace/components/MarketplaceMap";
 import { PriceReference } from "@/features/marketplace/components/PriceReference";
+import { ReviewsSection } from "@/components/marketplace/ReviewsSection";
+import { ReviewStars } from "@/components/marketplace/ReviewStars";
+import { EditListingModal } from "@/features/marketplace/components/EditListingModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { initializeFCM } from "@/features/marketplace/services/NotificationService";
 import { setUserOnline, setUserOffline } from "@/features/marketplace/services/PresenceService";
 import { getOrCreateChat } from "@/features/marketplace/services/ChatService";
 import { getOrder } from "@/features/marketplace/services/OrderService";
 import { findFarmersInRadius } from "@/features/marketplace/services/GeolocationService";
-import type { Listing, ListingFilters, ListingSortBy, Order, Rating } from "@/features/marketplace/models/types";
-import { formatKsh } from "@/lib/currency";
+import type { Listing, ListingSortBy, Order, Rating } from "@/features/marketplace/models/types";
+import {
+  createOrderForListing,
+  subscribeToBrowseListings,
+  subscribeToIncomingOrders,
+  subscribeToMyListings,
+  subscribeToMyOrders,
+} from "@/services/marketplaceService";
+import { toast } from "sonner";
 
 export default function MarketplaceEnhanced() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { cartItems, addItem: addToCart } = useCart();
   const [showListingModal, setShowListingModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<ListingFilters>({});
   const [sortBy, setSortBy] = useState<ListingSortBy>("newest");
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [farmerCount, setFarmerCount] = useState(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [browseListings, setBrowseListings] = useState<Listing[]>([]);
+  const [myListings, setMyListings] = useState<Listing[]>([]);
+  const [buyerOrders, setBuyerOrders] = useState<Order[]>([]);
+  const [incomingOrders, setIncomingOrders] = useState<Order[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [myListingsLoading, setMyListingsLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [listingToEdit, setListingToEdit] = useState<Listing | null>(null);
+  const [showSellerPhone, setShowSellerPhone] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get("tab") || "browse");
 
   // Initialize FCM and presence on mount
   useEffect(() => {
@@ -109,19 +134,92 @@ export default function MarketplaceEnhanced() {
     }
   }, [userLocation]);
 
-  // Fetch listings
-  const { data: searchResults, isLoading: listingsLoading } = useSearchListings(filters, sortBy);
-  const listings = searchResults?.listings || [];
+  // Browse listings: show all listings from every user.
+  useEffect(() => {
+    setListingsLoading(true);
+    const unsubscribe = subscribeToBrowseListings(
+      (listings) => {
+        setBrowseListings(listings);
+        setListingsLoading(false);
+      },
+      () => {
+        toast.error("Failed to load listings");
+        setListingsLoading(false);
+      }
+    );
 
-  // Fetch user's orders
-  const { orders: buyerOrders, isLoading: ordersLoading } = useUserOrders("buyer");
-  const { orders: sellerOrders } = useUserOrders("seller");
+    return () => unsubscribe();
+  }, []);
 
-  // Get ratings for selected listing
-  const { ratings: listingRatings } = useListingRatings(selectedListing?.id || null);
-  const { summary: sellerRatingSummary } = useSellerRatingSummary(selectedListing?.sellerId || null);
+  // User-specific data: my listings, my orders, and incoming orders.
+  useEffect(() => {
+    const uid = currentUser?.uid;
+    if (!uid) {
+      setMyListings([]);
+      setBuyerOrders([]);
+      setIncomingOrders([]);
+      setMyListingsLoading(false);
+      setOrdersLoading(false);
+      return;
+    }
 
-  const createOrder = useCreateOrder();
+    setMyListingsLoading(true);
+    setOrdersLoading(true);
+    let buyerLoaded = false;
+    let incomingLoaded = false;
+    const finishOrdersLoad = () => {
+      if (buyerLoaded && incomingLoaded) {
+        setOrdersLoading(false);
+      }
+    };
+
+    const unsubMyListings = subscribeToMyListings(
+      uid,
+      (listings) => {
+        setMyListings(listings);
+        setMyListingsLoading(false);
+      },
+      () => {
+        toast.error("Failed to load your listings");
+        setMyListingsLoading(false);
+      }
+    );
+
+    const unsubMyOrders = subscribeToMyOrders(
+      uid,
+      (orders) => {
+        setBuyerOrders(orders);
+        buyerLoaded = true;
+        finishOrdersLoad();
+      },
+      () => {
+        toast.error("Failed to load your orders");
+        buyerLoaded = true;
+        finishOrdersLoad();
+      }
+    );
+
+    const unsubIncoming = subscribeToIncomingOrders(
+      uid,
+      (orders) => {
+        setIncomingOrders(orders);
+        incomingLoaded = true;
+        finishOrdersLoad();
+      },
+      () => {
+        toast.error("Failed to load incoming orders");
+        incomingLoaded = true;
+        finishOrdersLoad();
+      }
+    );
+
+    return () => {
+      unsubMyListings();
+      unsubMyOrders();
+      unsubIncoming();
+    };
+  }, [currentUser?.uid]);
+
   const createRating = useCreateRating();
 
   const handleViewListing = (listing: Listing) => {
@@ -149,14 +247,12 @@ export default function MarketplaceEnhanced() {
     if (!selectedListing || !currentUser?.uid) return;
 
     try {
-      const orderId = await createOrder.mutateAsync({
-        listingId: selectedListing.id!,
-        sellerId: selectedListing.sellerId,
-        quantityOrdered: orderQuantity,
-        pricePerUnit: selectedListing.pricePerUnit,
-        priceTotal: selectedListing.pricePerUnit * orderQuantity,
-        currency: selectedListing.currency,
-      });
+      if (selectedListing.sellerId === currentUser.uid) {
+        toast.error("You cannot order your own listing");
+        return;
+      }
+
+      const orderId = await createOrderForListing(selectedListing, currentUser.uid, orderQuantity);
 
       const order = await getOrder(orderId);
       if (order) {
@@ -165,6 +261,7 @@ export default function MarketplaceEnhanced() {
       }
     } catch (error) {
       console.error("Error creating order:", error);
+      toast.error((error as Error)?.message || "Failed to create order");
     }
   };
 
@@ -186,7 +283,7 @@ export default function MarketplaceEnhanced() {
     }
   };
 
-  const filteredListings = listings.filter((listing) => {
+  const filteredListings = browseListings.filter((listing) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -196,13 +293,153 @@ export default function MarketplaceEnhanced() {
     );
   });
 
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    if (sortBy === "price_low") return a.pricePerUnit - b.pricePerUnit;
+    if (sortBy === "price_high") return b.pricePerUnit - a.pricePerUnit;
+    const aTime = new Date(a.createdAt as Date).getTime();
+    const bTime = new Date(b.createdAt as Date).getTime();
+    return bTime - aTime;
+  });
+
+  const sortedMyListings = [...myListings].sort((a, b) => {
+    const aTime = new Date(a.createdAt as Date).getTime();
+    const bTime = new Date(b.createdAt as Date).getTime();
+    return bTime - aTime;
+  });
+
+  const selectedListingAvgRating =
+    typeof selectedListing?.avgRating === "number" ? selectedListing.avgRating : 0;
+  const selectedListingReviewCount =
+    typeof selectedListing?.reviewCount === "number" ? selectedListing.reviewCount : 0;
+  const addToCartDisabled =
+    !!selectedListing &&
+    (selectedListing.sellerId === currentUser?.uid || selectedListing.quantity <= 0);
+
+  const formatOrderTitle = (order: Order) => {
+    if (order.items && order.items.length > 0) {
+      const firstTitle = order.items[0].title;
+      const extraCount = order.items.length - 1;
+      return extraCount > 0 ? `${firstTitle} +${extraCount} more` : firstTitle;
+    }
+    return order.listingSnapshot?.title || "Order";
+  };
+
+  const formatOrderLine = (order: Order) => {
+    if (order.items && order.items.length > 0) {
+      const totalQty = order.items.reduce((sum, item) => {
+        if (typeof item.quantity === "number") return sum + item.quantity;
+        if (typeof item.qty === "number") return sum + item.qty;
+        return sum;
+      }, 0);
+      return `${totalQty} items • ${order.totalAmount ?? order.priceTotal ?? 0} ${order.currency}`;
+    }
+    return `${order.quantityOrdered ?? 0} ${order.listingSnapshot?.unit || ""} x ${
+      order.pricePerUnit ?? 0
+    } = ${order.priceTotal ?? 0} ${order.currency}`;
+  };
+
+  // Keep selected listing in sync with live browse updates (e.g., review aggregates).
+  useEffect(() => {
+    if (!selectedListing?.id) return;
+    const updated = browseListings.find((listing) => listing.id === selectedListing.id);
+    if (updated) {
+      setSelectedListing(updated);
+    }
+  }, [browseListings, selectedListing?.id]);
+
+  useEffect(() => {
+    setShowSellerPhone(false);
+  }, [selectedListing?.id]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const maskPhoneNumber = (phone: string) => {
+    const trimmed = phone.trim();
+    if (!trimmed) return "";
+    const digits = trimmed.replace(/\D/g, "");
+    if (digits.length < 4) return trimmed;
+
+    const lastThree = digits.slice(-3);
+    if (trimmed.startsWith("+254")) {
+      return `+2547****${lastThree}`;
+    }
+    if (trimmed.startsWith("07")) {
+      return `07****${lastThree}`;
+    }
+    return `${digits.slice(0, 2)}****${lastThree}`;
+  };
+
+  const handleCopyPhone = async (phone: string) => {
+    try {
+      await navigator.clipboard.writeText(phone);
+      toast.success("Phone number copied.");
+    } catch (error) {
+      console.error("Copy phone failed:", error);
+      toast.error("Failed to copy phone number.");
+    }
+  };
+
+  const handleEditListing = (listing: Listing) => {
+    setListingToEdit(listing);
+    setShowEditModal(true);
+  };
+
+  const cartCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems]
+  );
+
+  const handleAddToCart = (listing: Listing, goToCheckout = false) => {
+    if (!currentUser?.uid) {
+      navigate("/login");
+      return;
+    }
+
+    if (listing.sellerId === currentUser.uid) {
+      toast.error("You cannot buy your own listing");
+      return;
+    }
+
+    if (listing.quantity <= 0) {
+      toast.error("This listing is out of stock");
+      return;
+    }
+
+    addToCart(listing, 1);
+    toast.success("Added to cart");
+
+    if (goToCheckout) {
+      navigate("/checkout");
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <PageHeader title="Marketplace" subtitle="Buy & sell crops" icon={Store}>
-        <Button size="sm" onClick={() => setShowListingModal(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">List Crop</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="relative"
+            onClick={() => navigate("/checkout")}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center px-1">
+                {cartCount}
+              </span>
+            )}
+          </Button>
+          <Button size="sm" onClick={() => setShowListingModal(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">List Crop</span>
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="p-4 md:p-6 space-y-6">
@@ -245,7 +482,12 @@ export default function MarketplaceEnhanced() {
           </Button>
         </div>
 
-        <Tabs defaultValue="browse" className="animate-fade-up" style={{ animationDelay: "0.1s" }}>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="animate-fade-up"
+          style={{ animationDelay: "0.1s" }}
+        >
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="browse">Browse</TabsTrigger>
             <TabsTrigger value="map">Map</TabsTrigger>
@@ -261,13 +503,17 @@ export default function MarketplaceEnhanced() {
                   <Skeleton key={i} className="h-64 rounded-xl" />
                 ))}
               </div>
-            ) : filteredListings.length > 0 ? (
+            ) : sortedListings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredListings.map((listing) => (
+                {sortedListings.map((listing) => (
                   <ListingCard
                     key={listing.id}
                     listing={listing}
                     onClick={() => handleViewListing(listing)}
+                    onAddToCart={() => handleAddToCart(listing)}
+                    addToCartDisabled={
+                      listing.sellerId === currentUser?.uid || listing.quantity <= 0
+                    }
                   />
                 ))}
               </div>
@@ -282,22 +528,10 @@ export default function MarketplaceEnhanced() {
 
           {/* Map Tab */}
           <TabsContent value="map" className="mt-4">
-            {userLocation ? (
-              <MapView
-                centerLat={userLocation.lat}
-                centerLng={userLocation.lng}
-                radiusKm={10}
-                onFarmerSelect={(farmer) => {
-                  // Open chat or view farmer profile
-                  console.log("Selected farmer:", farmer);
-                }}
-              />
-            ) : (
-              <Skeleton className="h-96 rounded-lg" />
-            )}
+            <MarketplaceMap onViewDetails={handleViewListing} />
           </TabsContent>
 
-          {/* My Orders Tab */}
+                    {/* My Orders Tab */}
           <TabsContent value="my-orders" className="mt-4">
             {ordersLoading ? (
               <div className="space-y-3">
@@ -305,85 +539,119 @@ export default function MarketplaceEnhanced() {
                   <Skeleton key={i} className="h-24 rounded-xl" />
                 ))}
               </div>
-            ) : buyerOrders.length > 0 ? (
-              <div className="space-y-3">
-                {buyerOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="bg-card rounded-xl p-4 border border-border/50"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {order.listingSnapshot?.title || "Order"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {order.quantityOrdered} {order.listingSnapshot?.unit} ×{" "}
-                          {order.pricePerUnit} = {order.priceTotal} {order.currency}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Status: {order.status}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-foreground">
-                          {order.priceTotal} {order.currency}
-                        </p>
-                        {order.status === "completed" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="mt-2"
-                            onClick={() => {
-                              setCreatedOrder(order);
-                              setShowRatingModal(true);
-                            }}
-                          >
-                            Rate Seller
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             ) : (
-              <AlertCard
-                type="info"
-                title="No Orders Yet"
-                message="Your orders will appear here once you make a purchase"
-              />
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  {buyerOrders.length > 0 ? (
+                    buyerOrders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="bg-card rounded-xl p-4 border border-border/50"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {formatOrderTitle(order)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatOrderLine(order)}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Status: {order.status}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-foreground">
+                              {order.totalAmount ?? order.priceTotal ?? 0} {order.currency}
+                            </p>
+                            {order.status === "completed" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mt-2"
+                                onClick={() => {
+                                  setCreatedOrder(order);
+                                  setShowRatingModal(true);
+                                }}
+                              >
+                                Rate Seller
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <AlertCard
+                      type="info"
+                      title="No Orders Yet"
+                      message="Your orders will appear here once you make a purchase"
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  {incomingOrders.length > 0 ? (
+                    incomingOrders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="bg-card rounded-xl p-4 border border-border/50"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              Incoming order
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatOrderLine(order)}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Status: {order.status}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-foreground">
+                              {order.totalAmount ?? order.priceTotal ?? 0} {order.currency}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <AlertCard
+                      type="info"
+                      title="No Incoming Orders"
+                      message="Orders placed on your listings will appear here"
+                    />
+                  )}
+                </div>
+              </div>
             )}
           </TabsContent>
 
-          {/* My Listings Tab */}
+                    {/* My Listings Tab */}
           <TabsContent value="my-listings" className="mt-4">
-            {sellerOrders.length > 0 ? (
-              <div className="space-y-3">
-                {sellerOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="bg-card rounded-xl p-4 border border-border/50"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          Order from {order.buyerName || "Buyer"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {order.quantityOrdered} {order.listingSnapshot?.unit}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Status: {order.status}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-foreground">
-                          {order.priceTotal} {order.currency}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+            {myListingsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-64 rounded-xl" />
+                ))}
+              </div>
+            ) : sortedMyListings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {sortedMyListings.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    onClick={() => handleViewListing(listing)}
+                    onEdit={
+                      listing.sellerId === currentUser?.uid
+                        ? () => handleEditListing(listing)
+                        : undefined
+                    }
+                    editDisabled={listing.status === "pending_update"}
+                    pendingLabel="Pending review"
+                  />
                 ))}
               </div>
             ) : (
@@ -401,7 +669,12 @@ export default function MarketplaceEnhanced() {
       <Dialog open={!!selectedListing} onOpenChange={() => setSelectedListing(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selectedListing?.title}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <span>{selectedListing?.title}</span>
+              {selectedListing?.status === "pending_update" && (
+                <Badge variant="secondary">Update pending</Badge>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {selectedListing && (
             <div className="space-y-4 mt-4">
@@ -422,16 +695,17 @@ export default function MarketplaceEnhanced() {
                 </div>
               )}
 
-              {/* Rating Display */}
-              {sellerRatingSummary && (
-                <div className="flex items-center gap-2">
-                  <StarRating
-                    rating={sellerRatingSummary.avg}
-                    count={sellerRatingSummary.count}
-                    size="md"
-                  />
-                </div>
-              )}
+              {/* Listing Rating Summary */}
+              <div className="flex items-center gap-2">
+                <ReviewStars rating={selectedListingAvgRating} size="md" />
+                {selectedListingReviewCount > 0 ? (
+                  <span className="text-sm text-muted-foreground">
+                    {selectedListingAvgRating.toFixed(1)} ({selectedListingReviewCount})
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">No reviews yet</span>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -453,6 +727,53 @@ export default function MarketplaceEnhanced() {
                 <span className="text-sm">{selectedListing.location.county}</span>
               </div>
 
+              {/* Seller Phone */}
+              {selectedListing.phoneNumber && (
+                <div className="rounded-lg border border-border/50 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Seller phone</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {showSellerPhone
+                          ? selectedListing.phoneNumber
+                          : maskPhoneNumber(selectedListing.phoneNumber)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!showSellerPhone && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowSellerPhone(true)}
+                        >
+                          Contact Seller
+                        </Button>
+                      )}
+                      {showSellerPhone && (
+                        <>
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="outline"
+                          >
+                            <a href={`tel:${selectedListing.phoneNumber}`}>Call</a>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleCopyPhone(selectedListing.phoneNumber)}
+                          >
+                            Copy
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {selectedListing.description && (
                 <div>
                   <p className="text-sm font-semibold mb-2">Description</p>
@@ -462,6 +783,12 @@ export default function MarketplaceEnhanced() {
 
               {/* Market Price Reference */}
               <PriceReference listing={selectedListing} />
+
+              {/* Reviews */}
+              <ReviewsSection
+                listing={selectedListing}
+                currentUser={{ uid: currentUser?.uid, displayName: currentUser?.displayName }}
+              />
 
               {/* Quantity Selector */}
               <div>
@@ -480,6 +807,14 @@ export default function MarketplaceEnhanced() {
                 <Button variant="outline" className="flex-1" onClick={handleContactSeller}>
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Contact Seller
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleAddToCart(selectedListing, true)}
+                  disabled={addToCartDisabled}
+                >
+                  Add to Cart
                 </Button>
                 <Button className="flex-1" onClick={handlePlaceOrder}>
                   Place Order
@@ -501,6 +836,20 @@ export default function MarketplaceEnhanced() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Edit Listing Modal */}
+      <EditListingModal
+        open={showEditModal}
+        listing={listingToEdit}
+        onClose={() => {
+          setShowEditModal(false);
+          setListingToEdit(null);
+        }}
+        onSubmitted={() => {
+          setShowEditModal(false);
+          setListingToEdit(null);
+        }}
+      />
 
       {/* Chat Modal */}
       <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
@@ -559,3 +908,5 @@ export default function MarketplaceEnhanced() {
     </div>
   );
 }
+
+
