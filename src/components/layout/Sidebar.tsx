@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Lock, LogOut, Sprout } from "lucide-react";
+import { Lock, LogOut, Sprout, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,39 @@ export function Sidebar() {
               )}
             </NavLink>
           ))}
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <User
+                  className={cn(
+                    "h-5 w-5 transition-transform duration-200",
+                    !isActive && "group-hover:scale-110"
+                  )}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{t("nav.profile")}</p>
+                  <p
+                    className={cn(
+                      "text-[10px] truncate transition-colors",
+                      isActive ? "text-primary-foreground/70" : "text-muted-foreground"
+                    )}
+                  >
+                    {t("navDescriptions.profile")}
+                  </p>
+                </div>
+              </>
+            )}
+          </NavLink>
           <div className="pt-3">
             <p className="px-3 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/80">
               {t("premium.sectionLabel")}
@@ -112,7 +145,11 @@ export function Sidebar() {
       </nav>
       
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 px-2 mb-3">
+        <button
+          type="button"
+          onClick={() => navigate("/profile")}
+          className="flex w-full items-center gap-3 rounded-lg px-2 py-2 mb-3 text-left transition-colors hover:bg-secondary/60"
+        >
           <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
             <span className="text-sm font-semibold text-foreground">
               {currentUser?.displayName?.charAt(0).toUpperCase() || currentUser?.email?.charAt(0).toUpperCase() || "U"}
@@ -126,7 +163,7 @@ export function Sidebar() {
               {currentUser?.email || t("common.noEmail")}
             </p>
           </div>
-        </div>
+        </button>
         <Button
           onClick={handleLogout}
           variant="ghost"
