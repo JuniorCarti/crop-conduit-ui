@@ -3,26 +3,48 @@
  * Displays a single listing in a card format
  */
 
-import { MapPin, Star, Calendar } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatKsh } from "@/lib/currency";
 import type { Listing } from "../models/types";
 import { format } from "date-fns";
+import { ReviewStars } from "@/components/marketplace/ReviewStars";
 
 interface ListingCardProps {
   listing: Listing;
   onClick?: () => void;
   showActions?: boolean;
+  onEdit?: () => void;
+  editDisabled?: boolean;
+  pendingLabel?: string;
+  onAddToCart?: () => void;
+  addToCartDisabled?: boolean;
 }
 
-export function ListingCard({ listing, onClick, showActions = true }: ListingCardProps) {
+export function ListingCard({
+  listing,
+  onClick,
+  showActions = true,
+  onEdit,
+  editDisabled = false,
+  pendingLabel = "Update pending",
+  onAddToCart,
+  addToCartDisabled = false,
+}: ListingCardProps) {
   const mainImage = listing.images?.[0] || "/placeholder.svg";
+  const avgRating = typeof listing.avgRating === "number" ? listing.avgRating : 0;
+  const reviewCount = typeof listing.reviewCount === "number" ? listing.reviewCount : 0;
+  const hasReviews = reviewCount > 0;
+  const latestSnippet =
+    typeof listing.latestReviewSnippet === "string" && listing.latestReviewSnippet.trim().length > 0
+      ? listing.latestReviewSnippet.trim()
+      : null;
 
   return (
     <Card
-      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      className="overflow-visible hover:shadow-lg transition-shadow cursor-pointer"
       onClick={onClick}
     >
       <div className="relative aspect-video bg-muted">
@@ -43,9 +65,16 @@ export function ListingCard({ listing, onClick, showActions = true }: ListingCar
         )}
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-4 pb-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg line-clamp-1">{listing.title}</h3>
+          <div className="space-y-1">
+            <h3 className="font-semibold text-lg line-clamp-1">{listing.title}</h3>
+            {listing.status === "pending_update" && (
+              <Badge variant="secondary" className="text-xs">
+                {pendingLabel}
+              </Badge>
+            )}
+          </div>
           {listing.sellerName && (
             <Badge variant="outline" className="ml-2">
               {listing.sellerName}
@@ -67,6 +96,12 @@ export function ListingCard({ listing, onClick, showActions = true }: ListingCar
               {formatKsh(listing.pricePerUnit)}/{listing.unit}
             </span>
           </div>
+
+          {latestSnippet && (
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              "{latestSnippet}"
+            </p>
+          )}
 
           {listing.availability && (
             <div className="flex items-center gap-2">
@@ -91,18 +126,55 @@ export function ListingCard({ listing, onClick, showActions = true }: ListingCar
       </CardContent>
 
       {showActions && (
-        <CardFooter className="p-4 pt-0 flex justify-between items-center">
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">4.5</span>
-            <span className="text-xs text-muted-foreground">(12)</span>
+        <CardFooter className="p-4 pt-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0 flex items-center gap-2">
+            <ReviewStars rating={avgRating} size="sm" />
+            {hasReviews ? (
+              <span className="text-xs text-muted-foreground truncate">({reviewCount})</span>
+            ) : (
+              <span className="text-xs text-muted-foreground truncate">No reviews</span>
+            )}
           </div>
-          <Button size="sm" onClick={(e) => {
-            e.stopPropagation();
-            onClick?.();
-          }}>
-            View Details
-          </Button>
+          <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
+            {onAddToCart && (
+              <Button
+                size="sm"
+                disabled={addToCartDisabled}
+                className="whitespace-nowrap shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart();
+                }}
+              >
+                Add to Cart
+              </Button>
+            )}
+            {onEdit && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={editDisabled}
+                className="whitespace-nowrap shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                Edit
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant={onAddToCart ? "outline" : "default"}
+              className="whitespace-nowrap shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick?.();
+              }}
+            >
+              View Details
+            </Button>
+          </div>
         </CardFooter>
       )}
     </Card>
