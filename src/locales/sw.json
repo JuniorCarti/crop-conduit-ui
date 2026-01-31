@@ -29,6 +29,7 @@
     "community": "Jumuiya",
     "home": "Nyumbani",
     "more": "Zaidi",
+    "profile": "Wasifu",
     "logout": "Toka"
   },
   "navDescriptions": {
@@ -42,7 +43,8 @@
     "harvest": "Msimamizi wa Mavuno",
     "finance": "Usimamizi wa Fedha",
     "marketplace": "Nunua na Uuze",
-    "community": "Unganisha"
+    "community": "Unganisha",
+    "profile": "Maelezo ya akaunti"
   },
   "auth": {
     "logoutSuccess": "Umetoka kwa mafanikio",
@@ -178,6 +180,7 @@
       "error": "Imeshindikana kutengeneza ushauri.",
       "why": "Kwa nini",
       "selectFarm": "Chagua shamba/eneo kwanza.",
+      "sectionLabel": "Ushauri wa AI (Mwongozo wa Hatua)",
       "cropLabel": "Zao",
       "cropPlaceholder": "Chagua zao",
       "stageLabel": "Hatua ya ukuaji",
@@ -270,6 +273,39 @@
     "actions": {
       "retry": "Jaribu tena"
     },
+    "signals": {
+      "title": "Ishara za Hali ya Hewa",
+      "subtitle": "Ishara tu. Mapendekezo yapo kwenye AI Advisory.",
+      "selectFarm": "Chagua shamba ili kuona ishara za hali ya hewa.",
+      "noData": "Data ya hali ya hewa haipatikani.",
+      "empty": "Hakuna ishara zinazopatikana kwa utabiri huu.",
+      "table": {
+        "date": "Tarehe",
+        "min": "Chini",
+        "max": "Juu",
+        "rainChance": "Uwezekano wa mvua",
+        "condition": "Hali"
+      }
+    },
+    "keyAlerts": {
+      "title": "Tahadhari muhimu"
+    },
+    "locationHeader": {
+      "range": "Siku {{days}} zijazo",
+      "cropsEmpty": "Hakuna mazao yaliyotajwa"
+    },
+    "snapshot": {
+      "title": "Muhtasari wa siku 7",
+      "subtitle": "Muhtasari wa joto na mvua.",
+      "viewTable": "Tazama jedwali kamili",
+      "hideTable": "Ficha jedwali kamili"
+    },
+    "alertsSection": {
+      "title": "Arifa na taarifa",
+      "notifications": "Arifa",
+      "notificationsHint": "Dhibiti njia za arifa na uone taarifa za hivi karibuni.",
+      "recent": "Arifa za hivi karibuni"
+    },
     "error": {
       "title": "Imeshindikana kupakia",
       "message": "Tafadhali jaribu tena baada ya muda mfupi.",
@@ -289,9 +325,18 @@
       "title": "Ongeza shamba",
       "name": "Jina la shamba",
       "county": "Kaunti",
+      "countyPlaceholder": "Chagua kaunti",
+      "subCounty": "Kaunti ndogo / Eneo Bunge",
+      "subCountyPlaceholder": "Chagua kaunti ndogo",
       "ward": "Wadi",
+      "wardPlaceholder": "Chagua wadi",
       "lat": "Latitudo",
       "lon": "Longitudo",
+      "cropsLabel": "Mazao yaliyopandwa",
+      "cropsPlaceholder": "Ongeza zao (mf. Mahindi)",
+      "cropsAdd": "Ongeza zao",
+      "cropsHint": "Bonyeza Enter au tumia koma kuongeza mazao mengi.",
+      "cropsRemove": "Ondoa zao",
       "elevation": "Urefu (hiari)",
       "useLocation": "Tumia eneo la sasa",
       "locationDenied": "Ruhusu upatikanaji wa eneo kwenye kivinjari.",
