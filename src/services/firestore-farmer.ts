@@ -7,39 +7,60 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
+  limit,
+  query,
   setDoc,
   updateDoc,
+  where,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const FARMER_PROFILES_COLLECTION = "farmerProfiles";
+const FARMER_PROFILES_COLLECTION = "farmers";
 
 /**
  * Farmer Profile Interface
- * Stores all farmer registration data including Supabase Storage URLs
+ * Stores all farmer registration data including Cloudflare R2 image URLs
  */
 export interface FarmerProfile {
   id?: string;
-  userId: string;
+  uid: string;
+  email?: string;
   fullName: string;
+  phone: string;
   county: string;
   constituency: string;
   ward: string;
   village: string;
-  farmSize: number; // acres
-  farmingType: "Crop" | "Livestock" | "Mixed";
+  farmSize?: number;
+  farmingType?: string;
+  farmSizeAcres?: number;
+  typeOfFarming?: "crop" | "livestock" | "mixed";
   crops: string[];
-  livestock: string[];
-  experience?: number; // years
-  tools?: string;
+  experienceYears?: number;
+  farmExperienceYears?: number;
+  toolsOwned?: string;
+  toolsOrEquipment?: string;
   challenges?: string;
-  monthlyProduction?: string;
-  phone: string;
-  farmPhotoUrl?: string; // Supabase Storage URL (replaces Firebase Storage path)
+  primaryChallenges?: string;
+  estimatedMonthlyProduction?: string;
+  farmPhotoUrl?: string | null;
+  pending?: {
+    status?: string;
+    submittedAt?: Date | Timestamp | string;
+    reviewEtaHours?: number;
+  };
   createdAt?: Date | Timestamp | string;
   updatedAt?: Date | Timestamp | string;
 }
+
+const normalizeProfile = (id: string, data: Record<string, any>): FarmerProfile => ({
+  id,
+  ...data,
+  createdAt: data.createdAt?.toDate?.() || data.createdAt,
+  updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
+});
 
 /**
  * Get a farmer profile by user ID
@@ -51,12 +72,7 @@ export async function getFarmerProfile(userId: string): Promise<FarmerProfile | 
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        ...data,
-        createdAt: data.createdAt?.toDate?.() || data.createdAt,
-        updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
-      } as FarmerProfile;
+      return normalizeProfile(docSnap.id, data);
     }
     return null;
   } catch (error) {
@@ -66,20 +82,92 @@ export async function getFarmerProfile(userId: string): Promise<FarmerProfile | 
 }
 
 /**
+ * Get a farmer profile by uid, with migration fallback from email-based documents.
+ */
+export async function getFarmerProfileWithMigration(
+  userId: string,
+  email?: string,
+  debug?: boolean
+): Promise<FarmerProfile | null> {
+  const log = (...args: any[]) => {
+    if (debug) {
+      console.log("[FarmerProfile]", ...args);
+    }
+  };
+
+  try {
+    log("Fetching profile for uid:", userId);
+    const docRef = doc(db, FARMER_PROFILES_COLLECTION, userId);
+    const docSnap = await getDoc(docRef);
+
+    log("farmers/{uid} exists:", docSnap.exists());
+    if (docSnap.exists()) {
+      return normalizeProfile(docSnap.id, docSnap.data());
+    }
+
+    if (!email) {
+      log("No email available for fallback lookup.");
+      return null;
+    }
+
+    const fallbackQuery = query(
+      collection(db, FARMER_PROFILES_COLLECTION),
+      where("email", "==", email),
+      limit(1)
+    );
+    const fallbackSnap = await getDocs(fallbackQuery);
+    log("fallback query found profile:", !fallbackSnap.empty);
+
+    if (fallbackSnap.empty) {
+      return null;
+    }
+
+    const legacyDoc = fallbackSnap.docs[0];
+    const legacyData = legacyDoc.data();
+    const createdAt = legacyData.createdAt ?? Timestamp.now();
+    const migratedData = {
+      ...legacyData,
+      uid: userId,
+      email,
+      createdAt,
+      updatedAt: Timestamp.now(),
+    };
+
+    await setDoc(docRef, migratedData, { merge: true });
+    return normalizeProfile(docRef.id, migratedData);
+  } catch (error) {
+    console.error("Error getting farmer profile with migration:", error);
+    throw error;
+  }
+}
+
+/**
  * Create or update a farmer profile
  * 
  * @param profile - Farmer profile data (without id, createdAt, updatedAt)
- * @returns The document ID (which is the userId)
+ * @returns The document ID (which is the uid)
  */
 export async function saveFarmerProfile(
   profile: Omit<FarmerProfile, "id" | "createdAt" | "updatedAt">
 ): Promise<string> {
   try {
+    const docRef = doc(db, FARMER_PROFILES_COLLECTION, profile.uid);
+    const existing = await getDoc(docRef);
+    const createdAt = existing.exists()
+      ? existing.data().createdAt ?? Timestamp.now()
+      : Timestamp.now();
+
     const profileData = {
       ...profile,
-      farmSize: typeof profile.farmSize === "string" ? parseFloat(profile.farmSize) : profile.farmSize,
-      experience: profile.experience ? (typeof profile.experience === "string" ? parseInt(profile.experience) : profile.experience) : undefined,
-      createdAt: Timestamp.now(),
+      farmSizeAcres:
+        typeof profile.farmSizeAcres === "string"
+          ? parseFloat(profile.farmSizeAcres)
+          : profile.farmSizeAcres,
+      farmExperienceYears:
+        profile.farmExperienceYears && typeof profile.farmExperienceYears === "string"
+          ? parseInt(profile.farmExperienceYears)
+          : profile.farmExperienceYears,
+      createdAt,
       updatedAt: Timestamp.now(),
     };
 
@@ -89,10 +177,9 @@ export async function saveFarmerProfile(
     ) as any;
 
     // Use userId as the document ID for easy lookup
-    const docRef = doc(db, FARMER_PROFILES_COLLECTION, profile.userId);
     await setDoc(docRef, cleanData, { merge: true });
 
-    return profile.userId;
+    return profile.uid;
   } catch (error) {
     console.error("Error saving farmer profile:", error);
     throw error;
@@ -114,11 +201,11 @@ export async function updateFarmerProfile(
     };
 
     // Convert farmSize and experience if they're strings
-    if (updateData.farmSize && typeof updateData.farmSize === "string") {
-      updateData.farmSize = parseFloat(updateData.farmSize);
+    if (updateData.farmSizeAcres && typeof updateData.farmSizeAcres === "string") {
+      updateData.farmSizeAcres = parseFloat(updateData.farmSizeAcres);
     }
-    if (updateData.experience && typeof updateData.experience === "string") {
-      updateData.experience = parseInt(updateData.experience);
+    if (updateData.farmExperienceYears && typeof updateData.farmExperienceYears === "string") {
+      updateData.farmExperienceYears = parseInt(updateData.farmExperienceYears);
     }
 
     // Clean undefined values
