@@ -1,14 +1,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, Send, Square } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Loader2, Mic, Send, Square } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { dispatchAshaActions } from "@/services/ashaActionDispatcher";
 import { generateAdvisory } from "@/services/advisoryService";
 import { requestSpeechAudio } from "@/services/voiceAgentService";
+import { toast } from "sonner";
 
 type VoiceStatus = "idle" | "listening" | "thinking" | "speaking";
 
@@ -431,6 +436,9 @@ const toSpeakText = (
 };
 
 export function AshaVoiceAgent() {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const cart = useCart();
   const [sessionId, setSessionId] = useState(() => getOrCreateSessionId());
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "sw">(
     getStoredLanguage()
@@ -445,6 +453,7 @@ export function AshaVoiceAgent() {
   const [voiceReplyEnabled, setVoiceReplyEnabled] = useState(true);
   const [lastNeedsHash, setLastNeedsHash] = useState<string | null>(null);
   const [lastAssistantText, setLastAssistantText] = useState("");
+  const [isDispatchingActions, setIsDispatchingActions] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState<
     {
       farm?: ConversationContext["farm"];
@@ -786,6 +795,34 @@ export function AshaVoiceAgent() {
     [appendAdvisory, appendAssistantText, copy.watchOuts, maybeSpeak]
   );
 
+  const runAshaActions = useCallback(
+    async (payload: any) => {
+      if (!payload?.actions && !payload?.uiHint) return;
+      setIsDispatchingActions(true);
+      try {
+        await dispatchAshaActions(payload, {
+          navigate,
+          cart,
+          userId: currentUser?.uid,
+          notify: (message, type) => {
+            if (type === "error") {
+              toast.error(message);
+              return;
+            }
+            if (type === "success") {
+              toast.success(message);
+              return;
+            }
+            toast.info(message);
+          },
+        });
+      } finally {
+        setIsDispatchingActions(false);
+      }
+    },
+    [cart, currentUser?.uid, navigate]
+  );
+
   const sendToAsha = useCallback(
     async (
       message: string,
@@ -819,21 +856,25 @@ export function AshaVoiceAgent() {
       console.log("POST /advisory/generate payload", payload);
 
       try {
-        const data = await generateAdvisory(payload);
+        const token = currentUser ? await currentUser.getIdToken() : undefined;
+        const data = await generateAdvisory(payload, { token });
         console.log("Worker response", data);
 
         if (data?.mode === "collect_context") {
           await handleBackendCollectContext(data, message, source);
+          void runAshaActions(data);
           return;
         }
 
         if (data?.mode === "advisory" && data?.advisory) {
           handleAdvisoryResponse(data, source);
+          void runAshaActions(data);
           return;
         }
 
         if (data?.advisory) {
           handleAdvisoryResponse(data, source);
+          void runAshaActions(data);
           return;
         }
 
@@ -849,6 +890,7 @@ export function AshaVoiceAgent() {
           maybeSpeak(copy.howCanIHelp, source);
         }
 
+        void runAshaActions(data);
         setStatus("idle");
         setPhase("collect_context");
       } catch (error: any) {
@@ -868,9 +910,11 @@ export function AshaVoiceAgent() {
       appendAssistantText,
       buildPendingConfirm,
       copy.howCanIHelp,
+      currentUser,
       handleAdvisoryResponse,
       handleBackendCollectContext,
       maybeSpeak,
+      runAshaActions,
     ]
   );
 
@@ -1242,6 +1286,13 @@ export function AshaVoiceAgent() {
             {status === "speaking" ? copy.voicePlaying : ""}
           </div>
         </div>
+
+        {isDispatchingActions && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Applying actions...</span>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
