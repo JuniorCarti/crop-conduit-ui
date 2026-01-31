@@ -99,6 +99,7 @@ export async function seedDemoData(userId: string): Promise<void> {
                 phone: "+254712345678",
                 email: "john.omondi@farm.local",
                 experience: "8 years",
+                assignedScheduleIds: [scheduleIds[0]],
                 emergencyContact: {
                     name: "Mary Omondi",
                     relationship: "Sister",
@@ -111,6 +112,7 @@ export async function seedDemoData(userId: string): Promise<void> {
                 phone: "+254723456789",
                 email: "fatima.hassan@farm.local",
                 experience: "5 years",
+                assignedScheduleIds: [scheduleIds[0], scheduleIds[1]],
             },
             {
                 name: "David Kipchoge",
@@ -118,6 +120,7 @@ export async function seedDemoData(userId: string): Promise<void> {
                 phone: "+254734567890",
                 email: "david.kipchoge@farm.local",
                 experience: "3 years",
+                assignedScheduleIds: [scheduleIds[2]],
             },
             {
                 name: "Samuel Njoroge",
@@ -125,6 +128,7 @@ export async function seedDemoData(userId: string): Promise<void> {
                 phone: "+254745678901",
                 email: "samuel.njoroge@farm.local",
                 experience: "6 years",
+                assignedScheduleIds: [scheduleIds[1], scheduleIds[2]],
                 emergencyContact: {
                     name: "Grace Njoroge",
                     relationship: "Wife",
