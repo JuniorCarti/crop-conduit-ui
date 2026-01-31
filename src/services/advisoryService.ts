@@ -1,7 +1,15 @@
-export async function generateAdvisory(payload: Record<string, any>) {
+export async function generateAdvisory(
+  payload: Record<string, any>,
+  options?: { token?: string }
+) {
   const baseUrl = import.meta.env.VITE_ADVISORY_API_BASE_URL;
   if (!baseUrl) {
     throw new Error("Missing VITE_ADVISORY_API_BASE_URL");
+  }
+
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (options?.token) {
+    headers.Authorization = `Bearer ${options.token}`;
   }
 
   const controller = new AbortController();
@@ -10,7 +18,7 @@ export async function generateAdvisory(payload: Record<string, any>) {
   try {
     const response = await fetch(`${baseUrl.replace(/\/$/, "")}/advisory/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
