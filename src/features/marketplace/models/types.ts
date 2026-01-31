@@ -36,7 +36,13 @@ export interface UserProfile {
 // LISTINGS
 // ============================================================================
 
-export type ListingStatus = "active" | "paused" | "sold" | "expired";
+export type ListingStatus =
+  | "active"
+  | "pending_update"
+  | "rejected"
+  | "paused"
+  | "sold"
+  | "expired";
 
 export interface Listing {
   id?: string;
@@ -47,17 +53,25 @@ export interface Listing {
   unit: "kg" | "tons" | "bags" | "crates" | "pieces";
   pricePerUnit: number;
   currency: "KES" | "USD";
+  phoneNumber: string;
   location: {
     lat: number;
     lng: number;
+    lon?: number;
     county: string;
     address?: string;
   };
   images: string[]; // Supabase Storage URLs
   sellerId: string;
   sellerName?: string;
+  sellerPhone?: string;
   description?: string;
   tags?: string[];
+  avgRating?: number;
+  reviewCount?: number;
+  latestReviewSnippet?: string;
+  latestReviewAt?: Date | Timestamp;
+  lastEditRequestId?: string;
   availability?: {
     startDate: Date | Timestamp;
     endDate: Date | Timestamp;
@@ -95,6 +109,7 @@ export type ListingSortBy = "nearest" | "price_low" | "price_high" | "rating" | 
 // ============================================================================
 
 export type OrderStatus =
+  | "pending"
   | "pending_payment"
   | "paid_in_escrow"
   | "shipped"
@@ -105,17 +120,59 @@ export type OrderStatus =
 
 export interface Order {
   id?: string;
-  listingId: string;
+  listingId?: string;
   listingSnapshot?: Listing; // Snapshot at time of order
+  buyerProfileSnapshot?: {
+    fullName?: string;
+    phone?: string;
+    email?: string;
+    county?: string;
+    town?: string;
+    addressLine?: string;
+    landmark?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
+  items?: {
+    listingId: string;
+    title: string;
+    unit: string;
+    quantity?: number;
+    pricePerUnit?: number;
+    qty?: number;
+    unitPrice?: number;
+    sellerId?: string;
+    imageUrl?: string;
+    subtotal: number;
+  }[];
   buyerId: string;
   buyerName?: string;
   sellerId: string;
   sellerName?: string;
-  quantityOrdered: number;
-  pricePerUnit: number;
-  priceTotal: number;
+  quantityOrdered?: number;
+  pricePerUnit?: number;
+  priceTotal?: number;
+  totalAmount?: number;
   currency: "KES" | "USD";
   status: OrderStatus;
+  totals?: {
+    itemsCount?: number;
+    subtotal?: number;
+    total?: number;
+  };
+  payment?: {
+    method?: string;
+    status?: string;
+    providerRef?: string;
+  };
+  delivery?: {
+    county?: string;
+    town?: string;
+    addressLine?: string;
+    landmark?: string;
+    lat?: number | null;
+    lng?: number | null;
+  };
   shippingInfo?: {
     address: string;
     county: string;
