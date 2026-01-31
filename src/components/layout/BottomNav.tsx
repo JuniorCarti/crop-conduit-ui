@@ -11,8 +11,8 @@ import { getFeatureById } from "@/config/featureAccess";
 import { usePremiumModalStore } from "@/store/premiumStore";
 import { useTranslation } from "react-i18next";
 
-const mainNavIds = ["dashboard", "market", "crops", "resources"];
-const moreNavIds = ["irrigation", "asha", "climate", "harvest", "finance", "marketplace", "community"];
+const mainNavIds = ["dashboard", "market", "asha", "climate"];
+const moreNavIds = ["crops", "resources", "irrigation", "harvest", "finance", "marketplace", "community"];
 
 export function BottomNav() {
   const location = useLocation();
