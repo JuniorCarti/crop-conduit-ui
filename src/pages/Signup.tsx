@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { ensureAuthToken } from "@/services/authService";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -149,6 +150,7 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const userCredential = await signup(formData.email, formData.password, formData.displayName);
+      await ensureAuthToken();
       if (farmerData && userCredential?.user?.uid) {
         try {
           await saveProfile(userCredential.user.uid, userCredential.user.email);
@@ -168,6 +170,7 @@ export default function Signup() {
     setIsSubmitting(true);
     try {
       const userCredential = await signInWithGoogle();
+      await ensureAuthToken();
       if (farmerData && userCredential?.user?.uid) {
         try {
           await saveProfile(userCredential.user.uid, userCredential.user.email);
@@ -208,6 +211,7 @@ export default function Signup() {
       setIsSubmitting(true);
       try {
         const userCredential = await verifyPhoneOTP(phoneConfirmation, formData.otp);
+        await ensureAuthToken();
         if (farmerData && userCredential?.user?.uid) {
           try {
             await saveProfile(userCredential.user.uid, userCredential.user.email);
