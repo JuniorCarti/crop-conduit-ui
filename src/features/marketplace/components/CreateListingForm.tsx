@@ -3,22 +3,43 @@
  * Form for sellers to create new listings
  */
 
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, LocateFixed, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCreateListing } from "../hooks/useMarketplace";
-import { uploadImage } from "../services/StorageService";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Listing } from "../models/types";
+import { createListingWithProfile, uploadToR2 } from "@/services/marketplaceService";
+
+const normalizePhoneNumber = (value: string): string | null => {
+  const trimmed = value.trim().replace(/\s+/g, "").replace(/-/g, "");
+  if (!trimmed) return null;
+
+  let normalized = trimmed;
+  if (trimmed.startsWith("0")) {
+    normalized = `+254${trimmed.slice(1)}`;
+  } else if (trimmed.startsWith("254")) {
+    normalized = `+${trimmed}`;
+  } else if (!trimmed.startsWith("+")) {
+    return null;
+  }
+
+  const digits = normalized.startsWith("+") ? normalized.slice(1) : normalized;
+  if (!/^\d+$/.test(digits)) return null;
+  if (digits.length < 10 || digits.length > 13) return null;
+  return normalized;
+};
+
+const isValidPhoneNumber = (value: string) => Boolean(normalizePhoneNumber(value));
 
 const listingSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -29,6 +50,12 @@ const listingSchema = z.object({
   pricePerUnit: z.number().min(1, "Price must be greater than 0"),
   currency: z.enum(["KES", "USD"]),
   county: z.string().min(1, "County is required"),
+  phoneNumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine((value) => isValidPhoneNumber(value), {
+      message: "Enter a valid Kenyan phone number",
+    }),
   address: z.string().optional(),
   lat: z.number().optional(),
   lng: z.number().optional(),
@@ -43,11 +70,21 @@ interface CreateListingFormProps {
   onCancel?: () => void;
 }
 
+const MAX_IMAGES = 5;
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/jpg"]);
+const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
+
 export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProps) {
   const { currentUser } = useAuth();
-  const [images, setImages] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const createListing = useCreateListing();
+  const [uploadProgress, setUploadProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [locationMessage, setLocationMessage] = useState<{ type: "warning" | "error"; text: string } | null>(null);
 
   const {
     register,
@@ -63,28 +100,125 @@ export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProp
     },
   });
 
+  useEffect(() => {
+    if (currentUser?.phoneNumber) {
+      const normalized = normalizePhoneNumber(currentUser.phoneNumber);
+      if (normalized) {
+        setValue("phoneNumber", normalized, { shouldDirty: false });
+      }
+    }
+  }, [currentUser?.phoneNumber, setValue]);
+
+  const hasLocation = Boolean(locationCoords);
+
+  const locationBadge = useMemo(() => {
+    if (!hasLocation) return null;
+    return (
+      <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-200">
+        Location captured
+      </Badge>
+    );
+  }, [hasLocation]);
+
   const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || !currentUser?.uid) return;
 
+    const selectedFiles = Array.from(files);
+    const remainingSlots = MAX_IMAGES - imageUrls.length;
+
+    if (remainingSlots <= 0) {
+      toast.error(`You can upload a maximum of ${MAX_IMAGES} images.`);
+      event.target.value = "";
+      return;
+    }
+
+    if (selectedFiles.length > remainingSlots) {
+      toast.error(`Only ${remainingSlots} more image(s) can be added (max ${MAX_IMAGES}).`);
+      event.target.value = "";
+      return;
+    }
+
+    for (const file of selectedFiles) {
+      const extension = file.name.split(".").pop()?.toLowerCase() || "";
+      const isTypeAllowed =
+        ALLOWED_IMAGE_TYPES.has(file.type) || ALLOWED_IMAGE_EXTENSIONS.has(extension);
+      if (!isTypeAllowed) {
+        toast.error("Only JPG, JPEG, PNG, or WEBP images are allowed.");
+        event.target.value = "";
+        return;
+      }
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        toast.error("Each image must be 5MB or smaller.");
+        event.target.value = "";
+        return;
+      }
+    }
+
+    let didFail = false;
     try {
       setUploadingImages(true);
-      // Upload to Supabase Storage
-      const uploadPromises = Array.from(files).map((file) =>
-        uploadImage(file, "listings", currentUser.uid)
-      );
-      const urls = await Promise.all(uploadPromises);
-      setImages((prev) => [...prev, ...urls]);
+      setUploadError(null);
+      setUploadProgress({ completed: 0, total: selectedFiles.length });
+      const urls = await uploadToR2(selectedFiles);
+      setImageUrls((prev) => [...prev, ...urls]);
+      setUploadProgress({ completed: selectedFiles.length, total: selectedFiles.length });
       toast.success("Images uploaded successfully");
     } catch (error: any) {
-      toast.error(error.message || "Failed to upload images");
+      const message = error?.message || "Failed to upload images";
+      setUploadError(message);
+      toast.error(message);
+      didFail = true;
     } finally {
       setUploadingImages(false);
+      if (!didFail) {
+        setUploadProgress(null);
+      }
+      event.target.value = "";
     }
   };
 
   const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      const message =
+        "Geolocation is not supported on this device. Listings without location won't appear on the Map tab.";
+      setLocationMessage({ type: "warning", text: message });
+      toast.warning(message);
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationMessage(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        setLocationCoords({ lat, lon });
+        setValue("lat", lat, { shouldValidate: false, shouldDirty: true });
+        // Keep existing lng wiring for compatibility while also storing lon.
+        setValue("lng", lon, { shouldValidate: false, shouldDirty: true });
+        setIsLocating(false);
+        toast.success("Location captured.");
+      },
+      (error) => {
+        console.warn("Geolocation error:", error);
+        setIsLocating(false);
+        const message =
+          "We couldn't access your location. You can still create the listing, but it won't appear on the Map tab.";
+        setLocationMessage({ type: "warning", text: message });
+        toast.warning(message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
   };
 
   const onSubmit = async (data: ListingFormData) => {
@@ -93,13 +227,39 @@ export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProp
       return;
     }
 
-    if (images.length === 0) {
+    if (uploadingImages) {
+      toast.error("Please wait for image uploads to finish");
+      return;
+    }
+
+    if (uploadError) {
+      toast.error("Please resolve image upload errors before creating a listing");
+      return;
+    }
+
+    if (imageUrls.length === 0) {
       toast.error("Please upload at least one image");
       return;
     }
 
+    if (!hasLocation) {
+      const message =
+        "Listings without location coordinates will not appear on the Map tab.";
+      setLocationMessage({ type: "warning", text: message });
+      toast.warning(message);
+    }
+
     try {
-      const listing: Omit<Listing, "id" | "createdAt" | "updatedAt" | "sellerId"> = {
+      setIsSubmitting(true);
+      const lat = locationCoords?.lat ?? data.lat ?? null;
+      const lon = locationCoords?.lon ?? data.lng ?? null;
+      const normalizedPhone = normalizePhoneNumber(data.phoneNumber);
+      if (!normalizedPhone) {
+        toast.error("Please enter a valid phone number.");
+        return;
+      }
+
+      const listing = {
         title: data.title,
         cropType: data.cropType,
         variety: data.variety,
@@ -107,22 +267,32 @@ export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProp
         unit: data.unit,
         pricePerUnit: data.pricePerUnit,
         currency: data.currency,
+        phoneNumber: normalizedPhone,
         location: {
-          lat: data.lat || 0,
-          lng: data.lng || 0,
-          county: data.county,
-          address: data.address,
+          lat,
+          lon,
+          // Preserve lng for existing UI/hooks that expect it.
+          lng: lon,
+          county: data.county || "",
+          address: data.address || "",
         },
-        images,
+        images: imageUrls || [],
+        imageUrls,
         description: data.description,
         tags: data.tags || [],
         status: "active",
+      } as Omit<Listing, "id" | "createdAt" | "updatedAt" | "sellerId"> & {
+        imageUrls: string[];
       };
 
-      await createListing.mutateAsync(listing);
+      await createListingWithProfile(listing, currentUser);
+      toast.success("Listing created successfully");
       onSuccess?.();
     } catch (error: any) {
       console.error("Error creating listing:", error);
+      toast.error(error?.message || "Failed to create listing");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -218,10 +388,46 @@ export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="county">County *</Label>
-              <Input id="county" {...register("county")} placeholder="e.g., Nakuru" />
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="county">County *</Label>
+                {locationBadge}
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <Input id="county" {...register("county")} placeholder="e.g., Nakuru" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 whitespace-nowrap"
+                  onClick={handleUseMyLocation}
+                  disabled={isLocating}
+                >
+                  {isLocating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Locating...
+                    </>
+                  ) : (
+                    <>
+                      <LocateFixed className="h-4 w-4" />
+                      Use my location
+                    </>
+                  )}
+                </Button>
+              </div>
               {errors.county && (
                 <p className="text-sm text-destructive mt-1">{errors.county.message}</p>
+              )}
+              {locationMessage && (
+                <p
+                  className={`text-xs mt-2 ${
+                    locationMessage.type === "error"
+                      ? "text-destructive"
+                      : "text-amber-600"
+                  }`}
+                >
+                  {locationMessage.text}
+                </p>
               )}
             </div>
 
@@ -240,6 +446,21 @@ export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProp
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="phoneNumber">Phone Number *</Label>
+            <div className="mt-2 flex items-center gap-2">
+              <Input
+                id="phoneNumber"
+                {...register("phoneNumber")}
+                placeholder="e.g., 0712345678 or +254712345678"
+              />
+              <Phone className="h-4 w-4 text-muted-foreground" />
+            </div>
+            {errors.phoneNumber && (
+              <p className="text-sm text-destructive mt-1">{errors.phoneNumber.message}</p>
+            )}
           </div>
 
           <div>
@@ -275,19 +496,24 @@ export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProp
                     </>
                   )}
                 </Button>
+                {uploadingImages && uploadProgress && (
+                  <span className="text-xs text-muted-foreground">
+                    Uploading {uploadProgress.completed}/{uploadProgress.total}...
+                  </span>
+                )}
                 <input
                   id="image-upload"
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   onChange={handleImageUpload}
                 />
               </div>
 
-              {images.length > 0 && (
+              {imageUrls.length > 0 && (
                 <div className="grid grid-cols-4 gap-2 gap-2">
-                  {images.map((url, index) => (
+                  {imageUrls.map((url, index) => (
                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
                       <img
                         src={url}
@@ -316,8 +542,8 @@ export function CreateListingForm({ onSuccess, onCancel }: CreateListingFormProp
                 Cancel
               </Button>
             )}
-            <Button type="submit" disabled={createListing.isPending}>
-              {createListing.isPending ? (
+            <Button type="submit" disabled={isSubmitting || uploadingImages || !!uploadError}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...
