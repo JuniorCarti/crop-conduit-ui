@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Upload, MapPin, User, Phone, Calendar, Package, AlertCircle, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ArrowRight, ArrowLeft, Upload, MapPin, User, Phone, Calendar, Package, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { AlertCard } from "@/components/shared/AlertCard";
-import { uploadImage, STORAGE_CATEGORIES } from "@/services/storage";
 import { toast } from "sonner";
-
-const kenyanCounties = [
-  "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika", "Malindi", 
-  "Kitale", "Garissa", "Kakamega", "Nyeri", "Meru", "Machakos", "Uasin Gishu"
-];
+import { getCounties, getConstituencies, getWards } from "@/utils/kenyaAdminData";
+import { useAuth } from "@/contexts/AuthContext";
+import { uploadToR2 } from "@/services/marketplaceService";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 
 const farmingTypes = ["Crop", "Livestock", "Mixed"];
 
@@ -28,33 +27,75 @@ const commonLivestock = [
   "Cattle", "Goats", "Sheep", "Chicken", "Pigs", "Rabbits", "Ducks", "Turkeys"
 ];
 
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/jpg"]);
+const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
+
 export default function FarmerRegistration() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
+  const initialData = location.state?.farmerData;
+  const isEditing = Boolean(currentUser && initialData);
   const [currentStep, setCurrentStep] = useState(1);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
-    county: "",
-    constituency: "",
-    ward: "",
-    village: "",
-    farmSize: "",
-    farmingType: "",
-    crops: [] as string[],
-    livestock: [] as string[],
-    experience: "",
-    tools: "",
-    challenges: "",
-    monthlyProduction: "",
-    phone: "",
+    fullName: initialData?.fullName ?? "",
+    county: initialData?.county ?? "",
+    constituency: initialData?.constituency ?? "",
+    ward: initialData?.ward ?? "",
+    village: initialData?.village ?? "",
+    farmSize: initialData?.farmSize ?? (initialData?.farmSizeAcres ? String(initialData.farmSizeAcres) : ""),
+    farmingType:
+      initialData?.farmingType ??
+      (initialData?.typeOfFarming
+        ? `${initialData.typeOfFarming.charAt(0).toUpperCase()}${initialData.typeOfFarming.slice(1)}`
+        : ""),
+    crops: initialData?.crops ?? [],
+    livestock: initialData?.livestock ?? [],
+    experience:
+      initialData?.experience ??
+      (initialData?.farmExperienceYears ? String(initialData.farmExperienceYears) : ""),
+    tools: initialData?.tools ?? initialData?.toolsOrEquipment ?? "",
+    challenges: initialData?.challenges ?? initialData?.primaryChallenges ?? "",
+    monthlyProduction: initialData?.monthlyProduction ?? initialData?.estimatedMonthlyProduction ?? "",
+    phone: initialData?.phone ?? "",
     farmPhoto: null as File | null,
-    farmPhotoUrl: "" as string, // Will store Supabase URL after upload
+    farmPhotoUrl: initialData?.farmPhotoUrl ?? null,
   });
+
+  const countyOptions = useMemo(() => getCounties(), []);
+  const adminDataAvailable = countyOptions.length > 0;
+  const constituencyOptions = useMemo(
+    () => (formData.county ? getConstituencies(formData.county) : []),
+    [formData.county]
+  );
+  const wardOptions = useMemo(
+    () => (formData.county && formData.constituency ? getWards(formData.county, formData.constituency) : []),
+    [formData.county, formData.constituency]
+  );
 
   const totalSteps = 3;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCountyChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      county: value,
+      constituency: "",
+      ward: "",
+    }));
+  };
+
+  const handleConstituencyChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      constituency: value,
+      ward: "",
+    }));
   };
 
   const handleMultiSelect = (field: "crops" | "livestock", value: string) => {
@@ -69,53 +110,220 @@ export default function FarmerRegistration() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, farmPhoto: e.target.files![0] }));
+      const file = e.target.files[0];
+      const extension = file.name.split(".").pop()?.toLowerCase() || "";
+      const isTypeAllowed =
+        ALLOWED_IMAGE_TYPES.has(file.type) || ALLOWED_IMAGE_EXTENSIONS.has(extension);
+
+      if (!isTypeAllowed) {
+        toast.error("Only JPG, JPEG, PNG, or WEBP images are allowed.");
+        e.target.value = "";
+        return;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        toast.error("Farm photo must be 5MB or smaller.");
+        e.target.value = "";
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, farmPhoto: file }));
     }
   };
 
   const handleNext = async () => {
     if (currentStep < totalSteps) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      // Upload farm photo to Supabase if provided, then proceed to signup
-      if (formData.farmPhoto) {
-        setIsUploading(true);
-        try {
-          // Generate a temporary user ID for upload (will be replaced with actual user ID after signup)
-          const tempUserId = `temp-${Date.now()}`;
-          const photoUrl = await uploadImage(
-            formData.farmPhoto,
-            STORAGE_CATEGORIES.FARM_PHOTOS,
-            tempUserId
-          );
-          
-          // Store the Supabase URL in formData
-          const updatedFormData = {
-            ...formData,
-            farmPhotoUrl: photoUrl,
-          };
-          
-          navigate("/signup", { state: { farmerData: updatedFormData } });
-        } catch (error: any) {
-          console.error("Error uploading farm photo:", error);
-          toast.error("Failed to upload farm photo. You can continue without it.");
-          // Proceed to signup even if upload fails
-          navigate("/signup", { state: { farmerData: formData } });
-        } finally {
-          setIsUploading(false);
-        }
-      } else {
-        // No photo to upload, proceed directly
-        navigate("/signup", { state: { farmerData: formData } });
+      setCurrentStep((prev) => prev + 1);
+      return;
+    }
+
+    if (!currentUser) {
+      navigate("/signup", { state: { farmerData: formData } });
+      return;
+    }
+
+    if (isSaving) return;
+    setIsSaving(true);
+
+    const DEBUG_SAVE = import.meta.env.DEV && import.meta.env.VITE_DEBUG_PROFILE === "true";
+    const logDebug = (...args: any[]) => {
+      if (DEBUG_SAVE) {
+        console.log("[FarmerRegistration]", ...args);
+      }
+    };
+
+    const docRef = doc(db, "farmers", currentUser.uid);
+    const farmSizeValue = formData.farmSize ? parseFloat(formData.farmSize) : undefined;
+    const experienceValue = formData.experience ? parseInt(formData.experience, 10) : undefined;
+    const safeFarmSize = Number.isNaN(farmSizeValue) ? undefined : farmSizeValue;
+    const safeExperience = Number.isNaN(experienceValue) ? undefined : experienceValue;
+    let createdAt = Timestamp.now();
+    let hasExistingProfile = false;
+
+    try {
+      const existing = await getDoc(docRef);
+      if (existing.exists()) {
+        hasExistingProfile = true;
+        createdAt = existing.data().createdAt ?? createdAt;
+      }
+    } catch (error) {
+      if (DEBUG_SAVE) {
+        console.error("[FarmerRegistration] Failed to read existing profile:", error);
       }
     }
+
+    const basePayload = {
+      uid: currentUser.uid,
+      email: currentUser.email || undefined,
+      fullName: formData.fullName,
+      phone: formData.phone,
+      county: formData.county,
+      constituency: formData.constituency,
+      ward: formData.ward,
+      village: formData.village,
+      farmSize: safeFarmSize,
+      farmingType: formData.farmingType,
+      crops: formData.crops || [],
+      experienceYears: safeExperience,
+      toolsOwned: formData.tools,
+      challenges: formData.challenges,
+      estimatedMonthlyProduction: formData.monthlyProduction,
+      farmSizeAcres: safeFarmSize,
+      typeOfFarming: (formData.farmingType || "Crop").toLowerCase() as
+        | "crop"
+        | "livestock"
+        | "mixed",
+      farmExperienceYears: safeExperience,
+      toolsOrEquipment: formData.tools,
+      primaryChallenges: formData.challenges,
+    };
+
+    const cleanBasePayload = Object.fromEntries(
+      Object.entries(basePayload).filter(([, value]) => value !== undefined)
+    );
+
+    if (!hasExistingProfile) {
+      try {
+        const payload = {
+          ...cleanBasePayload,
+          createdAt,
+          updatedAt: Timestamp.now(),
+        };
+        logDebug("Saving profile for uid:", currentUser.uid);
+        await setDoc(docRef, payload, { merge: true });
+      } catch (error: any) {
+        if (DEBUG_SAVE) {
+          console.error("[FarmerRegistration] Firestore save failed:", error);
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        toast.error(`Failed to save profile: ${message}`);
+        setIsSaving(false);
+        return;
+      }
+
+      if (formData.farmPhoto) {
+        const file = formData.farmPhoto;
+        const extension = file.name.split(".").pop()?.toLowerCase() || "";
+        const isTypeAllowed =
+          ALLOWED_IMAGE_TYPES.has(file.type) || ALLOWED_IMAGE_EXTENSIONS.has(extension);
+
+        if (!isTypeAllowed) {
+          toast.error("Only JPG, JPEG, PNG, or WEBP images are allowed.");
+        } else if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          toast.error("Farm photo must be 5MB or smaller.");
+        } else {
+          try {
+            const [url] = await uploadToR2([file]);
+            await setDoc(
+              docRef,
+              { farmPhotoUrl: url, updatedAt: Timestamp.now() },
+              { merge: true }
+            );
+          } catch (error: any) {
+            if (DEBUG_SAVE) {
+              console.error("[FarmerRegistration] Farm photo upload failed:", error);
+            }
+            toast.warning("Profile saved, but photo upload failed.");
+          }
+        }
+      }
+
+      toast.success("Profile saved.");
+      navigate("/profile");
+      setIsSaving(false);
+      return;
+    }
+
+    const submittedAt = Timestamp.now();
+    try {
+      await setDoc(
+        docRef,
+        {
+          pending: {
+            status: "pending",
+            submittedAt,
+            reviewEtaHours: 2,
+          },
+        },
+        { merge: true }
+      );
+      await setDoc(
+        doc(db, "farmers", currentUser.uid, "pendingUpdates", "latest"),
+        {
+          payload: cleanBasePayload,
+          status: "pending",
+          submittedAt,
+          reviewEtaHours: 2,
+        },
+        { merge: true }
+      );
+    } catch (error: any) {
+      if (DEBUG_SAVE) {
+        console.error("[FarmerRegistration] Pending update save failed:", error);
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Failed to submit update: ${message}`);
+      setIsSaving(false);
+      return;
+    }
+
+    if (formData.farmPhoto) {
+      const file = formData.farmPhoto;
+      const extension = file.name.split(".").pop()?.toLowerCase() || "";
+      const isTypeAllowed =
+        ALLOWED_IMAGE_TYPES.has(file.type) || ALLOWED_IMAGE_EXTENSIONS.has(extension);
+
+      if (!isTypeAllowed) {
+        toast.error("Only JPG, JPEG, PNG, or WEBP images are allowed.");
+      } else if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        toast.error("Farm photo must be 5MB or smaller.");
+      } else {
+        try {
+          const [url] = await uploadToR2([file]);
+          await setDoc(
+            doc(db, "farmers", currentUser.uid, "pendingUpdates", "latest"),
+            { payload: { ...cleanBasePayload, farmPhotoUrl: url } },
+            { merge: true }
+          );
+        } catch (error: any) {
+          if (DEBUG_SAVE) {
+            console.error("[FarmerRegistration] Farm photo upload failed:", error);
+          }
+          toast.warning("Profile saved, but photo upload failed.");
+        }
+      }
+    }
+
+    toast.success("Update submitted. It will be reviewed within 1–2 hours.");
+    navigate("/profile");
+    setIsSaving(false);
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
     } else {
-      navigate("/");
+      navigate(isEditing ? "/profile" : "/");
     }
   };
 
@@ -140,7 +348,7 @@ export default function FarmerRegistration() {
             <User className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Farmer Registration
+            {isEditing ? "Edit Farmer Profile" : "Farmer Registration"}
           </h1>
           <p className="text-sm text-muted-foreground">
             Step {currentStep} of {totalSteps} • Tell us about your farm
@@ -169,46 +377,98 @@ export default function FarmerRegistration() {
               />
             </div>
 
+            {!adminDataAvailable && (
+              <AlertCard
+                type="warning"
+                title="Administrative dataset unavailable"
+                message="Administrative dataset unavailable — manual entry enabled."
+              />
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="county" className="flex items-center gap-2 mb-2">
                   <MapPin className="h-4 w-4" />
                   County *
                 </Label>
-                <Select value={formData.county} onValueChange={(value) => handleInputChange("county", value)}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Select county" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kenyanCounties.map(county => (
-                      <SelectItem key={county} value={county}>{county}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {adminDataAvailable ? (
+                  <Select value={formData.county} onValueChange={handleCountyChange}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select county" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countyOptions.map((county) => (
+                        <SelectItem key={county} value={county}>{county}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="county"
+                    placeholder="Enter county"
+                    value={formData.county}
+                    onChange={(e) => handleInputChange("county", e.target.value)}
+                    className="bg-background"
+                  />
+                )}
               </div>
 
               <div>
                 <Label htmlFor="constituency" className="mb-2">Constituency *</Label>
-                <Input
-                  id="constituency"
-                  placeholder="Enter constituency"
-                  value={formData.constituency}
-                  onChange={(e) => handleInputChange("constituency", e.target.value)}
-                  className="bg-background"
-                />
+                {adminDataAvailable ? (
+                  <Select
+                    value={formData.constituency}
+                    onValueChange={handleConstituencyChange}
+                    disabled={!formData.county}
+                  >
+                    <SelectTrigger className="bg-background" disabled={!formData.county}>
+                      <SelectValue placeholder="Select constituency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {constituencyOptions.map((constituency) => (
+                        <SelectItem key={constituency} value={constituency}>{constituency}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="constituency"
+                    placeholder="Enter constituency"
+                    value={formData.constituency}
+                    onChange={(e) => handleInputChange("constituency", e.target.value)}
+                    className="bg-background"
+                  />
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="ward" className="mb-2">Ward *</Label>
-                <Input
-                  id="ward"
-                  placeholder="Enter ward"
-                  value={formData.ward}
-                  onChange={(e) => handleInputChange("ward", e.target.value)}
-                  className="bg-background"
-                />
+                {adminDataAvailable ? (
+                  <Select
+                    value={formData.ward}
+                    onValueChange={(value) => handleInputChange("ward", value)}
+                    disabled={!formData.constituency}
+                  >
+                    <SelectTrigger className="bg-background" disabled={!formData.constituency}>
+                      <SelectValue placeholder="Select ward" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {wardOptions.map((ward) => (
+                        <SelectItem key={ward} value={ward}>{ward}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="ward"
+                    placeholder="Enter ward"
+                    value={formData.ward}
+                    onChange={(e) => handleInputChange("ward", e.target.value)}
+                    className="bg-background"
+                  />
+                )}
               </div>
 
               <div>
@@ -422,20 +682,23 @@ export default function FarmerRegistration() {
 
           <Button
             onClick={handleNext}
-            disabled={!canProceed() || isUploading}
+            disabled={!canProceed() || isSaving}
             className="gap-2"
           >
-            {isUploading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                {currentStep === totalSteps ? "Continue to Signup" : "Next"}
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
+            <>
+              {currentStep === totalSteps
+                ? currentUser
+                  ? isEditing
+                    ? isSaving
+                      ? "Submitting..."
+                      : "Submit for Review"
+                    : isSaving
+                      ? "Saving..."
+                      : "Save Profile"
+                  : "Continue to Signup"
+                : "Next"}
+              <ArrowRight className="h-4 w-4" />
+            </>
           </Button>
         </div>
       </div>
