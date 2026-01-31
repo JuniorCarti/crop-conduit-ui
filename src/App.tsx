@@ -21,6 +21,8 @@ import ListingDetails from "./pages/ListingDetails";
 import Checkout from "./pages/Checkout";
 import MarketPrices from "./pages/MarketPrices";
 import Community from "./pages/Community";
+import Inbox from "./pages/Inbox";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 import FarmerRegistration from "./pages/FarmerRegistration";
 import Signup from "./pages/Signup";
@@ -116,6 +118,22 @@ const App = () => (
                   element={
                     <PremiumRouteGuard featureId="community">
                       <Community />
+                    </PremiumRouteGuard>
+                  }
+                />
+                <Route
+                  path="/community/inbox"
+                  element={
+                    <PremiumRouteGuard featureId="community">
+                      <Inbox />
+                    </PremiumRouteGuard>
+                  }
+                />
+                <Route
+                  path="/community/chat/:conversationId"
+                  element={
+                    <PremiumRouteGuard featureId="community">
+                      <Chat />
                     </PremiumRouteGuard>
                   }
                 />
