@@ -29,6 +29,7 @@
     "community": "Community",
     "home": "Home",
     "more": "More",
+    "profile": "Profile",
     "logout": "Logout"
   },
   "navDescriptions": {
@@ -42,7 +43,8 @@
     "harvest": "Foreman Agent",
     "finance": "Chancellor",
     "marketplace": "Buy & Sell",
-    "community": "Connect"
+    "community": "Connect",
+    "profile": "Account details"
   },
   "auth": {
     "logoutSuccess": "Logged out successfully",
@@ -178,6 +180,7 @@
       "error": "Unable to generate advisory.",
       "why": "Why",
       "selectFarm": "Select a farm/location first.",
+      "sectionLabel": "AI Advisory (Actionable Guidance)",
       "cropLabel": "Crop",
       "cropPlaceholder": "Select crop",
       "stageLabel": "Growth stage",
@@ -270,6 +273,39 @@
     "actions": {
       "retry": "Retry"
     },
+    "signals": {
+      "title": "Climate Signals",
+      "subtitle": "Signals only. Recommendations appear in AI Advisory.",
+      "selectFarm": "Select a farm to see climate signals.",
+      "noData": "Weather data unavailable.",
+      "empty": "No signals available for this forecast.",
+      "table": {
+        "date": "Date",
+        "min": "Min",
+        "max": "Max",
+        "rainChance": "Rain Chance",
+        "condition": "Condition"
+      }
+    },
+    "keyAlerts": {
+      "title": "Key alerts"
+    },
+    "locationHeader": {
+      "range": "Next {{days}} days",
+      "cropsEmpty": "No crops listed"
+    },
+    "snapshot": {
+      "title": "7-day snapshot",
+      "subtitle": "Quick view of temperature and rain patterns.",
+      "viewTable": "View full table",
+      "hideTable": "Hide full table"
+    },
+    "alertsSection": {
+      "title": "Alerts & notifications",
+      "notifications": "Notifications",
+      "notificationsHint": "Manage alert channels and review recent activity.",
+      "recent": "Recent alerts"
+    },
     "error": {
       "title": "Failed to load",
       "message": "Please try again in a moment.",
@@ -289,9 +325,18 @@
       "title": "Add farm",
       "name": "Farm name",
       "county": "County",
+      "countyPlaceholder": "Select county",
+      "subCounty": "Sub-county / Constituency",
+      "subCountyPlaceholder": "Select sub-county",
       "ward": "Ward",
+      "wardPlaceholder": "Select ward",
       "lat": "Latitude",
       "lon": "Longitude",
+      "cropsLabel": "Crops planted",
+      "cropsPlaceholder": "Add a crop (e.g., Maize)",
+      "cropsAdd": "Add crop",
+      "cropsHint": "Press Enter or use commas to add multiple crops.",
+      "cropsRemove": "Remove crop",
       "elevation": "Elevation (optional)",
       "useLocation": "Use current location",
       "locationDenied": "Allow location access in your browser.",
