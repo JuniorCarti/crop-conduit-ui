@@ -1,294 +1,199 @@
-# 🌱 **AgriSmart - AI-Powered Agricultural Intelligence Platform**
+# 🌱 AgriSmart
 
-## 🚀 **Overview**
-**AgriSmart** is a revolutionary multi-agent AI platform that transforms smallholder farmers in Africa from vulnerable producers into resilient, data-driven agri-entrepreneurs. Using five specialized AI agents working in concert, we provide predictive market insights, precise yield forecasts, climate resilience, post-harvest optimization, and financial visibility.
+## AI-Powered Agricultural Intelligence Platform
+## 🚀 Overview
+**AgriSmart** is an **AI-powered agricultural intelligence platform** designed to protect **smallholder farmers** from **climate shocks, market exploitation, and post-harvest losses**.
 
-## 🎯 **Core Features**
+At the center of the platform is **Asha**, a conversational AI assistant that helps farmers decide **when to plant, harvest, sell, and transport produce** using **real climate data, live market prices, and logistics intelligence**.
 
-### 🤖 **Multi-Agent AI System**
-- **🌱 Sentinel Agent** - Real-time crop monitoring & yield forecasting via satellite imagery
-- **📊 Oracle Agent** - Market price prediction & demand forecasting
-- **💧 Quartermaster Agent** - Resource optimization & input management
-- **🚚 Foreman Agent** - Harvest scheduling & logistics optimization
-- **💰 Chancellor Agent** - Financial planning & risk assessment
+AgriSmart combines **climate insights, market intelligence, logistics coordination, and a digital marketplace** into a single, farmer-friendly system built for **African realities**.
 
-### 🌍 **Platform Capabilities**
-- **Predictive Analytics**: Forecast crop yields, market prices, and climate impacts
-- **Real-time Monitoring**: Satellite-based field health tracking
-- **Market Intelligence**: Best-price recommendations across regional markets
-- **Resource Optimization**: Smart irrigation, fertilizer, and input management
-- **Financial Tools**: Cash flow projections, loan readiness, and risk scoring
-- **Offline Support**: USSD/SMS fallback for low-connectivity areas
-- **Multi-language**: Swahili-first interface with English support
+## 🎯 What AgriSmart Solves
 
-## 🏗️ **Technology Stack**
+* Farmers sell blindly without **price visibility**
+* Climate shocks destroy crops with **little or no warning**
+* Poor logistics cause **post-harvest losses**
+* Middlemen exploit **information gaps**
+* Existing digital tools ignore **local context and language**
 
-### **Frontend**
-- **React** with **TypeScript** for type-safe development
-- **Vite** for fast builds and hot module replacement
-- **shadcn/ui** for beautiful, accessible components
-- **Tailwind CSS** for utility-first styling
-- **React Query** for server state management
-- **Zustand** for client state management
+**AgriSmart turns this chaos into clarity.**
 
-### **Backend**
-- **Node.js** with **Express** for API services
-- **Firebase** for authentication, Firestore database, and cloud functions
-- **Python FastAPI** for AI agent microservices
-- **Redis** for caching and real-time features
-- **Celery** for background task processing
+## 🤖 Asha – Conversational AI Assistant
 
-### **AI/ML Stack**
-- **TensorFlow/PyTorch** for machine learning models
-- **Sentinel Hub API** for satellite imagery
-- **OpenCV** for image processing
-- **Scikit-learn** for traditional ML algorithms
-- **Prophet** for time-series forecasting
+**Asha** is a **task-aware, action-capable AI agent** built to support real farming decisions.
 
-### **Infrastructure**
-- **Google Cloud Platform** for hosting and scaling
-- **Docker** for containerization
-- **GitHub Actions** for CI/CD
-- **Terraform** for infrastructure as code
-- **Prometheus & Grafana** for monitoring
+### What Asha Can Do
 
-## 📁 **Project Structure**
+* Explain **today’s and upcoming weather** in simple language
+* Recommend the **best day to harvest**
+* Identify the **best market and price** to sell produce
+* Help farmers **list produce** on the marketplace
+* Assist buyers to **place orders**
+* Detect **climate risks** (frost, rainfall, heat stress, disease)
+* Guide **logistics and delivery decisions**
+* Work via **text and voice**
 
-```
-agrismart/
-├── apps/
-│   ├── web/                  # React web application
-│   ├── mobile/               # Flutter mobile app (future)
-│   └── admin/                # Admin dashboard
-├── packages/
-│   ├── api/                  # Backend API
-│   ├── ai-agents/            # AI microservices
-│   └── shared/               # Shared utilities & types
-├── infrastructure/
-│   ├── terraform/            # Infrastructure as Code
-│   └── docker/               # Docker configurations
-└── docs/                     # Documentation
-```
+Asha is designed for **low-literacy, mobile-first users**.
+## 🌍 Core Platform Features
 
-## 🚀 **Quick Start**
+### 🌦️ Climate Intelligence
 
-### **Prerequisites**
-- Node.js 18+ and npm
-- Python 3.10+
-- Firebase CLI
-- Docker (optional)
+* 7–10 day forecast insights
+* Frost, rainfall, heat stress, wind, and disease risk detection
+* Crop-aware recommendations
+* Farm-specific insights using GPS location
+### 📊 Market Intelligence
 
-### **Local Development**
+* Live market prices across regions
+* Price trend awareness
+* Market comparison insights
+* Best-time-to-sell recommendations
 
-1. **Clone the repository**
-```bash
-git clone <your-repository-url>
-cd agrismart
-```
+### 🛒 Marketplace
 
-2. **Install dependencies**
-```bash
-npm install
-```
+* Farmers list produce with images and prices
+* Buyers browse and place orders
+* Cart and checkout flow
+* Reviews and ratings
+* Seller and buyer order tracking
 
-3. **Set up environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+### 🚚 Harvest & Logistics
 
-4. **Start the development server**
-```bash
-npm run dev
-```
+* Harvest scheduling
+* Worker assignment
+* Delivery planning
+* Transport readiness indicators
+* Weather-aware market delivery suitability
 
-5. **Access the application**
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
-- AI Agents: http://localhost:8000
+### 🔔 Alerts & Notifications
 
-## 🛠️ **Development Scripts**
+* Climate alerts
+* Market opportunities
+* Order updates
+* Delivered via **WhatsApp, SMS, and Email**
 
-```bash
-# Install dependencies
-npm install
+### 🌐 Accessibility
 
-# Start development servers
-npm run dev
+* Mobile-first UI
+* Swahili-first (English supported)
+* Optimized for low-bandwidth environments
 
-# Build for production
-npm run build
+## 🏗️ Technology Stack (Actual & Deployed)
 
-# Run tests
-npm run test
+### Frontend
 
-# Run linting
-npm run lint
+* React + TypeScript
+* Vite
+* Tailwind CSS
+* shadcn/ui
+* Responsive mobile-first design
 
-# Type checking
-npm run type-check
+### Backend (Serverless & Edge)
 
-# Start AI agents locally
-npm run agents:dev
-```
+* Cloudflare Workers – API layer & AI orchestration
+* Cloudflare D1 – Conversation memory & structured AI state
+* Cloudflare R2 – Image and asset storage (S3-compatible)
+* Firebase Authentication – Secure user login
+* Firebase Firestore – Farms, listings, orders, profiles
 
-## 🔧 **Configuration**
+### AI & Voice
 
-### **Environment Variables**
-Create a `.env` file in the root directory:
+* OpenAI APIs – AI reasoning & recommendations
+* Microsoft Azure AI / Speech Services – Voice input/output for Asha
+* Prompt-driven agent architecture (no hallucinated automation)
+  
+### Market Prediction
 
-```env
-# Firebase Configuration
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
+* Market price prediction model hosted on Render (U.S.)
+* Consumed via API by AgriSmart frontend and Asha
 
-# Backend API
-VITE_API_URL=http://localhost:3000
+### Notifications
 
-# AI Services
-VITE_SENTINEL_API_URL=http://localhost:8001
-VITE_ORACLE_API_URL=http://localhost:8002
+* Twilio – WhatsApp & SMS alerts
+* Resend – Transactional email notifications
 
-# External APIs
-SENTINELHUB_CLIENT_ID=your_client_id
-SENTINELHUB_CLIENT_SECRET=your_secret
-WEATHER_API_KEY=your_weather_api_key
-```
+### Cloud Infrastructure
 
-## 🧪 **Testing**
+* Cloudflare (U.S.) – Edge compute, storage, AI routing
+* AWS (U.S.) – DynamoDB and S3-compatible services
+* Google Cloud Firebase (U.S.) – Identity and real-time data
+* Microsoft Azure (U.S.) – Voice AI services
+
+## 🧠 Data Sources Used
+
+* Weather forecast APIs (via Cloudflare Worker proxy)
+* Market price datasets (live + predicted)
+* Farmer-generated farm, crop, and harvest data
+* Marketplace transactions and reviews
+
+## 📁 Project Structure
 
 ```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run end-to-end tests
-npm run test:e2e
+crop-conduit-ui/
+├── src/
+│   ├── pages/               # App pages (Climate, Marketplace, Harvest, Asha)
+│   ├── components/          # UI components
+│   ├── services/            # Firestore, Workers, AI, logistics services
+│   ├── hooks/               # Custom React hooks
+│   ├── types/               # TypeScript types
+│   └── utils/               # Helpers & datasets
+│
+├── agrismart-advisory/      # Cloudflare Worker (Asha backend)
+│   ├── src/
+│   ├── migrations/          # D1 database migrations
+│   └── wrangler.jsonc
+│
+├── firestore.rules
+├── firestore.marketplace.rules
+└── README.md
 ```
 
-## 📦 **Deployment**
+## 🔒 Security & Data Protection
 
-### **Deploy to Lovable**
-1. Push changes to your repository
-2. Visit [Lovable](https://lovable.dev/projects/96453b19-d29e-489e-aaf2-bb1db34ec81d)
-3. Click on Share → Publish
+* Firebase Authentication
+* Strict Firestore security rules
+* User-scoped data access
+* No client-side admin privileges
+* Cloudflare edge security & rate limiting
+* HTTPS enforced everywhere
 
-### **Manual Deployment**
-```bash
-# Build the application
-npm run build
+## 📈 Scalability & Reliability
 
-# Deploy to Firebase
-npm run deploy:firebase
+* Fully serverless architecture
+* Edge-based APIs for low latency
+* No vendor lock-in (multi-cloud)
+* Works independently of Firebase Cloud Functions
 
-# Deploy AI agents
-npm run deploy:agents
-```
+## 🇺🇸 U.S. Technology Compliance
 
-## 🔌 **API Integration**
+AgriSmart is built entirely on **U.S.-based cloud and AI infrastructure**, including:
 
-### **Available Endpoints**
-- `GET /api/v1/market-prices` - Current market prices
-- `POST /api/v1/yield-forecast` - Yield prediction
-- `GET /api/v1/field-health/:fieldId` - Field health status
-- `POST /api/v1/recommendations` - AI recommendations
+* Cloudflare
+* Microsoft Azure
+* Google Cloud
+* AWS
+* Render
+* Twilio
+* OpenAI
 
-### **AI Agent APIs**
-- Sentinel: `http://localhost:8001/ndvi` - NDVI analysis
-- Oracle: `http://localhost:8002/predict` - Price prediction
-- Quartermaster: `http://localhost:8003/optimize` - Resource optimization
+## 🌍 Impact Vision
 
-## 🎨 **UI Components**
+AgriSmart enables farmers to:
 
-We use **shadcn/ui** components with custom theming. To add new components:
+* Earn fairer prices
+* Reduce climate-related losses
+* Plan confidently
+* Access markets digitally
+* Make decisions with data, not guesswork
 
-```bash
-# Add a shadcn/ui component
-npx shadcn-ui add button
-```
+## 🙏 Acknowledgments
 
-Custom components are located in `apps/web/src/components/ui/`
+* Kenyan farmers who shaped the product
+* Open-source community
+* Climate and agriculture research partners
+* Innovation hubs and mentors
 
-## 📱 **Mobile Responsive**
 
-The application is fully responsive with breakpoints:
-- Mobile: < 768px
-- Tablet: 768px - 1024px
-- Desktop: > 1024px
-
-## 🌐 **Internationalization**
-
-Currently supports:
-- 🇰🇪 Swahili (primary)
-- 🇬🇧 English
-
-To add new translations:
-1. Add language file in `apps/web/src/locales/`
-2. Update `apps/web/src/lib/i18n.ts`
-
-## 🔒 **Security**
-
-- Input validation on all endpoints
-- CORS configuration
-- Rate limiting
-- Firebase security rules
-- HTTPS enforcement in production
-- Regular security audits
-
-## 📈 **Analytics**
-
-- User behavior tracking
-- Feature usage metrics
-- Error reporting with Sentry
-- Performance monitoring
-- A/B testing framework
-
-## 🤝 **Contributing**
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### **Code Style**
-- Use TypeScript for all new code
-- Follow ESLint configuration
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-
-## 📄 **License**
-
-This project is proprietary and confidential. All rights reserved.
-
-## 🆘 **Support**
-
-For support, please:
-1. Check the [documentation](docs/)
-2. Search existing issues
-3. Create a new issue with detailed information
-
-## 🙏 **Acknowledgments**
-
-- Kenyan farmers for their invaluable insights
-- Agricultural research institutions for data partnerships
-- Open source community for amazing tools
-- Development partners for support and funding
-
----
-
-**Built with ❤️ for African farmers**
-
----
-
-*Last updated: January 2026*
+**Built with purpose for African farmers.**
+**Designed for scale.**
+**Ready for investment and impact.**
