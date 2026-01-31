@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { clearAuthDebug, ensureAuthToken } from "@/services/authService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmationResult } from "firebase/auth";
 import { useTranslation } from "react-i18next";
@@ -41,7 +42,9 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
+      clearAuthDebug();
       await login(formData.email, formData.password);
+      await ensureAuthToken();
       navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.message || t("login.errors.failed"));
@@ -53,7 +56,9 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setIsSubmitting(true);
     try {
+      clearAuthDebug();
       await signInWithGoogle();
+      await ensureAuthToken();
       navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.message || t("login.errors.googleFailed"));
@@ -90,6 +95,7 @@ export default function Login() {
       setIsSubmitting(true);
       try {
         await verifyPhoneOTP(phoneConfirmation, formData.otp);
+        await ensureAuthToken();
         navigate(from, { replace: true });
       } catch (err: any) {
         setError(err.message || t("login.errors.otpInvalid"));
