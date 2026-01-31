@@ -195,7 +195,7 @@ export async function createWorker(
     ...data,
     userId,
     status: "Active" as const,
-    assignedScheduleIds: [],
+    assignedScheduleIds: data.assignedScheduleIds ?? [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
