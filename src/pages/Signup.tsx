@@ -9,9 +9,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmationResult } from "firebase/auth";
 import { saveFarmerProfile } from "@/services/firestore-farmer";
+import { uploadToR2 } from "@/services/marketplaceService";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -70,26 +73,70 @@ export default function Signup() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const saveProfile = async (userId: string) => {
+  const saveProfile = async (userId: string, emailOverride?: string | null) => {
     if (!farmerData) return;
+    const DEBUG_SAVE = import.meta.env.DEV && import.meta.env.VITE_DEBUG_PROFILE === "true";
+
     await saveFarmerProfile({
-      userId,
+      uid: userId,
+      email: emailOverride || formData.email || undefined,
       fullName: farmerData.fullName,
+      phone: farmerData.phone,
       county: farmerData.county,
       constituency: farmerData.constituency,
       ward: farmerData.ward,
       village: farmerData.village,
-      farmSize: farmerData.farmSize,
-      farmingType: farmerData.farmingType as "Crop" | "Livestock" | "Mixed",
+      farmSizeAcres: farmerData.farmSize,
+      farmSize:
+        farmerData.farmSize && !Number.isNaN(parseFloat(farmerData.farmSize))
+          ? parseFloat(farmerData.farmSize)
+          : undefined,
+      typeOfFarming: (farmerData.farmingType || "Crop").toLowerCase() as
+        | "crop"
+        | "livestock"
+        | "mixed",
+      farmingType: farmerData.farmingType,
       crops: farmerData.crops || [],
-      livestock: farmerData.livestock || [],
-      experience: farmerData.experience,
-      tools: farmerData.tools,
+      farmExperienceYears: farmerData.experience,
+      experienceYears:
+        farmerData.experience && !Number.isNaN(parseInt(farmerData.experience, 10))
+          ? parseInt(farmerData.experience, 10)
+          : undefined,
+      toolsOrEquipment: farmerData.tools,
+      toolsOwned: farmerData.tools,
+      primaryChallenges: farmerData.challenges,
       challenges: farmerData.challenges,
-      monthlyProduction: farmerData.monthlyProduction,
-      phone: farmerData.phone,
-      farmPhotoUrl: farmerData.farmPhotoUrl || undefined,
+      estimatedMonthlyProduction: farmerData.monthlyProduction,
+      farmPhotoUrl: null,
     });
+
+    if (farmerData.farmPhoto) {
+      const file: File = farmerData.farmPhoto as File;
+      const extension = file.name.split(".").pop()?.toLowerCase() || "";
+      const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/jpg"]);
+      const allowedExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
+      const maxSizeBytes = 5 * 1024 * 1024;
+
+      if (!allowedTypes.has(file.type) && !allowedExtensions.has(extension)) {
+        toast.error("Only JPG, JPEG, PNG, or WEBP images are allowed.");
+      } else if (file.size > maxSizeBytes) {
+        toast.error("Farm photo must be 5MB or smaller.");
+      } else {
+        try {
+          const [url] = await uploadToR2([file]);
+          await setDoc(
+            doc(db, "farmers", userId),
+            { farmPhotoUrl: url, updatedAt: Timestamp.now() },
+            { merge: true }
+          );
+        } catch (error: any) {
+          if (DEBUG_SAVE) {
+            console.error("Farm photo upload failed:", error);
+          }
+          toast.warning("Profile saved, photo upload failed.");
+        }
+      }
+    }
   };
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -104,14 +151,14 @@ export default function Signup() {
       const userCredential = await signup(formData.email, formData.password, formData.displayName);
       if (farmerData && userCredential?.user?.uid) {
         try {
-          await saveProfile(userCredential.user.uid);
+          await saveProfile(userCredential.user.uid, userCredential.user.email);
           toast.success(t("signup.profileSaved"));
         } catch (profileError: any) {
           console.error("Error saving farmer profile:", profileError);
           toast.error(t("signup.profileSaveError"));
         }
       }
-      navigate("/");
+      navigate("/profile");
     } finally {
       setIsSubmitting(false);
     }
@@ -123,14 +170,14 @@ export default function Signup() {
       const userCredential = await signInWithGoogle();
       if (farmerData && userCredential?.user?.uid) {
         try {
-          await saveProfile(userCredential.user.uid);
+          await saveProfile(userCredential.user.uid, userCredential.user.email);
           toast.success(t("signup.profileSaved"));
         } catch (profileError: any) {
           console.error("Error saving farmer profile:", profileError);
           toast.error(t("signup.profileSaveError"));
         }
       }
-      navigate("/dashboard");
+      navigate("/profile");
     } finally {
       setIsSubmitting(false);
     }
@@ -163,14 +210,14 @@ export default function Signup() {
         const userCredential = await verifyPhoneOTP(phoneConfirmation, formData.otp);
         if (farmerData && userCredential?.user?.uid) {
           try {
-            await saveProfile(userCredential.user.uid);
+            await saveProfile(userCredential.user.uid, userCredential.user.email);
             toast.success(t("signup.profileSaved"));
           } catch (profileError: any) {
             console.error("Error saving farmer profile:", profileError);
             toast.error(t("signup.profileSaveError"));
           }
         }
-        navigate("/dashboard");
+        navigate("/profile");
       } finally {
         setIsSubmitting(false);
       }
