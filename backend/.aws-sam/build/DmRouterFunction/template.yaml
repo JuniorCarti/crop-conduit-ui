@@ -1,0 +1,486 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AgriSmart Community Connect backend (HTTP API + Lambda + DynamoDB + S3)
+
+Parameters:
+  PostsTableName:
+    Type: String
+    Default: agrismart-community-posts
+  CommentsTableName:
+    Type: String
+    Default: agrismart-community-comments
+  ReactionsTableName:
+    Type: String
+    Default: agrismart-community-reactions
+  MediaBucketName:
+    Type: String
+    Default: agrismart-community-media
+  FirebaseProjectId:
+    Type: String
+    Default: YOUR_FIREBASE_PROJECT_ID
+  AllowedOrigins:
+    Type: String
+    Default: "http://localhost:8080,https://crop-conduit-ui.web.app"
+  DmConversationsTableName:
+    Type: String
+    Default: agrismart-dm-conversations
+  DmMessagesTableName:
+    Type: String
+    Default: agrismart-dm-messages
+  DmContactRequestsTableName:
+    Type: String
+    Default: agrismart-dm-contactRequests
+  DmBlocksTableName:
+    Type: String
+    Default: agrismart-dm-blocks
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        POSTS_TABLE: !Ref PostsTableName
+        COMMENTS_TABLE: !Ref CommentsTableName
+        REACTIONS_TABLE: !Ref ReactionsTableName
+        MEDIA_BUCKET: !Ref MediaBucketName
+        FIREBASE_PROJECT_ID: !Ref FirebaseProjectId
+        ALLOWED_ORIGINS: !Ref AllowedOrigins
+        REGION: !Ref AWS::Region
+        DM_CONVERSATIONS_TABLE: !Ref DmConversationsTableName
+        DM_MESSAGES_TABLE: !Ref DmMessagesTableName
+        DM_CONTACT_REQUESTS_TABLE: !Ref DmContactRequestsTableName
+        DM_BLOCKS_TABLE: !Ref DmBlocksTableName
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - http://localhost:8080
+          - https://crop-conduit-ui.web.app
+        AllowHeaders:
+          - Authorization
+          - Content-Type
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+          - PUT
+          - DELETE
+        AllowCredentials: false
+
+  PostsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref PostsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: postId
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+        - AttributeName: gsi2pk
+          AttributeType: S
+        - AttributeName: gsi2sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: postId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1-Feed
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: GSI2-UserPosts
+          KeySchema:
+            - AttributeName: gsi2pk
+              KeyType: HASH
+            - AttributeName: gsi2sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  CommentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref CommentsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: postId
+          AttributeType: S
+        - AttributeName: commentKey
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: postId
+          KeyType: HASH
+        - AttributeName: commentKey
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1-UserComments
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  ReactionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ReactionsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: postId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: postId
+          KeyType: HASH
+        - AttributeName: userId
+          KeyType: RANGE
+
+  DmConversationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DmConversationsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: conversationId
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: conversationId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1-UserUpdated
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  DmMessagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DmMessagesTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: conversationId
+          AttributeType: S
+        - AttributeName: messageKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: conversationId
+          KeyType: HASH
+        - AttributeName: messageKey
+          KeyType: RANGE
+
+  DmContactRequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DmContactRequestsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pairKey
+          AttributeType: S
+        - AttributeName: requestId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pairKey
+          KeyType: HASH
+        - AttributeName: requestId
+          KeyType: RANGE
+
+  DmBlocksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DmBlocksTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: blockerUid
+          AttributeType: S
+        - AttributeName: blockedUid
+          AttributeType: S
+      KeySchema:
+        - AttributeName: blockerUid
+          KeyType: HASH
+        - AttributeName: blockedUid
+          KeyType: RANGE
+
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref MediaBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - http://localhost:8080
+              - https://crop-conduit-ui.web.app
+            AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - PUT
+              - GET
+              - HEAD
+            MaxAge: 3000
+
+  CreatePostFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/createPost.handler
+      Events:
+        CreatePost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /community/posts
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:GetItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PostsTableName}
+
+  ListPostsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/listPosts.handler
+      Events:
+        ListPosts:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /community/posts
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PostsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PostsTableName}/index/*
+
+  GetPostFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/getPost.handler
+      Events:
+        GetPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /community/posts/{postId}
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PostsTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:Query
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CommentsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CommentsTableName}/index/*
+
+  CreateCommentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/createComment.handler
+      Events:
+        CreateComment:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /community/posts/{postId}/comments
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:TransactWriteItems
+              - dynamodb:UpdateItem
+              - dynamodb:GetItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CommentsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PostsTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+            Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PostsTableName}
+
+  ListCommentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/listComments.handler
+      Events:
+        ListComments:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /community/posts/{postId}/comments
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CommentsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CommentsTableName}/index/*
+
+  ToggleReactionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/toggleReaction.handler
+      Events:
+        ToggleReaction:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /community/posts/{postId}/reactions
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:TransactWriteItems
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ReactionsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${PostsTableName}
+
+  PresignUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/presignUpload.handler
+      Events:
+        PresignUpload:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /community/uploads/presign
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource:
+              - !Sub arn:aws:s3:::${MediaBucketName}
+              - !Sub arn:aws:s3:::${MediaBucketName}/*
+
+  DmRouterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/dmRouter.handler
+      Events:
+        DmRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /dm/{proxy+}
+            Method: ANY
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmConversationsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmConversationsTableName}/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmMessagesTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmContactRequestsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmBlocksTableName}
+
+Outputs:
+  ApiBaseUrl:
+    Description: HTTP API base URL
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  MediaBucketName:
+    Description: Media bucket name
+    Value: !Ref MediaBucketName
+  DmConversationsTableName:
+    Description: DM conversations table name
+    Value: !Ref DmConversationsTableName
+  DmMessagesTableName:
+    Description: DM messages table name
+    Value: !Ref DmMessagesTableName
+  DmContactRequestsTableName:
+    Description: DM contact requests table name
+    Value: !Ref DmContactRequestsTableName
+  DmBlocksTableName:
+    Description: DM blocks table name
+    Value: !Ref DmBlocksTableName
