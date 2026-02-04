@@ -3,6 +3,7 @@ import { Play, Square, RefreshCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { speakText } from "@/services/voiceService";
+import { useAuth } from "@/contexts/AuthContext";
 import type { AshaMessage } from "@/types/asha";
 import { toast } from "sonner";
 import { AshaInsightCard } from "@/components/asha/InsightCard";
@@ -15,24 +16,43 @@ const formatTime = (value: number) =>
   new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 export function ChatBubble({ message }: ChatBubbleProps) {
+  const { currentUser } = useAuth();
   const isAssistant = message.role === "assistant";
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
   const autoPlayedRef = useRef(false);
 
   useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+    }
+
+    const audio = audioRef.current;
+    const handleEnded = () => setIsPlaying(false);
+    const handleError = () => {
+      setIsPlaying(false);
+      toast.error("Audio playback failed.");
+    };
+
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
+
     return () => {
-      if (audioRef.current) {
+      if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
-        audioRef.current = null;
+        audioRef.current.currentTime = 0;
       }
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
       }
     };
-  }, [audioUrl]);
+  }, []);
 
   const playAudio = async (forceReload = false) => {
     if (!isAssistant || !message.text.trim()) return;
@@ -42,20 +62,35 @@ export function ChatBubble({ message }: ChatBubbleProps) {
       setIsLoading(true);
       let url = audioUrl;
       if (!url || forceReload) {
-        const blob = await speakText(message.text);
-        url = URL.createObjectURL(blob);
-        setAudioUrl(url);
+        const token = currentUser ? await currentUser.getIdToken() : undefined;
+        const language = message.language || "en";
+        const blob = await speakText(message.text, { token, language });
+        const nextUrl = URL.createObjectURL(blob);
+        if (audioUrlRef.current) {
+          URL.revokeObjectURL(audioUrlRef.current);
+        }
+        audioUrlRef.current = nextUrl;
+        setAudioUrl(nextUrl);
+        url = nextUrl;
       }
 
-      const audio = new Audio(url);
+      const audio = audioRef.current ?? new Audio();
       audioRef.current = audio;
+
+      if (!audio.paused) {
+        audio.pause();
+      }
+      audio.currentTime = 0;
+      audio.src = url;
+
       setIsPlaying(true);
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => {
-        setIsPlaying(false);
-        toast.error("Audio playback failed.");
-      };
-      await audio.play();
+      try {
+        await audio.play();
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          throw error;
+        }
+      }
     } catch (error: any) {
       toast.error(error?.message || "Voice playback failed.");
     } finally {
@@ -65,7 +100,9 @@ export function ChatBubble({ message }: ChatBubbleProps) {
 
   const stopAudio = () => {
     if (!audioRef.current) return;
-    audioRef.current.pause();
+    if (!audioRef.current.paused) {
+      audioRef.current.pause();
+    }
     audioRef.current.currentTime = 0;
     setIsPlaying(false);
   };
