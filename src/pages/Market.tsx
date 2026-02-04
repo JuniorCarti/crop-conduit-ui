@@ -79,6 +79,10 @@ export default function Market() {
   const { data: priceHistory, isLoading: historyLoading } = usePriceHistory(pricePeriod);
   const syncPrices = useSyncMarketPrices();
   const predictMutation = useMarketOraclePrediction();
+  const handleSyncPrices = () => {
+    if (syncPrices.isPending) return;
+    syncPrices.mutate();
+  };
 
   const todayRange = useMemo(() => {
     const startDate = new Date();
@@ -349,7 +353,7 @@ export default function Market() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => syncPrices.mutate()}
+            onClick={handleSyncPrices}
             disabled={syncPrices.isPending}
             className="gap-2"
           >
@@ -760,7 +764,7 @@ export default function Market() {
               </p>
               {!searchQuery && (
                 <Button
-                  onClick={() => syncPrices.mutate()}
+                  onClick={handleSyncPrices}
                   disabled={syncPrices.isPending}
                   className="gap-2"
                 >
