@@ -39,7 +39,7 @@ export function ChatComposer({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 <span className={cn("h-2 w-2 rounded-full bg-rose-500", "animate-pulse")} />
-                <span className="text-rose-600">Recording</span>
+                <span className="text-rose-600">Listening...</span>
               </div>
             </div>
           )}
