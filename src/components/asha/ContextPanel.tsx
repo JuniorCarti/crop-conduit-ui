@@ -36,8 +36,8 @@ export function ContextPanel({
   weather,
 }: {
   sessionId: string;
-  language: "en" | "sw";
-  onLanguageChange: (value: "en" | "sw") => void;
+  language: "auto" | "en" | "sw";
+  onLanguageChange: (value: "auto" | "en" | "sw") => void;
   autoRead: boolean;
   onAutoReadChange: (value: boolean) => void;
   farm: FarmContext;
@@ -83,8 +83,16 @@ export function ContextPanel({
               id="asha-language"
               className="h-8 rounded-md border border-input bg-background px-2 text-sm"
               value={language}
-              onChange={(event) => onLanguageChange(event.target.value === "sw" ? "sw" : "en")}
+              onChange={(event) => {
+                const next = event.target.value;
+                if (next === "sw" || next === "en") {
+                  onLanguageChange(next);
+                  return;
+                }
+                onLanguageChange("auto");
+              }}
             >
+              <option value="auto">Auto detect</option>
               <option value="en">English</option>
               <option value="sw">Kiswahili</option>
             </select>
