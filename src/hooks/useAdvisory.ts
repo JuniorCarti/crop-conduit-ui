@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { generateAdvisory } from "@/services/advisoryService";
 import type { AdvisoryGenerateResponse } from "@/types/advisory";
+import { auth } from "@/lib/firebase";
 
 type PendingConfirm = {
   farm?: Record<string, any>;
@@ -21,7 +22,8 @@ type SendToAshaOptions = {
 export function useAdvisory() {
   const mutation = useMutation<AdvisoryGenerateResponse, Error, Record<string, any>>({
     mutationFn: async (payload) => {
-      const data = await generateAdvisory(payload);
+      const token = await auth.currentUser?.getIdToken();
+      const data = await generateAdvisory(payload, { token });
       return data as AdvisoryGenerateResponse;
     },
   });
@@ -60,7 +62,8 @@ export function useAdvisory() {
         ...overrides,
       };
 
-      const data = await generateAdvisory(payload);
+      const token = await auth.currentUser?.getIdToken();
+      const data = await generateAdvisory(payload, { token });
 
       if (data?.mode === "collect_context") {
         if (typeof data.reply === "string") {
@@ -81,7 +84,7 @@ export function useAdvisory() {
       return data;
     } catch (error: any) {
       options?.onAssistantMessage?.(
-        `⚠️ I couldn’t generate advice. ${String(error?.message || error)}`
+        `I couldn't generate advice. ${String(error?.message || error)}`
       );
       throw error;
     } finally {
