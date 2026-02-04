@@ -20,7 +20,16 @@ Parameters:
     Default: YOUR_FIREBASE_PROJECT_ID
   AllowedOrigins:
     Type: String
-    Default: "http://localhost:8080,https://crop-conduit-ui.web.app"
+    Default: "http://localhost:8080,http://127.0.0.1:8080,https://crop-conduit-ui.web.app"
+  AzureSpeechSecretArn:
+    Type: String
+    Default: arn:aws:secretsmanager:us-east-2:762233767298:secret:agrismart/asha/azure-speech-pxpAuA
+  VoiceRateLimitMax:
+    Type: Number
+    Default: 12
+  VoiceRateLimitWindowMs:
+    Type: Number
+    Default: 60000
   DmConversationsTableName:
     Type: String
     Default: agrismart-dm-conversations
@@ -59,17 +68,25 @@ Resources:
     Properties:
       CorsConfiguration:
         AllowOrigins:
-          - http://localhost:8080
           - https://crop-conduit-ui.web.app
+          - http://localhost:8080
+          - http://127.0.0.1:8080
         AllowHeaders:
           - Authorization
           - Content-Type
+          - X-Requested-With
+          - Accept
+          - Origin
         AllowMethods:
+          - OPTIONS
           - GET
           - POST
-          - OPTIONS
           - PUT
           - DELETE
+        ExposeHeaders:
+          - Content-Type
+          - Content-Length
+        MaxAge: 600
         AllowCredentials: false
 
   PostsTable:
@@ -464,6 +481,32 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmMessagesTableName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmContactRequestsTableName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DmBlocksTableName}
+
+  AshaVoiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/ashaVoiceRouter.handler
+      Events:
+        VoiceRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /asha/voice/{proxy+}
+            Method: ANY
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref AzureSpeechSecretArn
+      Environment:
+        Variables:
+          AZURE_SPEECH_SECRET_ARN: !Ref AzureSpeechSecretArn
+          VOICE_RATE_LIMIT_MAX: !Ref VoiceRateLimitMax
+          VOICE_RATE_LIMIT_WINDOW_MS: !Ref VoiceRateLimitWindowMs
 
 Outputs:
   ApiBaseUrl:
