@@ -108,5 +108,10 @@ export type AdvisoryGenerateResponse = {
   dataUsed?: {
     locationName?: string | null;
     weatherHighlights?: string[];
+    weatherSource?: string | null;
+    weatherTimestamp?: string | null;
+    marketHighlights?: string[];
+    marketTimestamp?: string | null;
+    dataQualityMessages?: string[];
   };
 };
