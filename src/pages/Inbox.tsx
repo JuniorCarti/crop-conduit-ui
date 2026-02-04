@@ -1,49 +1,19 @@
 import { useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { MessageSquareText, Plus } from "lucide-react";
-import { toast } from "sonner";
+import { MessageSquareText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConversationList } from "@/components/community/ConversationList";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertCard } from "@/components/shared/AlertCard";
 import { useConversations } from "@/hooks/useDirectMessages";
-import { startConversation } from "@/services/dmService";
 
 export default function Inbox() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const queryClient = useQueryClient();
   const { data, isLoading } = useConversations(currentUser?.uid);
-  const createMutation = useMutation({
-    mutationFn: (otherUid: string) => startConversation(otherUid),
-    onSuccess: (conversation) => {
-      queryClient.invalidateQueries({ queryKey: ["dm", "conversations"] });
-      navigate(`/community/chat/${conversation.conversationId}`);
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || "Unable to start conversation");
-    },
-  });
-
   const conversations = useMemo(() => data?.items || [], [data]);
-
-  const handleNewChat = () => {
-    if (typeof window === "undefined") return;
-    const input = window.prompt("Enter the farmer UID to start a chat", "");
-    const otherUid = input?.trim();
-    if (!otherUid) return;
-    if (otherUid.length <= 20) {
-      toast.error("Please select a farmer from a post or profile (names aren’t valid IDs).");
-      return;
-    }
-    if (otherUid === currentUser?.uid) {
-      toast.error("You cannot chat with yourself.");
-      return;
-    }
-    createMutation.mutate(otherUid);
-  };
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-6">
@@ -69,17 +39,9 @@ export default function Inbox() {
       <Card className="border-border/60 bg-card/80 p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold">Your conversations</p>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleNewChat}
-            disabled={createMutation.isPending}
-          >
-            <Plus className="h-4 w-4" />
-            New chat
-          </Button>
+          <p className="text-xs text-muted-foreground">
+            Tap “Message Farmer” from a post or profile to start chatting.
+          </p>
         </div>
       </Card>
 
@@ -89,11 +51,17 @@ export default function Inbox() {
             <Skeleton key={index} className="h-20 rounded-2xl" />
           ))}
         </div>
-      ) : (
+      ) : conversations.length ? (
         <ConversationList
           conversations={conversations}
           currentUserId={currentUser?.uid || null}
           onSelect={(conversation) => navigate(`/community/chat/${conversation.conversationId}`)}
+        />
+      ) : (
+        <AlertCard
+          type="info"
+          title="No conversations yet"
+          message="Message a farmer from the community feed to start the first chat."
         />
       )}
     </div>
