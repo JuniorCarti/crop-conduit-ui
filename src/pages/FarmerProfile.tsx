@@ -8,6 +8,8 @@ import { AlertCard } from "@/components/shared/AlertCard";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFarmerProfileWithMigration, type FarmerProfile } from "@/services/firestore-farmer";
+import { startConversation } from "@/services/dmService";
+import { toast } from "sonner";
 import { db } from "@/lib/firebase";
 import { deleteDoc, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 
@@ -139,20 +141,39 @@ export default function FarmerProfile() {
     );
   }
 
+  const handleMessageFarmer = async () => {
+    if (!profile?.uid || profile.uid === currentUser?.uid) return;
+    try {
+      const conversation = await startConversation(profile.uid);
+      if (conversation?.conversationId) {
+        navigate(`/community/chat/${conversation.conversationId}`);
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to start conversation");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader title="Farmer Profile" subtitle="Your farm and registration details">
-        <Button
-          variant="outline"
-          onClick={() =>
-            navigate("/farmer-registration", {
-              state: { farmerData: profile, pendingStatus: profile?.pending?.status },
-            })
-          }
-          disabled={Boolean(isPending || !profile)}
-        >
-          {isPending ? "Edit (pending review)" : "Edit Profile"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {!loading && profile && profile.uid !== currentUser?.uid ? (
+            <Button type="button" onClick={handleMessageFarmer} size="sm" variant="outline">
+              Message Farmer
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate("/farmer-registration", {
+                state: { farmerData: profile, pendingStatus: profile?.pending?.status },
+              })
+            }
+            disabled={Boolean(isPending || !profile)}
+          >
+            {isPending ? "Edit (pending review)" : "Edit Profile"}
+          </Button>
+        </div>
       </PageHeader>
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-6">
         {loading ? (
