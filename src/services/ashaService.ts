@@ -1,13 +1,12 @@
 import type { AshaChatRequest, AshaResponse } from "@/types/asha";
 
-const DEFAULT_ADVISORY_API_URL = "https://agrismart-advisory.ridgejunior204.workers.dev";
-
-const resolveAdvisoryUrl = (): string =>
-  (
-    import.meta.env.VITE_ADVISORY_API_BASE_URL ||
-    import.meta.env.VITE_ADVISORY_WORKER_URL ||
-    DEFAULT_ADVISORY_API_URL
-  ).replace(/\/$/, "");
+const resolveAshaBaseUrl = (): string => {
+  const raw = import.meta.env.VITE_ASHA_API_BASE_URL as string | undefined;
+  if (!raw) {
+    throw new Error("VITE_ASHA_API_BASE_URL is not configured.");
+  }
+  return raw.replace(/\/$/, "");
+};
 
 const parseResponse = async (response: Response): Promise<any> => {
   const contentType = response.headers.get("Content-Type") || "";
@@ -49,7 +48,15 @@ export async function sendAshaChat(
   payload: AshaChatRequest,
   token?: string
 ): Promise<AshaResponse> {
-  const baseUrl = resolveAdvisoryUrl();
+  if (!token) {
+    return {
+      ok: false,
+      reply: "Authentication required.",
+      error: "Missing Firebase ID token.",
+    };
+  }
+
+  const baseUrl = resolveAshaBaseUrl();
   const endpoints = ["/asha/chat", "/advisory/generate"];
 
   let lastError = "Request failed.";
@@ -59,7 +66,7 @@ export async function sendAshaChat(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
     }).catch((error) => {
