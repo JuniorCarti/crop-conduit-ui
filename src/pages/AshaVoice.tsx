@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Mic, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -59,10 +59,12 @@ const loadToggle = (key: string, fallback = false) => {
   }
 };
 
-const loadLanguage = (): "en" | "sw" => {
-  if (typeof window === "undefined") return "en";
+const loadLanguage = (): "auto" | "en" | "sw" => {
+  if (typeof window === "undefined") return "auto";
   const raw = window.localStorage.getItem(LANGUAGE_KEY);
-  return raw === "sw" ? "sw" : "en";
+  if (raw === "sw") return "sw";
+  if (raw === "en") return "en";
+  return "auto";
 };
 
 const extractWeatherSummary = (forecast: WeatherApiForecast | null) => {
@@ -86,22 +88,28 @@ export default function AshaVoice() {
   const { sessionId, messages, isLoading, error, sendMessage, resetSession, hasMessages } = useAshaChat();
 
   const [input, setInput] = useState("");
-  const [language, setLanguage] = useState<"en" | "sw">(loadLanguage());
+  const [selectedLanguage, setSelectedLanguage] = useState<"auto" | "en" | "sw">(loadLanguage());
   const [autoRead, setAutoRead] = useState(loadToggle(AUTO_READ_KEY));
   const [farmContext, setFarmContext] = useState<Record<string, any>>(loadStoredFarm());
   const [weatherSummary, setWeatherSummary] = useState<any | null>(null);
   const [showContext, setShowContext] = useState(false);
+
+  const getVoiceAuthToken = useCallback(async () => {
+    if (!currentUser) return undefined;
+    return currentUser.getIdToken();
+  }, [currentUser]);
 
   const {
     isRecording,
     isTranscribing,
     transcript,
     setTranscript,
+    detectedLanguage,
     error: voiceError,
     isSupported,
     startRecording,
     stopRecording,
-  } = useVoice(language);
+  } = useVoice({ language: selectedLanguage, getAuthToken: getVoiceAuthToken });
 
   useEffect(() => {
     if (transcript) {
@@ -115,9 +123,9 @@ export default function AshaVoice() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(LANGUAGE_KEY, language);
+      window.localStorage.setItem(LANGUAGE_KEY, selectedLanguage);
     }
-  }, [language]);
+  }, [selectedLanguage]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -154,27 +162,38 @@ export default function AshaVoice() {
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
+    const languageForChat =
+      selectedLanguage === "sw"
+        ? "sw"
+        : selectedLanguage === "en"
+        ? "en"
+        : detectedLanguage || "en";
+
     setInput("");
     setTranscript("");
-    await sendMessage(trimmed, {
-      language,
-      farm: {
-        lat: farmContext.lat,
-        lon: farmContext.lon,
-        county: farmContext.county,
-        ward: farmContext.ward,
-        crops: farmContext.crops,
+    await sendMessage(
+      trimmed,
+      {
+        language: languageForChat,
+        farm: {
+          lat: farmContext.lat,
+          lon: farmContext.lon,
+          county: farmContext.county,
+          ward: farmContext.ward,
+          crops: farmContext.crops,
+        },
+        context: {
+          userId: currentUser?.uid,
+          displayName: currentUser?.displayName || "",
+          email: currentUser?.email || "",
+        },
+        clientContext: {
+          activeTab: "asha",
+          cartCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+        },
       },
-      context: {
-        userId: currentUser?.uid,
-        displayName: currentUser?.displayName || "",
-        email: currentUser?.email || "",
-      },
-      clientContext: {
-        activeTab: "asha",
-        cartCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-      },
-    }, { autoPlay: autoRead });
+      { autoPlay: autoRead }
+    );
   };
 
   const handleSuggestion = (value: string) => {
@@ -212,8 +231,8 @@ export default function AshaVoice() {
           <div className={cn(showContext ? "block" : "hidden", "lg:block")}>
             <ContextPanel
               sessionId={sessionId}
-              language={language}
-              onLanguageChange={setLanguage}
+              language={selectedLanguage}
+              onLanguageChange={setSelectedLanguage}
               autoRead={autoRead}
               onAutoReadChange={setAutoRead}
               farm={farmContext}
@@ -260,6 +279,17 @@ export default function AshaVoice() {
               isTranscribing={isTranscribing}
               isVoiceSupported={isSupported}
             />
+            {transcript && (
+              <div className="rounded-2xl border border-border bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Transcript preview
+                </p>
+                <p className="mt-1 text-base text-foreground break-words">{transcript}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Detected language: {detectedLanguage === "sw" ? "Kiswahili" : "English"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
