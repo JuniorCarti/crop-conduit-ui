@@ -17,7 +17,9 @@ import {
   Timestamp,
   runTransaction,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { toast } from "sonner";
+import { auth, db } from "@/lib/firebase";
 
 export interface MarketPrice {
   id?: string;
@@ -37,6 +39,95 @@ export interface MarketPrice {
 }
 
 const MARKET_PRICES_COLLECTION = "market_prices";
+
+type PredictCommodity = "potatoes" | "kale" | "tomatoes" | "onion" | "cabbage";
+
+const PREDICT_COMMODITIES: ReadonlySet<PredictCommodity> = new Set([
+  "potatoes",
+  "kale",
+  "tomatoes",
+  "onion",
+  "cabbage",
+]);
+
+const STORAGE_COMMODITY_LABELS: Record<PredictCommodity, string> = {
+  tomatoes: "Tomatoes",
+  onion: "Onions",
+  potatoes: "Irish potato",
+  kale: "Kale",
+  cabbage: "Cabbage",
+};
+
+export const getStorageCommodityLabel = (commodity: PredictCommodity): string =>
+  STORAGE_COMMODITY_LABELS[commodity];
+
+const DEFAULT_PREVIOUS_MONTH_PRICES: Record<PredictCommodity, number> = {
+  tomatoes: 50,
+  onion: 60,
+  potatoes: 40,
+  kale: 45,
+  cabbage: 35,
+};
+
+const unsupportedPredictCommodities = new Set<PredictCommodity>();
+
+const AUTH_REQUIRED_MESSAGE = "Login required to load cached market prices.";
+let authMessageShown = false;
+
+let authReady = false;
+let authReadyPromise: Promise<void> | null = null;
+
+const awaitAuthReady = (): Promise<void> => {
+  if (authReady) {
+    return Promise.resolve();
+  }
+  if (!authReadyPromise) {
+    authReadyPromise = new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, () => {
+        authReady = true;
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+  return authReadyPromise;
+};
+
+const hasAuthenticatedUser = (): boolean => !!auth.currentUser;
+
+const canUseFirestore = async (): Promise<boolean> => {
+  await awaitAuthReady();
+  return hasAuthenticatedUser();
+};
+
+const notifyAuthRequired = () => {
+  if (authMessageShown) return;
+  authMessageShown = true;
+  console.warn(AUTH_REQUIRED_MESSAGE);
+  if (typeof window !== "undefined") {
+    toast.warning(AUTH_REQUIRED_MESSAGE);
+  }
+};
+
+const logFirestoreSkip = (context: string) => {
+  console.info(`[MarketPriceService] Skipping Firestore ${context}: user not authenticated.`);
+  notifyAuthRequired();
+};
+
+const isPermissionDenied = (error: any): boolean => {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "permission-denied" ||
+    message.includes("Missing or insufficient permissions") ||
+    message.toLowerCase().includes("permission-denied")
+  );
+};
+
+const logPermissionDenied = (context: string, error?: any) => {
+  if (import.meta.env.DEV) {
+    console.warn(`[MarketPriceService] Firestore permission denied (${context}).`, error);
+  }
+};
 
 // Render API Configuration
 // Set this in your .env file: VITE_RENDER_API_URL=https://market-forecaster-kenyan-agro-market-621a.onrender.com/predict
@@ -131,6 +222,27 @@ function generatePriceKey(commodity: string, market: string, date: Date): string
 }
 
 /**
+ * Normalize UI commodity labels to the Render /predict API contract.
+ */
+export function normalizeCommodityForPredict(uiCommodity: string): PredictCommodity {
+  const normalized = uiCommodity.trim().toLowerCase();
+  if (!normalized) {
+    throw new Error("[MarketPriceService] Unsupported commodity: empty value");
+  }
+
+  if (normalized.includes("potato")) return "potatoes";
+  if (normalized.includes("onion")) return "onion";
+  if (normalized.includes("tomato")) return "tomatoes";
+  if (normalized.includes("kale")) return "kale";
+  if (normalized.includes("cabbage")) return "cabbage";
+
+  throw new Error(
+    `[MarketPriceService] Unsupported commodity "${uiCommodity}". ` +
+    `Expected one of: ${Array.from(PREDICT_COMMODITIES).join(", ")}`
+  );
+}
+
+/**
  * Excel parsing removed - now using Render API only
  * This function is deprecated and kept for backward compatibility
  */
@@ -149,6 +261,12 @@ export async function uploadMarketPrices(prices: MarketPrice[]): Promise<{ succe
   let errors = 0;
 
   try {
+    const allowFirestore = await canUseFirestore();
+    if (!allowFirestore) {
+      logFirestoreSkip("upload");
+      return { success: 0, skipped: prices.length, errors: 0 };
+    }
+
     // Process in batches to avoid Firestore limits
     const batchSize = 500;
     for (let i = 0; i < prices.length; i += batchSize) {
@@ -250,104 +368,19 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
 
   try {
     console.log("[MarketPriceService] Fetching market forecast from Render API /predict endpoint:", RENDER_API_URL);
-    
-    type NormalizedCommodity = "tomatoes" | "onion" | "potatoes" | "kale" | "cabbage";
-
-    const ALLOWED_COMMODITIES: ReadonlySet<NormalizedCommodity> = new Set([
-      "tomatoes",
-      "onion",
-      "potatoes",
-      "kale",
-      "cabbage",
-    ]);
-
-    // Normalize commodity names to API enums.
-    const normalizeApiCommodity = (value: string): NormalizedCommodity | null => {
-      const normalized = value.trim().toLowerCase();
-      switch (normalized) {
-        case "tomato":
-        case "tomatoes":
-          return "tomatoes";
-        case "onion":
-        case "onions":
-        case "onions (dry)":
-          return "onion";
-        case "potato":
-        case "potatoes":
-        case "irish potato":
-          return "potatoes";
-        case "kale":
-          return "kale";
-        case "cabbage":
-          return "cabbage";
-        default:
-          return null;
-      }
-    };
-
-    const assertAllowedCommodity = (value: string): NormalizedCommodity => {
-      const normalized = normalizeApiCommodity(value);
-      if (!normalized || !ALLOWED_COMMODITIES.has(normalized)) {
-        throw new Error(
-          `[MarketPriceService] Invalid commodity "${value}". ` +
-          `Allowed values: ${Array.from(ALLOWED_COMMODITIES).join(", ")}`
-        );
-      }
-      return normalized;
-    };
-
-    const COMMODITY_LABELS: Record<NormalizedCommodity, string> = {
-      tomatoes: "Tomatoes",
-      onion: "Onions (dry)",
-      potatoes: "Potatoes (Irish)",
-      kale: "Kale",
-      cabbage: "Cabbage",
-    };
-
-    type CommodityMode = "lowercase" | "label";
-    let commodityMode: CommodityMode = "lowercase";
-
-    const parseAllowedList = (err: unknown): string[] => {
-      const msg = typeof err === "string" ? err : JSON.stringify(err);
-      const match = msg.match(/\[(.+?)\]/);
-      if (!match) {
-        return [];
-      }
-      return match[1]
-        .split(",")
-        .map((entry) => entry.trim().replace(/^['"]|['"]$/g, ""))
-        .filter(Boolean);
-    };
-
-    const updateCommodityModeFromError = (err: unknown): void => {
-      const allowed = parseAllowedList(err);
-      if (!allowed.length) {
-        return;
-      }
-      const hasLowercase = allowed.some((value) =>
-        ["cabbage", "potatoes", "kale", "onion", "tomatoes"].includes(value)
-      );
-      const hasLabels = allowed.some((value) =>
-        ["Cabbage", "Kale", "Onions (dry)", "Potatoes (Irish)", "Tomatoes"].includes(value)
-      );
-
-      if (hasLowercase && commodityMode !== "lowercase") {
-        commodityMode = "lowercase";
-        console.warn("[Predict] commodity mode set to lowercase based on backend response.");
-      } else if (hasLabels && commodityMode !== "label") {
-        commodityMode = "label";
-        console.warn("[Predict] commodity mode set to label based on backend response.");
-      }
-    };
-
-    const formatCommodityForApi = (value: NormalizedCommodity): string =>
-      commodityMode === "lowercase" ? value : COMMODITY_LABELS[value];
+    const allowFirestore = await canUseFirestore();
+    if (!allowFirestore) {
+      logFirestoreSkip("read/write");
+    }
 
     const postPredict = async (payload: RenderApiRequest): Promise<Response> => {
-      const normalizedCommodity = assertAllowedCommodity(payload.commodity);
+      const normalizedCommodity = normalizeCommodityForPredict(payload.commodity);
+      if (unsupportedPredictCommodities.has(normalizedCommodity)) {
+        throw new Error(`[Predict] Commodity "${normalizedCommodity}" marked unsupported in this session.`);
+      }
       const fixed: RenderApiRequest = {
         ...payload,
-        commodity: formatCommodityForApi(normalizedCommodity),
+        commodity: normalizedCommodity,
         admin1: payload.admin1.trim() as Region,
         market: payload.market?.trim(),
       };
@@ -368,7 +401,9 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
           err = JSON.parse(txt);
         } catch {}
         console.error("[Predict] API error:", res.status, err);
-        updateCommodityModeFromError(err);
+        if (res.status === 400) {
+          unsupportedPredictCommodities.add(normalizedCommodity);
+        }
 
         // Throw so caller can count it as an error.
         throw new Error(
@@ -382,7 +417,7 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
     };
 
     // Only query commodities supported by the API
-    const supportedCommodities = ["tomatoes", "onions", "irish potato"];
+    const supportedCommodities = Object.values(STORAGE_COMMODITY_LABELS);
     
     // Market mapping: internal name -> API name (admin1 resolved via mapping)
     const markets = [
@@ -402,48 +437,60 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
     let errors = 0;
 
     // Fetch predictions for each commodity-market combination
-    for (const commodity of supportedCommodities) {
-      for (const marketInfo of markets) {
-        try {
-          // Map commodity to API format
-          const normalizedCommodity = assertAllowedCommodity(commodity);
+    for (const commodityLabel of supportedCommodities) {
+      let normalizedCommodity: PredictCommodity;
+      try {
+        normalizedCommodity = normalizeCommodityForPredict(commodityLabel);
+      } catch (normalizeError) {
+        console.warn("[MarketPriceService] Unsupported commodity, skipping predict:", commodityLabel, normalizeError);
+        skipped += markets.length;
+        continue;
+      }
 
+      if (unsupportedPredictCommodities.has(normalizedCommodity)) {
+        console.warn(`[MarketPriceService] Skipping ${normalizedCommodity}: marked unsupported in this session.`);
+        skipped += markets.length;
+        continue;
+      }
+
+      const storageCommodity = STORAGE_COMMODITY_LABELS[normalizedCommodity];
+
+      for (const marketInfo of markets) {
+        if (unsupportedPredictCommodities.has(normalizedCommodity)) {
+          skipped++;
+          continue;
+        }
+
+        try {
           // Get previous month's price from Firestore for this commodity-market combination
           const previousMonthDate = new Date(today);
           previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
-          const previousMonthStr = previousMonthDate.toISOString().split("T")[0];
 
           // Try to get previous month price from Firestore
           let previousMonthPrice: number | undefined = undefined;
-          try {
-            const previousPrices = await getMarketPrices({
-              commodity: commodity.charAt(0).toUpperCase() + commodity.slice(1),
-              market: marketInfo.name,
-              startDate: previousMonthDate,
-              endDate: previousMonthDate,
-              limitCount: 1,
-            });
+          if (allowFirestore) {
+            try {
+              const previousPrices = await getMarketPrices({
+                commodity: storageCommodity,
+                market: marketInfo.name,
+                startDate: previousMonthDate,
+                endDate: previousMonthDate,
+                limitCount: 1,
+              });
 
-            if (previousPrices.length > 0) {
-              // Use retail price as previous_month_price (or wholesale if retail not available)
-              previousMonthPrice = previousPrices[0].retail || previousPrices[0].wholesale;
+              if (previousPrices.length > 0) {
+                // Use retail price as previous_month_price (or wholesale if retail not available)
+                previousMonthPrice = previousPrices[0].retail || previousPrices[0].wholesale;
+              }
+            } catch (priceError) {
+              console.warn(`[MarketPriceService] Could not fetch previous month price for ${storageCommodity} - ${marketInfo.name}:`, priceError);
             }
-          } catch (priceError) {
-            console.warn(`[MarketPriceService] Could not fetch previous month price for ${commodity} - ${marketInfo.name}:`, priceError);
           }
 
           // Fallback to default price if not found (use average market price or default)
           if (previousMonthPrice === undefined || previousMonthPrice <= 0) {
-            // Default prices per commodity (in KSh per kg/unit) - can be adjusted
-            const defaultPrices: Record<NormalizedCommodity, number> = {
-              tomatoes: 50,
-              onion: 60,
-              potatoes: 40,
-              kale: 45,
-              cabbage: 35,
-            };
-            previousMonthPrice = defaultPrices[normalizedCommodity];
-            console.log(`[MarketPriceService] Using default previous_month_price ${previousMonthPrice} for ${commodity}`);
+            previousMonthPrice = DEFAULT_PREVIOUS_MONTH_PRICES[normalizedCommodity];
+            console.log(`[MarketPriceService] Using default previous_month_price ${previousMonthPrice} for ${storageCommodity}`);
           }
 
           const admin1 = resolveAdmin1(marketInfo.apiName || marketInfo.name);
@@ -455,8 +502,8 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
             market: apiMarketName,
           };
 
-          console.log(`[MarketPriceService] Requesting prediction for ${commodity} - ${marketInfo.name} (retail)`);
-          console.log(`[MarketPriceService] Requesting prediction for ${commodity} - ${marketInfo.name} (wholesale)`);
+          console.log(`[MarketPriceService] Requesting prediction for ${storageCommodity} - ${marketInfo.name} (retail)`);
+          console.log(`[MarketPriceService] Requesting prediction for ${storageCommodity} - ${marketInfo.name} (wholesale)`);
           const retailRequest: RenderApiRequest = {
             ...baseRequest,
             commodity: normalizedCommodity,
@@ -480,7 +527,7 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
           if (retailResponse.status === "fulfilled" && retailResponse.value.ok) {
             try {
               const retailData: RenderApiResponse = await retailResponse.value.json();
-              console.log(`[MarketPriceService] Retail response for ${commodity}:`, retailData);
+              console.log(`[MarketPriceService] Retail response for ${storageCommodity}:`, retailData);
               // API returns prediction_per_kg field - prioritize this field
               retailPrice = retailData.prediction_per_kg ?? retailData.predicted_price ?? retailData.retail ?? null;
               // Ensure price is a valid number
@@ -488,10 +535,10 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
                 retailPrice = null;
               }
             } catch (parseError) {
-              console.warn(`[MarketPriceService] Error parsing retail response for ${commodity} - ${marketInfo.name}:`, parseError);
+              console.warn(`[MarketPriceService] Error parsing retail response for ${storageCommodity} - ${marketInfo.name}:`, parseError);
             }
           } else if (retailResponse.status === "rejected") {
-            console.warn(`[MarketPriceService] Retail request failed for ${commodity} - ${marketInfo.name}:`, retailResponse.reason);
+            console.warn(`[MarketPriceService] Retail request failed for ${storageCommodity} - ${marketInfo.name}:`, retailResponse.reason);
           }
 
           // Process wholesale response
@@ -499,7 +546,7 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
           if (wholesaleResponse.status === "fulfilled" && wholesaleResponse.value.ok) {
             try {
               const wholesaleData: RenderApiResponse = await wholesaleResponse.value.json();
-              console.log(`[MarketPriceService] Wholesale response for ${commodity}:`, wholesaleData);
+              console.log(`[MarketPriceService] Wholesale response for ${storageCommodity}:`, wholesaleData);
               // API returns prediction_per_kg field - prioritize this field
               wholesalePrice = wholesaleData.prediction_per_kg ?? wholesaleData.predicted_price ?? wholesaleData.wholesale ?? null;
               // Ensure price is a valid number
@@ -507,15 +554,15 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
                 wholesalePrice = null;
               }
             } catch (parseError) {
-              console.warn(`[MarketPriceService] Error parsing wholesale response for ${commodity} - ${marketInfo.name}:`, parseError);
+              console.warn(`[MarketPriceService] Error parsing wholesale response for ${storageCommodity} - ${marketInfo.name}:`, parseError);
             }
           } else if (wholesaleResponse.status === "rejected") {
-            console.warn(`[MarketPriceService] Wholesale request failed for ${commodity} - ${marketInfo.name}:`, wholesaleResponse.reason);
+            console.warn(`[MarketPriceService] Wholesale request failed for ${storageCommodity} - ${marketInfo.name}:`, wholesaleResponse.reason);
           }
 
           // Skip if both prices are invalid
           if ((retailPrice === null || retailPrice <= 0) && (wholesalePrice === null || wholesalePrice <= 0)) {
-            console.warn(`[MarketPriceService] Skipping ${commodity} - ${marketInfo.name}: No valid prices (retail: ${retailPrice}, wholesale: ${wholesalePrice})`);
+            console.warn(`[MarketPriceService] Skipping ${storageCommodity} - ${marketInfo.name}: No valid prices (retail: ${retailPrice}, wholesale: ${wholesalePrice})`);
             skipped++;
             continue;
           }
@@ -531,7 +578,7 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
 
           // Map to MarketPrice format
           const marketPrice: Omit<MarketPrice, "id" | "createdAt" | "updatedAt"> = {
-            commodity: commodity.charAt(0).toUpperCase() + commodity.slice(1), // Capitalize first letter
+            commodity: storageCommodity,
             market: marketInfo.name,
             county: admin1,
             retail: finalRetail,
@@ -539,31 +586,33 @@ export async function fetchMarketForecastFromRender(): Promise<{ success: number
             date: today,
           };
 
-          // Generate composite key for upsert
-          const priceKey = generatePriceKey(marketPrice.commodity, marketPrice.market, today);
-          const docRef = doc(db, MARKET_PRICES_COLLECTION, priceKey);
+          if (allowFirestore) {
+            // Generate composite key for upsert
+            const priceKey = generatePriceKey(marketPrice.commodity, marketPrice.market, today);
+            const docRef = doc(db, MARKET_PRICES_COLLECTION, priceKey);
 
-          // Check if document exists to preserve createdAt
-          const existingDoc = await getDoc(docRef);
-          const createdAt = existingDoc.exists() && existingDoc.data().createdAt
-            ? existingDoc.data().createdAt
-            : Timestamp.now();
+            // Check if document exists to preserve createdAt
+            const existingDoc = await getDoc(docRef);
+            const createdAt = existingDoc.exists() && existingDoc.data().createdAt
+              ? existingDoc.data().createdAt
+              : Timestamp.now();
 
-          // Upsert to Firestore (merge with existing data)
-          await setDoc(
-            docRef,
-            {
-              ...marketPrice,
-              date: Timestamp.fromDate(today),
-              updatedAt: Timestamp.now(),
-              createdAt: createdAt,
-            },
-            { merge: true }
-          );
+            // Upsert to Firestore (merge with existing data)
+            await setDoc(
+              docRef,
+              {
+                ...marketPrice,
+                date: Timestamp.fromDate(today),
+                updatedAt: Timestamp.now(),
+                createdAt: createdAt,
+              },
+              { merge: true }
+            );
+          }
 
           success++;
         } catch (recordError: any) {
-          console.error(`[MarketPriceService] Error processing ${commodity} - ${marketInfo.name}:`, recordError);
+          console.error(`[MarketPriceService] Error processing ${storageCommodity} - ${marketInfo.name}:`, recordError);
           errors++;
         }
       }
@@ -608,6 +657,10 @@ export async function syncMarketForecastWithFallback(): Promise<{ success: numbe
 
   try {
     console.log("[MarketPriceService] Starting market forecast sync from Render API /predict endpoint...");
+    await awaitAuthReady();
+    if (!hasAuthenticatedUser()) {
+      logFirestoreSkip("cache");
+    }
     
     // Only call /predict endpoint - no other options
     const syncResult = await fetchMarketForecastFromRender();
@@ -644,6 +697,12 @@ export async function getMarketPrices(filters: {
   limitCount?: number;
 }): Promise<MarketPrice[]> {
   try {
+    await awaitAuthReady();
+    if (!hasAuthenticatedUser()) {
+      logFirestoreSkip("read");
+      return [];
+    }
+
     let q = query(collection(db, MARKET_PRICES_COLLECTION));
 
     if (filters.commodity) {
@@ -683,6 +742,10 @@ export async function getMarketPrices(filters: {
 
     return prices;
   } catch (error: any) {
+    if (isPermissionDenied(error)) {
+      logPermissionDenied("read", error);
+      return [];
+    }
     console.error("Error getting market prices:", error);
     throw error;
   }
@@ -702,47 +765,66 @@ export function subscribeToMarketPrices(
   callback: (prices: MarketPrice[]) => void
 ): () => void {
   try {
-    let q = query(collection(db, MARKET_PRICES_COLLECTION));
+    let active = true;
+    let unsubscribeSnapshot: (() => void) | null = null;
 
-    if (filters.commodity) {
-      q = query(q, where("commodity", "==", filters.commodity));
-    }
-    if (filters.market) {
-      q = query(q, where("market", "==", filters.market));
-    }
-    if (filters.county) {
-      q = query(q, where("county", "==", filters.county));
-    }
-    if (filters.startDate) {
-      q = query(q, where("date", ">=", Timestamp.fromDate(filters.startDate)));
-    }
-    if (filters.endDate) {
-      q = query(q, where("date", "<=", Timestamp.fromDate(filters.endDate)));
-    }
-
-    q = query(q, orderBy("date", "desc"), limit(1000));
-
-    return onSnapshot(
-      q,
-      (snapshot) => {
-        const prices: MarketPrice[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          prices.push({
-            id: doc.id,
-            ...data,
-            date: data.date?.toDate() || new Date(),
-            createdAt: data.createdAt?.toDate(),
-            updatedAt: data.updatedAt?.toDate(),
-          } as MarketPrice);
-        });
-        callback(prices);
-      },
-      (error) => {
-        console.error("Error subscribing to market prices:", error);
+    awaitAuthReady().then(() => {
+      if (!active) return;
+      if (!hasAuthenticatedUser()) {
+        logFirestoreSkip("subscription");
         callback([]);
+        return;
       }
-    );
+
+      let q = query(collection(db, MARKET_PRICES_COLLECTION));
+
+      if (filters.commodity) {
+        q = query(q, where("commodity", "==", filters.commodity));
+      }
+      if (filters.market) {
+        q = query(q, where("market", "==", filters.market));
+      }
+      if (filters.county) {
+        q = query(q, where("county", "==", filters.county));
+      }
+      if (filters.startDate) {
+        q = query(q, where("date", ">=", Timestamp.fromDate(filters.startDate)));
+      }
+      if (filters.endDate) {
+        q = query(q, where("date", "<=", Timestamp.fromDate(filters.endDate)));
+      }
+
+      q = query(q, orderBy("date", "desc"), limit(1000));
+
+      unsubscribeSnapshot = onSnapshot(
+        q,
+        (snapshot) => {
+          const prices: MarketPrice[] = [];
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            prices.push({
+              id: doc.id,
+              ...data,
+              date: data.date?.toDate() || new Date(),
+              createdAt: data.createdAt?.toDate(),
+              updatedAt: data.updatedAt?.toDate(),
+            } as MarketPrice);
+          });
+          callback(prices);
+        },
+        (error) => {
+          console.error("Error subscribing to market prices:", error);
+          callback([]);
+        }
+      );
+    });
+
+    return () => {
+      active = false;
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+    };
   } catch (error: any) {
     console.error("Error setting up market price subscription:", error);
     return () => {};
@@ -754,6 +836,12 @@ export function subscribeToMarketPrices(
  */
 export async function getLatestPrice(commodity: string, market?: string): Promise<MarketPrice | null> {
   try {
+    await awaitAuthReady();
+    if (!hasAuthenticatedUser()) {
+      logFirestoreSkip("latest price read");
+      return null;
+    }
+
     let q = query(
       collection(db, MARKET_PRICES_COLLECTION),
       where("commodity", "==", commodity),
@@ -786,6 +874,10 @@ export async function getLatestPrice(commodity: string, market?: string): Promis
       updatedAt: data.updatedAt?.toDate(),
     } as MarketPrice;
   } catch (error: any) {
+    if (isPermissionDenied(error)) {
+      logPermissionDenied("latest price read", error);
+      return null;
+    }
     console.error("Error getting latest price:", error);
     return null;
   }
@@ -796,6 +888,12 @@ export async function getLatestPrice(commodity: string, market?: string): Promis
  */
 export async function getAveragePrice(commodity: string, date?: Date): Promise<{ wholesale: number; retail: number } | null> {
   try {
+    await awaitAuthReady();
+    if (!hasAuthenticatedUser()) {
+      logFirestoreSkip("average price read");
+      return null;
+    }
+
     let q = query(
       collection(db, MARKET_PRICES_COLLECTION),
       where("commodity", "==", commodity),
@@ -834,6 +932,10 @@ export async function getAveragePrice(commodity: string, date?: Date): Promise<{
       retail: totalRetail / count,
     };
   } catch (error: any) {
+    if (isPermissionDenied(error)) {
+      logPermissionDenied("average price read", error);
+      return null;
+    }
     console.error("Error getting average price:", error);
     return null;
   }
