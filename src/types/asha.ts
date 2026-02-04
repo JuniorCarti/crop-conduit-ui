@@ -51,6 +51,7 @@ export type AshaMessage = {
   toolResult?: any;
   cards?: AshaCard[];
   autoPlay?: boolean;
+  language?: "en" | "sw";
 };
 
 export type AshaChatRequest = {
