@@ -4,6 +4,7 @@ import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import type { ContactRequest, ContactStatus, Conversation } from "@/types/dm";
 import {
@@ -70,21 +71,19 @@ export default function Chat() {
   };
 
   const handleAccept = async () => {
-    if (!activeRequestOtherUid) return;
-    const requestId =
-      activeRequestId ||
-      (typeof window !== "undefined" ? window.prompt("Enter the request ID to accept") || "" : "");
-    if (!requestId) return;
-    await acceptContact.mutateAsync({ otherUid: activeRequestOtherUid, requestId });
+    if (!activeRequestOtherUid || !activeRequestId) {
+      toast.error("Contact request not found.");
+      return;
+    }
+    await acceptContact.mutateAsync({ otherUid: activeRequestOtherUid, requestId: activeRequestId });
   };
 
   const handleReject = async () => {
-    if (!activeRequestOtherUid) return;
-    const requestId =
-      activeRequestId ||
-      (typeof window !== "undefined" ? window.prompt("Enter the request ID to decline") || "" : "");
-    if (!requestId) return;
-    await rejectContact.mutateAsync({ otherUid: activeRequestOtherUid, requestId });
+    if (!activeRequestOtherUid || !activeRequestId) {
+      toast.error("Contact request not found.");
+      return;
+    }
+    await rejectContact.mutateAsync({ otherUid: activeRequestOtherUid, requestId: activeRequestId });
   };
 
   const handleSendMessage = async (text: string) => {
