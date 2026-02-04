@@ -1,5 +1,9 @@
-const DEFAULT_ALLOWED_HEADERS = 'Authorization,Content-Type';
+const DEFAULT_ALLOWED_HEADERS =
+  'authorization,content-type,x-requested-with,accept,origin';
 const DEFAULT_ALLOWED_METHODS = 'OPTIONS,GET,POST,PUT,DELETE';
+const DEFAULT_EXPOSE_HEADERS = 'content-type,content-length';
+const DEFAULT_ALLOWED_ORIGIN = 'http://localhost:8080';
+const DEFAULT_MAX_AGE = '600';
 
 function getAllowedOrigins() {
   const raw = process.env.ALLOWED_ORIGINS || '';
@@ -11,7 +15,7 @@ function getAllowedOrigins() {
 
 function resolveOrigin(requestOrigin) {
   const allowed = getAllowedOrigins();
-  if (!allowed.length) return '*';
+  if (!allowed.length) return DEFAULT_ALLOWED_ORIGIN;
   if (!requestOrigin) return allowed[0];
   return allowed.includes(requestOrigin) ? requestOrigin : allowed[0];
 }
@@ -26,7 +30,7 @@ function isOptionsRequest(event) {
 
 function preflightResponse(event) {
   return {
-    statusCode: 200,
+    statusCode: 204,
     headers: {
       ...corsHeaders(event),
     },
@@ -40,6 +44,8 @@ function corsHeaders(event) {
     'Access-Control-Allow-Origin': resolveOrigin(origin),
     'Access-Control-Allow-Headers': DEFAULT_ALLOWED_HEADERS,
     'Access-Control-Allow-Methods': DEFAULT_ALLOWED_METHODS,
+    'Access-Control-Expose-Headers': DEFAULT_EXPOSE_HEADERS,
+    'Access-Control-Max-Age': DEFAULT_MAX_AGE,
     Vary: 'Origin'
   };
 }
@@ -78,6 +84,8 @@ const unauthorized = (event, message = 'Unauthorized') =>
   safeJsonResponse(event, 401, { message });
 const notFound = (event, message = 'Not Found') =>
   safeJsonResponse(event, 404, { message });
+const tooManyRequests = (event, message = 'Too Many Requests') =>
+  safeJsonResponse(event, 429, { message });
 const serverError = (event, message = 'Internal Server Error') =>
   safeJsonResponse(event, 500, { message });
 
@@ -106,5 +114,6 @@ module.exports = {
   badRequest,
   unauthorized,
   notFound,
+  tooManyRequests,
   serverError
 };
