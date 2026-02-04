@@ -117,6 +117,7 @@ export function useAshaChat() {
         );
 
         const replyText = response.reply || "Asha could not respond right now.";
+        const replyLanguage = payload.language ?? "en";
         const replyMessage: AshaMessage = {
           id: `${Date.now()}-assistant`,
           role: "assistant",
@@ -129,6 +130,7 @@ export function useAshaChat() {
           toolResult: response.toolResult,
           cards: buildCards(response),
           autoPlay: options?.autoPlay ?? false,
+          language: replyLanguage,
         };
 
         setMessages((prev) => [...prev, replyMessage]);
