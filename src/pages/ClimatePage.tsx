@@ -46,6 +46,7 @@ import { useClimateForecast } from "@/hooks/useClimateForecast";
 import { useAdvisory } from "@/hooks/useAdvisory";
 import { useSubscribeEmailAlerts, useSubscribeWhatsAppAlerts } from "@/hooks/useAlerts";
 import { isAlertsWorkerConfigured } from "@/services/alertsService";
+import { getAdvisoryContext } from "@/services/advisoryContextService";
 import { getSupportedCommodities } from "@/services/marketOracleService";
 import { useClimateStore } from "@/store/climateStore";
 import { usePremiumModalStore } from "@/store/premiumStore";
@@ -66,7 +67,6 @@ const defaultFeatures: UserFeatureFlags = {
 
 const FALLBACK_CROPS = ["tomatoes", "cabbage", "potatoes", "onion", "kale"];
 const ADVISORY_STORAGE_KEY = "agrismart:lastAdvisory";
-const MARKET_SIGNAL_STORAGE_KEY = "agrismart:lastMarketPrediction";
 const LAST_FARM_LAT_KEY = "agrismart:lastFarmLat";
 const LAST_FARM_LON_KEY = "agrismart:lastFarmLon";
 const LAST_FARM_NAME_KEY = "agrismart:lastFarmName";
@@ -131,6 +131,9 @@ export default function ClimatePage() {
   const [aiLanguage, setAiLanguage] = useState<"en" | "sw">("en");
   const [aiCrop, setAiCrop] = useState<string>("tomatoes");
   const [aiStage, setAiStage] = useState<string>("vegetative");
+  const [advisoryProgress, setAdvisoryProgress] = useState<string | null>(null);
+  const [advisoryError, setAdvisoryError] = useState<string | null>(null);
+  const [advisoryBusy, setAdvisoryBusy] = useState(false);
   const [cachedAdvisory, setCachedAdvisory] = useState<AdvisoryGenerateResponse | null>(() => {
     if (typeof window === "undefined") return null;
     const raw = window.localStorage.getItem(ADVISORY_STORAGE_KEY);
@@ -284,24 +287,6 @@ export default function ClimatePage() {
     selectedFarm
       ? `${selectedFarm.name} - ${selectedFarm.county}, ${selectedFarm.ward}`
       : storedFarm?.name || t("climate.aiAdvisory.locationUnknown");
-  const marketSignals = useMemo(() => {
-    if (typeof window === "undefined") return {};
-    const raw = window.localStorage.getItem(MARKET_SIGNAL_STORAGE_KEY);
-    if (!raw) return {};
-    try {
-      const parsed = JSON.parse(raw) as {
-        predictedPrice?: number;
-        marketUnreasonable?: boolean;
-      };
-      const predictedPrice =
-        typeof parsed.predictedPrice === "number" ? parsed.predictedPrice : undefined;
-      const marketUnreasonable =
-        typeof parsed.marketUnreasonable === "boolean" ? parsed.marketUnreasonable : undefined;
-      return { predictedPrice, marketUnreasonable };
-    } catch {
-      return {};
-    }
-  }, []);
   const climateSignals = useMemo(() => {
     if (!selectedFarm || !climateData?.forecast) return [];
     return computeClimateInsights(
@@ -425,6 +410,8 @@ export default function ClimatePage() {
     : {
         locationName: advisoryLocationName,
         weatherHighlights,
+        weatherSource: "Weather proxy",
+        weatherTimestamp: climateData?.forecast?.location?.localtime ?? null,
       };
 
   const handleUpgrade = () => {
@@ -597,37 +584,58 @@ export default function ClimatePage() {
   const handleGenerateAdvisory = async () => {
     if (!canGenerateAi || advisoryLat == null || advisoryLon == null) return;
     try {
-      const result = await advisoryMutation.mutateAsync({
-        language: aiLanguage,
-        farm: {
-          lat: advisoryLat,
-          lon: advisoryLon,
-          locationName: advisoryLocationName,
-        },
-        crop: {
+      setAdvisoryError(null);
+      advisoryMutation.reset();
+      setAdvisoryBusy(true);
+      setAdvisoryProgress(t("climate.aiAdvisory.progress.weather", "Fetching weather..."));
+
+      const { context, meta } = await getAdvisoryContext(
+        {
           name: aiCrop,
           stage: aiStage,
         },
-        signals: {
-          ...marketSignals,
-          climateSignals,
+        {
+          county: selectedFarm?.county || "",
+          ward: selectedFarm?.ward || "",
+          lat: advisoryLat,
+          lng: advisoryLon,
         },
-      });
-      const enriched = result.dataUsed
-        ? result
-        : {
-            ...result,
-            dataUsed: {
-              locationName: advisoryLocationName,
-              weatherHighlights,
-            },
-          };
+        aiLanguage,
+        {
+          signals: climateSignals,
+          onProgress: (step) => {
+            setAdvisoryProgress(
+              step === "weather"
+                ? t("climate.aiAdvisory.progress.weather", "Fetching weather...")
+                : t("climate.aiAdvisory.progress.market", "Fetching market...")
+            );
+          },
+        }
+      );
+
+      setAdvisoryProgress(t("climate.aiAdvisory.progress.generate", "Generating advisory..."));
+      const result = await advisoryMutation.mutateAsync(context);
+      const enriched = {
+        ...result,
+        dataUsed: {
+          ...meta,
+          locationName: advisoryLocationName,
+        },
+      };
       setCachedAdvisory(enriched);
       if (typeof window !== "undefined") {
         window.localStorage.setItem(ADVISORY_STORAGE_KEY, JSON.stringify(enriched));
       }
-    } catch {
-      // Error is surfaced in UI via mutation state.
+    } catch (error: any) {
+      setAdvisoryError(
+        error?.message || t("climate.aiAdvisory.error", "Unable to generate advisory.")
+      );
+      toast.error(
+        error?.message || t("climate.aiAdvisory.error", "Unable to generate advisory.")
+      );
+    } finally {
+      setAdvisoryBusy(false);
+      setAdvisoryProgress(null);
     }
   };
 
@@ -1027,8 +1035,9 @@ export default function ClimatePage() {
               </div>
               <AdvisoryCard
                 aiData={advisoryResult ?? null}
-                aiLoading={advisoryMutation.isPending}
-                aiError={advisoryMutation.error?.message ?? null}
+                aiLoading={advisoryBusy}
+                aiError={advisoryError ?? advisoryMutation.error?.message ?? null}
+                aiProgress={advisoryProgress}
                 onGenerateAi={handleGenerateAdvisory}
                 aiLanguage={aiLanguage}
                 onChangeAiLanguage={setAiLanguage}
