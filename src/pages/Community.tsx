@@ -84,6 +84,11 @@ export default function Community() {
   const startConversationMutation = useMutation({
     mutationFn: (otherUid: string) => startConversation(otherUid),
     onError: (error: any) => {
+      const message = String(error?.message || "").toLowerCase();
+      if (message.includes("blocked")) {
+        toast.error("You cannot message this farmer.");
+        return;
+      }
       toast.error(error?.message || "Unable to start conversation");
     },
   });
