@@ -13,6 +13,7 @@ interface AdvisoryCardProps {
   aiLoading: boolean;
   aiError: string | null;
   onGenerateAi: () => void;
+  aiProgress?: string | null;
   aiLanguage: "en" | "sw";
   onChangeAiLanguage: (language: "en" | "sw") => void;
   aiCrop: string;
@@ -24,6 +25,11 @@ interface AdvisoryCardProps {
   aiDataUsed?: {
     locationName?: string | null;
     weatherHighlights?: string[];
+    weatherSource?: string | null;
+    weatherTimestamp?: string | null;
+    marketHighlights?: string[];
+    marketTimestamp?: string | null;
+    dataQualityMessages?: string[];
   } | null;
   canGenerateAi: boolean;
   aiDisabledReason?: string | null;
@@ -38,6 +44,7 @@ export function AdvisoryCard({
   aiLoading,
   aiError,
   onGenerateAi,
+  aiProgress,
   aiLanguage,
   onChangeAiLanguage,
   aiCrop,
@@ -76,6 +83,16 @@ export function AdvisoryCard({
     aiData?.dataUsed?.locationName || aiDataUsed?.locationName || "";
   const aiHighlights =
     aiData?.dataUsed?.weatherHighlights || aiDataUsed?.weatherHighlights || [];
+  const aiWeatherSource =
+    aiData?.dataUsed?.weatherSource || aiDataUsed?.weatherSource || "";
+  const aiWeatherTimestamp =
+    aiData?.dataUsed?.weatherTimestamp || aiDataUsed?.weatherTimestamp || "";
+  const aiMarketHighlights =
+    aiData?.dataUsed?.marketHighlights || aiDataUsed?.marketHighlights || [];
+  const aiMarketTimestamp =
+    aiData?.dataUsed?.marketTimestamp || aiDataUsed?.marketTimestamp || "";
+  const aiDataQualityMessages =
+    aiData?.dataUsed?.dataQualityMessages || aiDataUsed?.dataQualityMessages || [];
 
   const card = (
     <Card className="border-border/60">
@@ -156,6 +173,9 @@ export function AdvisoryCard({
 
           {aiLoading && (
             <div className="space-y-2">
+              {aiProgress && (
+                <p className="text-xs text-muted-foreground">{aiProgress}</p>
+              )}
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-8 w-full" />
@@ -180,6 +200,18 @@ export function AdvisoryCard({
 
           {!aiLoading && aiData && (
             <div className="space-y-4">
+              {aiDataQualityMessages.length > 0 && (
+                <Alert>
+                  <AlertTitle>{t("climate.aiAdvisory.dataLimitations", "Data limitations")}</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc space-y-1 pl-4 text-xs">
+                      {aiDataQualityMessages.map((item, index) => (
+                        <li key={`${item}-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="rounded-md border border-border/60 p-3 text-sm">
                 <p className="text-xs text-muted-foreground">{t("climate.aiAdvisory.summary")}</p>
                 <p className="mt-1 font-semibold">{aiSummary || t("climate.aiAdvisory.noSummary")}</p>
@@ -223,12 +255,31 @@ export function AdvisoryCard({
                 <p className="font-semibold">
                   {aiLocationName || t("climate.aiAdvisory.locationUnknown")}
                 </p>
+                {aiWeatherSource && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("climate.aiAdvisory.weatherSource", "Weather source")}: {aiWeatherSource}
+                    {aiWeatherTimestamp ? ` - ${aiWeatherTimestamp}` : ""}
+                  </p>
+                )}
                 {aiHighlights.length > 0 && (
                   <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
                     {aiHighlights.map((item, index) => (
                       <li key={`${item}-${index}`}>{item}</li>
                     ))}
                   </ul>
+                )}
+                {aiMarketHighlights.length > 0 && (
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <p>{t("climate.aiAdvisory.marketUsed", "Markets considered")}:</p>
+                    <ul className="list-disc space-y-1 pl-4">
+                      {aiMarketHighlights.map((item, index) => (
+                        <li key={`${item}-${index}`}>{item}</li>
+                      ))}
+                    </ul>
+                    {aiMarketTimestamp && (
+                      <p>{t("climate.aiAdvisory.marketUpdated", "Market updated")}: {aiMarketTimestamp}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
