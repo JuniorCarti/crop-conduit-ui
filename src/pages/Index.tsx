@@ -15,7 +15,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -354,7 +354,7 @@ export default function Index() {
             title="Complete your farmer profile"
             message="Add your farm details to unlock tailored insights."
             action="Complete registration"
-            onAction={() => navigate("/farmer-registration")}
+            onAction={() => navigate("/registration")}
             onDismiss={() => {
               setDismissedProfilePrompt(true);
               if (typeof window !== "undefined") {
