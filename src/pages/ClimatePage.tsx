@@ -11,6 +11,7 @@ import {
   Droplet,
   Leaf,
   MapPin,
+  Sprout,
   Snowflake,
   Sun,
   Thermometer,
@@ -19,7 +20,7 @@ import {
   Wind,
   X,
 } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,12 @@ import { useSubscribeEmailAlerts, useSubscribeWhatsAppAlerts } from "@/hooks/use
 import { isAlertsWorkerConfigured } from "@/services/alertsService";
 import { getAdvisoryContext } from "@/services/advisoryContextService";
 import { getSupportedCommodities } from "@/services/marketOracleService";
+import { useCropPrices } from "@/hooks/useApi";
+import {
+  buildDecisionSupport,
+  type DecisionSupportForecastDay,
+  type DecisionSupportOutput,
+} from "@/services/decisionSupportService";
 import { useClimateStore } from "@/store/climateStore";
 import { usePremiumModalStore } from "@/store/premiumStore";
 import type { AdvisoryGenerateResponse } from "@/types/advisory";
@@ -120,6 +127,7 @@ export default function ClimatePage() {
     setUserPlan,
   } = useClimateStore();
   const { open: openPremiumModal } = usePremiumModalStore();
+  const { data: oraclePrices, error: oracleError } = useCropPrices();
 
   useEffect(() => {
     if (profile) {
@@ -134,6 +142,7 @@ export default function ClimatePage() {
   const [advisoryProgress, setAdvisoryProgress] = useState<string | null>(null);
   const [advisoryError, setAdvisoryError] = useState<string | null>(null);
   const [advisoryBusy, setAdvisoryBusy] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [cachedAdvisory, setCachedAdvisory] = useState<AdvisoryGenerateResponse | null>(() => {
     if (typeof window === "undefined") return null;
     const raw = window.localStorage.getItem(ADVISORY_STORAGE_KEY);
@@ -331,6 +340,18 @@ export default function ClimatePage() {
     return { min, max, range: Math.max(max - min, 1) };
   }, [snapshotRows]);
 
+  const decisionForecast = useMemo<DecisionSupportForecastDay[]>(() => {
+    const days = climateData?.forecast?.forecast?.forecastday ?? [];
+    return days.map((day) => ({
+      date: day.date,
+      chanceOfRain: day.day.daily_chance_of_rain ?? 0,
+      totalPrecipMm: day.day.totalprecip_mm ?? 0,
+      maxTempC: day.day.maxtemp_c ?? 0,
+      minTempC: day.day.mintemp_c ?? 0,
+      maxWindKph: day.day.maxwind_kph ?? 0,
+    }));
+  }, [climateData?.forecast?.forecast?.forecastday]);
+
   const keyAlertSignals = useMemo(() => {
     const candidates = climateSignals.filter((signal) =>
       ["heat-stress", "cold-stress", "rainfall-trend"].includes(signal.id)
@@ -413,6 +434,115 @@ export default function ClimatePage() {
         weatherSource: "Weather proxy",
         weatherTimestamp: climateData?.forecast?.location?.localtime ?? null,
       };
+
+  const decisionSupport = useMemo<DecisionSupportOutput>(() => {
+    return buildDecisionSupport({
+      crop: aiCrop,
+      location: {
+        county: selectedFarm?.county,
+        ward: selectedFarm?.ward,
+        name: selectedFarm?.name,
+      },
+      forecastDaily: decisionForecast,
+      marketOracleData: oraclePrices ?? [],
+    });
+  }, [aiCrop, decisionForecast, oraclePrices, selectedFarm?.county, selectedFarm?.name, selectedFarm?.ward]);
+
+  const decisionSupportError = oracleError
+    ? "Market Oracle unavailable - using weather-only guidance."
+    : null;
+
+  const cropLabel = useMemo(() => {
+    return cropOptions.find((option) => option.value === aiCrop)?.label ?? aiCrop;
+  }, [aiCrop, cropOptions]);
+
+  const weekSummary = useMemo(() => {
+    if (!headerSummary.days) {
+      return "Add a farm to see this week's summary.";
+    }
+    const rain =
+      headerSummary.avgChance != null && headerSummary.avgChance >= 60
+        ? "Good rains expected"
+        : headerSummary.avgChance != null && headerSummary.avgChance >= 30
+        ? "Light showers likely"
+        : "Dry week expected";
+    const temp =
+      headerSummary.avgMax != null && headerSummary.avgMax >= 32
+        ? "hot afternoons"
+        : headerSummary.avgMax != null && headerSummary.avgMax <= 20
+        ? "cool days"
+        : "mild temperatures";
+    return `This week: ${rain}, ${temp} good for ${cropLabel}.`;
+  }, [cropLabel, headerSummary.avgChance, headerSummary.avgMax, headerSummary.days]);
+
+  const actionCards = useMemo(() => {
+    const cards: Array<{
+      title: string;
+      reason: string;
+      tone: "good" | "warn" | "risk";
+    }> = [];
+
+    if (decisionSupport.plantingAdvice.window.toLowerCase().includes("delay")) {
+      cards.push({
+        title: "Delay planting this week",
+        reason: decisionSupport.plantingAdvice.reasons[0] ?? "Dry spell expected.",
+        tone: "risk",
+      });
+    } else {
+      cards.push({
+        title: "Planting is favorable this week",
+        reason: decisionSupport.plantingAdvice.reasons[0] ?? "Soil moisture improving.",
+        tone: decisionSupport.plantingAdvice.confidence === "High" ? "good" : "warn",
+      });
+    }
+
+    if (decisionSupport.harvestAdvice.weatherRisk === "Rain") {
+      cards.push({
+        title: "Harvest before heavy rain",
+        reason: decisionSupport.harvestAdvice.reasons[0] ?? "Heavy rain risk soon.",
+        tone: "risk",
+      });
+    } else if (decisionSupport.harvestAdvice.weatherRisk === "Heat") {
+      cards.push({
+        title: "Harvest early mornings",
+        reason: decisionSupport.harvestAdvice.reasons[0] ?? "Heat stress expected.",
+        tone: "warn",
+      });
+    } else {
+      cards.push({
+        title: "Harvest on schedule",
+        reason: decisionSupport.harvestAdvice.reasons[0] ?? "Weather is stable.",
+        tone: "good",
+      });
+    }
+
+    cards.push({
+      title: decisionSupport.riskAlert.title,
+      reason: decisionSupport.riskAlert.tips[0] ?? "Monitor fields closely.",
+      tone:
+        decisionSupport.riskAlert.level === "Red"
+          ? "risk"
+          : decisionSupport.riskAlert.level === "Orange"
+          ? "warn"
+          : "good",
+    });
+
+    return cards.slice(0, 3);
+  }, [decisionSupport]);
+
+  const marketMessage = useMemo(() => {
+    const change = decisionSupport.marketSignal.changePct;
+    if (decisionSupport.marketSignal.price == null) {
+      return "No live prices — forecast-only mode.";
+    }
+    const trend =
+      change != null && change > 0
+        ? "rising"
+        : change != null && change < 0
+        ? "softening"
+        : "steady";
+    return `${cropLabel} prices are ${trend} this week. Good time to plan sales.`;
+  }, [cropLabel, decisionSupport.marketSignal.changePct, decisionSupport.marketSignal.price]);
 
   const handleUpgrade = () => {
     openPremiumModal();
@@ -693,6 +823,134 @@ export default function ClimatePage() {
           </Alert>
         ) : (
           <>
+            <div className="space-y-6">
+              <Card className="border-border/60">
+                <CardContent className="space-y-4 p-5 md:p-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Farm snapshot</p>
+                      <h2 className="text-2xl font-semibold text-foreground">
+                        {selectedFarm?.name || t("climate.farmSelector.placeholder")}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedFarm
+                          ? [selectedFarm.county, selectedFarm.subCounty, selectedFarm.ward]
+                              .filter(Boolean)
+                              .join(" / ")
+                          : t("climate.signals.selectFarm")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
+                      <Leaf className="h-4 w-4 text-success" />
+                      <span>Crop: {cropLabel}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                      <CloudRain className="h-4 w-4 text-info" />
+                      <span>{headerSummary.avgChance != null ? `${headerSummary.avgChance}% rain` : "--"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                      <Thermometer className="h-4 w-4 text-warning" />
+                      <span>{headerSummary.avgMax != null ? `${headerSummary.avgMax}C avg max` : "--"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                      <Sprout className="h-4 w-4 text-success" />
+                      <span>Next 7 days</span>
+                    </div>
+                  </div>
+                  <p className="text-base font-medium text-foreground">{weekSummary}</p>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold">What you should do this week</h2>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {actionCards.map((action) => (
+                    <Card
+                      key={action.title}
+                      className={`border-border/60 ${
+                        action.tone === "good"
+                          ? "bg-success/5"
+                          : action.tone === "warn"
+                          ? "bg-warning/5"
+                          : "bg-destructive/5"
+                      }`}
+                    >
+                      <CardContent className="space-y-2 p-4">
+                        <p className="text-sm font-semibold text-foreground">{action.title}</p>
+                        <p className="text-xs text-muted-foreground">{action.reason}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card className="border-border/60">
+                  <CardHeader>
+                    <CardTitle className="text-base">Risk alerts</CardTitle>
+                    <p className="text-sm text-muted-foreground">Simple warnings to avoid losses.</p>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-warning" />
+                      <p className="text-sm font-semibold">{decisionSupport.riskAlert.title}</p>
+                    </div>
+                    {decisionSupport.riskAlert.tips.map((tip) => (
+                      <p key={tip} className="text-xs text-muted-foreground">
+                        {tip}
+                      </p>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/60">
+                  <CardHeader>
+                    <CardTitle className="text-base">Market opportunity</CardTitle>
+                    <p className="text-sm text-muted-foreground">Use Market Oracle signals.</p>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm font-semibold">{marketMessage}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {decisionSupport.marketSignal.transportTip ??
+                        decisionSupport.marketSignal.fallback ??
+                        "Consider group transport to reduce costs."}
+                    </p>
+                    {decisionSupportError && (
+                      <p className="text-xs text-warning">{decisionSupportError}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="border-border/60 bg-success/5">
+                <CardContent className="p-4">
+                  <p className="text-sm font-semibold">Weekly tip</p>
+                  <p className="text-sm text-muted-foreground">{decisionSupport.profitTip.tip}</p>
+                </CardContent>
+              </Card>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold">View details</p>
+                  <p className="text-xs text-muted-foreground">
+                    Forecasts, AI advisory, and full alerts.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDetailsOpen((prev) => !prev)}
+                >
+                  {detailsOpen ? "Hide details" : "View details"}
+                </Button>
+              </div>
+            </div>
+
+            <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+              <CollapsibleContent className="space-y-4 pt-4">
             <div className="sticky top-0 z-20 -mx-4 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-2">
@@ -955,6 +1213,11 @@ export default function ClimatePage() {
                     <p className="text-sm text-muted-foreground">{t("climate.signals.noData")}</p>
                   ) : (
                     <div className="space-y-3">
+                      {snapshotRows.length < 7 && (
+                        <p className="text-xs text-muted-foreground">
+                          Only {snapshotRows.length} days available from forecast source.
+                        </p>
+                      )}
                       {snapshotRows.map((row) => {
                         const left = ((row.min - snapshotRange.min) / snapshotRange.range) * 100;
                         const width = ((row.max - row.min) / snapshotRange.range) * 100;
@@ -970,13 +1233,13 @@ export default function ClimatePage() {
                                 />
                               </div>
                               <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
-                                <span>{row.min}C</span>
-                                <span>{row.max}C</span>
+                                <span>{`${row.min}C`}</span>
+                                <span>{`${row.max}C`}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <RainIcon className="h-4 w-4" />
-                              <span>{row.rainChance}%</span>
+                              <span>{`${row.rainChance}%`}</span>
                             </div>
                           </div>
                         );
@@ -1011,9 +1274,9 @@ export default function ClimatePage() {
                             {snapshotRows.map((row) => (
                               <tr key={row.date} className="border-t border-border/60">
                                 <td className="px-2 py-1">{row.date}</td>
-                                <td className="px-2 py-1">{row.min}C</td>
-                                <td className="px-2 py-1">{row.max}C</td>
-                                <td className="px-2 py-1">{row.rainChance}%</td>
+                                <td className="px-2 py-1">{`${row.min}C`}</td>
+                                <td className="px-2 py-1">{`${row.max}C`}</td>
+                                <td className="px-2 py-1">{`${row.rainChance}%`}</td>
                                 <td className="px-2 py-1">{row.condition}</td>
                               </tr>
                             ))}
@@ -1284,6 +1547,8 @@ export default function ClimatePage() {
                 </Card>
               </div>
             </div>
+              </CollapsibleContent>
+            </Collapsible>
           </>
         )}
 
