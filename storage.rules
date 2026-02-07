@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOrgMember(orgId) {
+      return isAuthenticated()
+        && (firestore.exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid))
+          || firestore.exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)));
+    }
+
+    match /org_verification/{uid}/{file=**} {
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
+    match /orgs/{orgId}/members/{file=**} {
+      allow read, write: if isOrgMember(orgId);
+    }
+
+    match /orgs/{orgId}/certificates/{file=**} {
+      allow read, write: if isOrgMember(orgId);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

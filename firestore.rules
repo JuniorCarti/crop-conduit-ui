@@ -37,6 +37,106 @@ service cloud.firestore {
       return isAuthenticated()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
+    function isSuperAdmin() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    function userRole() {
+      return isAuthenticated()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+
+    function userOrgId() {
+      return isAuthenticated()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.orgId
+        : null;
+    }
+
+    function isOrgMember(orgId) {
+      return isAuthenticated()
+        && (exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid))
+          || exists(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid)));
+    }
+
+    function isOrgAdmin(orgId) {
+      return isAuthenticated()
+        && ((exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+            && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role == 'admin')
+          || (exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid))
+            && get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.role in ['org_admin', 'admin'])
+          || (exists(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid))
+            && get(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid)).data.role == 'org_admin'));
+    }
+
+    function isOrgStaff(orgId) {
+      return isAuthenticated()
+        && ((exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+            && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role == 'staff')
+          || (exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid))
+            && get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.role in ['org_staff', 'staff'])
+          || (exists(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid))
+            && get(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid)).data.role == 'org_staff'));
+    }
+
+    function isOrgVerificationOnlyUpdate() {
+      return request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasOnly(['verificationStatus', 'verifiedAt', 'verifiedBy', 'rejectedAt', 'rejectionReason']);
+    }
+
+    function isOrgApproved(orgId) {
+      return exists(/databases/$(database)/documents/orgs/$(orgId))
+        && get(/databases/$(database)/documents/orgs/$(orgId)).data.verificationStatus == 'approved';
+    }
+
+    function isApprovedOrgManager(orgId) {
+      return isOrgManager(orgId) && isOrgApproved(orgId);
+    }
+    function isOrgManager(orgId) {
+      return isOrgAdmin(orgId)
+        || isOrgStaff(orgId)
+        || (userOrgId() == orgId && userRole() in ['org_admin', 'org_staff'])
+        || isAdmin()
+        || isSuperAdmin();
+    }
+
+    function isOrgAffiliated(orgId) {
+      return isOrgMember(orgId)
+        || (userOrgId() == orgId && userRole() in ['org_admin', 'org_staff'])
+        || isAdmin()
+        || isSuperAdmin();
+    }
+
+    function canStaffManageBilling(orgId) {
+      return isOrgStaff(orgId)
+        && exists(/databases/$(database)/documents/orgs/$(orgId)/billing/settings)
+        && get(/databases/$(database)/documents/orgs/$(orgId)/billing/settings).data.staffCanManageBilling == true;
+    }
+
+    function isSeatMutation() {
+      return request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasAny(['seatType', 'seatStatus', 'premiumSeatType', 'seatAssignedAt', 'seatAssignedBy', 'seatAssignedByName', 'entitlement']);
+    }
+
+
+    function isOrgProfileUpdate() {
+      return !request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasAny(['verificationStatus', 'verifiedAt', 'verifiedBy', 'rejectedAt', 'rejectionReason', 'documents']);
+    }
+
+    function isOrgAdminWritingStaffProfile(userId) {
+      return isAuthenticated()
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'org_staff'
+        && request.resource.data.orgId is string
+        && isOrgAdmin(request.resource.data.orgId);
+    }
     
     /**
      * Validate common harvest document structure
@@ -130,7 +230,279 @@ service cloud.firestore {
     // ========================================================================
 
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || isSuperAdmin();
+      allow write: if isOwner(userId) || isSuperAdmin() || isOrgAdminWritingStaffProfile(userId);
+    }
+
+    match /users/{userId}/coopVerification/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId)
+        || (isAuthenticated()
+          && request.resource.data.orgId is string
+          && isOrgManager(request.resource.data.orgId))
+        || isSuperAdmin()
+        || isAdmin();
+      allow delete: if false;
+    }
+
+    match /buyerProfiles/{userId} {
+      allow read: if isOwner(userId) || isSuperAdmin();
+      allow write: if isOwner(userId);
+    }
+
+    match /userDirectory/{userId} {
+      allow read: if isAuthenticated() && userRole() in ['org_admin', 'org_staff', 'admin', 'superadmin'];
+      allow write: if isOwner(userId);
+    }
+
+    match /billingPlanTemplates/{planId} {
+      allow read: if isAuthenticated() && resource.data.isPublic == true;
+      allow write: if isAdmin() || isSuperAdmin();
+    }
+
+    // ========================================================================
+    // ORGANIZATIONS
+    // ========================================================================
+
+    match /organizations/{orgId} {
+      allow read: if isOrgMember(orgId) || isAdmin() || isSuperAdmin();
+      allow create: if isAuthenticated()
+        && request.resource.data.createdByUid == request.auth.uid;
+      allow update, delete: if (isOrgMember(orgId) && isOrgProfileUpdate())
+        || isAdmin()
+        || (isSuperAdmin() && isOrgVerificationOnlyUpdate());
+
+      match /members/{memberId} {
+        allow read: if isOrgMember(orgId) || isAdmin() || isSuperAdmin();
+        allow create, update: if isOrgMember(orgId)
+          || isAdmin()
+          || isSuperAdmin()
+          || (isAuthenticated()
+            && request.auth.uid == memberId
+            && get(/databases/$(database)/documents/organizations/$(orgId)).data.createdByUid == request.auth.uid);
+        allow delete: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+      }
+
+      match /subscription/{subId} {
+        allow read: if isOrgMember(orgId) || isAdmin() || isSuperAdmin();
+        allow create, update, delete: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+      }
+      match /memberAudit/{logId} {
+        allow read: if isOrgMember(orgId) || isAdmin() || isSuperAdmin();
+        allow create: if isOrgManager(orgId);
+        allow update, delete: if false;
+      }
+
+    }
+
+    match /orgs/{orgId} {
+      allow read: if isOrgAffiliated(orgId);
+      allow create: if isAuthenticated()
+        && request.resource.data.createdByUid == request.auth.uid;
+      allow update, delete: if (isOrgMember(orgId) && isOrgProfileUpdate())
+        || isAdmin()
+        || (isSuperAdmin() && isOrgVerificationOnlyUpdate());
+
+      match /members/{memberId} {
+        allow read: if (isOrgApproved(orgId) && (isOrgMember(orgId) || isAdmin() || isSuperAdmin()))
+          || (isAuthenticated()
+            && (request.auth.uid == memberId || resource.data.linkedUserUid == request.auth.uid || resource.data.userUid == request.auth.uid));
+        allow create: if (isOrgApproved(orgId) && (isOrgAdmin(orgId) || isAdmin() || isSuperAdmin()))
+          || (isOrgApproved(orgId)
+            && isOrgStaff(orgId)
+            && (!('status' in request.resource.data) || request.resource.data.status in ['draft', 'submitted'])
+            && (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus in ['draft', 'submitted'])
+            && !request.resource.data.keys().hasAny(['verifiedBy', 'verifiedAt', 'rejectionReason', 'seatStatus', 'premiumSeatType', 'seatType', 'seatAssignedBy', 'seatAssignedAt']))
+          || (isAuthenticated()
+            && request.auth.uid == memberId
+            && get(/databases/$(database)/documents/orgs/$(orgId)).data.createdByUid == request.auth.uid
+            && request.resource.data.role == 'org_admin');
+        allow update: if ((isOrgApproved(orgId) && (isOrgAdmin(orgId) || isAdmin() || isSuperAdmin()))
+            && (!isSeatMutation() || isOrgAdmin(orgId) || canStaffManageBilling(orgId) || isAdmin() || isSuperAdmin()))
+          || (isOrgAdmin(orgId)
+            && request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['seatType', 'seatStatus', 'premiumSeatType', 'seatAssignedAt', 'seatAssignedBy', 'seatAssignedByName', 'updatedAt']))
+          || (isOrgApproved(orgId)
+            && isOrgStaff(orgId)
+            && !isSeatMutation()
+            && (!('status' in request.resource.data) || request.resource.data.status in ['draft', 'submitted'])
+            && (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus in ['draft', 'submitted'])
+            && !request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasAny(['verifiedBy', 'verifiedAt', 'verifiedByUid', 'verifiedByName', 'rejectionReason', 'seatStatus', 'premiumSeatType', 'seatType', 'seatAssignedBy', 'seatAssignedAt']));
+        allow delete: if isOrgApproved(orgId) && isOrgManager(orgId);
+
+        match /audit/{logId} {
+          allow read: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+          allow create: if isOrgApproved(orgId) && isOrgManager(orgId);
+          allow update, delete: if false;
+        }
+      }
+
+      match /memberApplications/{applicationId} {
+        allow read: if isOrgApproved(orgId) && (isOrgAdmin(orgId) || isOrgStaff(orgId) || isAdmin() || isSuperAdmin());
+        allow create: if isOrgApproved(orgId)
+          && (isOrgAdmin(orgId) || isOrgStaff(orgId) || isAdmin() || isSuperAdmin())
+          && request.resource.data.status == 'pending'
+          && request.resource.data.submittedByUid == request.auth.uid;
+        allow update: if (isOrgApproved(orgId) && (isOrgAdmin(orgId) || isAdmin() || isSuperAdmin())
+            && request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['status', 'updatedAt', 'approvedByUid', 'approvedAt', 'rejectedByUid', 'rejectedAt', 'rejectionReason'])
+            && request.resource.data.status in ['approved', 'rejected'])
+          || (isOrgApproved(orgId) && (isOrgAdmin(orgId) || isOrgStaff(orgId) || isAdmin() || isSuperAdmin())
+            && request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['memberUid', 'updatedAt']));
+        allow delete: if false;
+      }
+
+      match /collections/{collectionId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+
+        match /commitments/{memberId} {
+          allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+        }
+
+        match /deliveries/{deliveryId} {
+          allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+        }
+      }
+
+            match /marketSnapshots/{snapshotId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+match /priceSnapshots/{snapshotId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+      match /priceSignals/{signalId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+      match /priceHistory/{docId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+      match /priceAlerts/{alertId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+      match /recommendations/{docId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+      match /trainings/{trainingId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+
+        match /attendance/{memberId} {
+          allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+        }
+      }
+
+      match /certificates/{certificateId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+      match /targets/{targetId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+
+        match /progress/{memberId} {
+          allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+        }
+
+        match /rewards/{rewardId} {
+          allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+        }
+      }
+
+      match /subscription/{docId} {
+        allow read: if isOrgManager(orgId) || isAdmin() || isSuperAdmin();
+        allow create: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin() || canStaffManageBilling(orgId);
+        allow update, delete: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin() || canStaffManageBilling(orgId);
+      }
+
+      match /billing/settings {
+        allow read: if isOrgManager(orgId) || isAdmin() || isSuperAdmin();
+        allow create: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin() || canStaffManageBilling(orgId);
+        allow update: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin() || canStaffManageBilling(orgId);
+        allow delete: if false;
+      }
+
+      match /billing/seatLedger/{ledgerId} {
+        allow read: if isOrgManager(orgId) || isAdmin() || isSuperAdmin();
+        allow create: if isOrgAdmin(orgId) || canStaffManageBilling(orgId) || isAdmin() || isSuperAdmin();
+        allow update, delete: if false;
+      }
+
+      match /billing/invoices/{invoiceId} {
+        allow read: if isOrgManager(orgId) || isAdmin() || isSuperAdmin();
+        allow write: if isOrgAdmin(orgId) || canStaffManageBilling(orgId) || isAdmin() || isSuperAdmin();
+      }
+
+      match /billing/payments/{paymentId} {
+        allow read: if isOrgManager(orgId) || isAdmin() || isSuperAdmin();
+        allow write: if isOrgAdmin(orgId) || canStaffManageBilling(orgId) || isAdmin() || isSuperAdmin();
+      }
+
+      match /settings/{docId} {
+        allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+      }
+
+      match /joinCodes/{code} {
+        allow read: if isAuthenticated();
+        allow create: if isOrgAdmin(orgId) || isOrgStaff(orgId) || isAdmin() || isSuperAdmin();
+        allow update, delete: if isOrgAdmin(orgId) || isOrgStaff(orgId) || isAdmin() || isSuperAdmin();
+      }
+    }
+
+    // ========================================================================
+    // ORG MEMBERS (TOP-LEVEL)
+    // ========================================================================
+
+    match /orgMembers/{memberId} {
+      allow read: if isAuthenticated()
+        && (isAdmin() || isSuperAdmin() || isOrgAdmin(resource.data.orgId) || isOrgStaff(resource.data.orgId));
+      allow create: if isAuthenticated()
+        && (isAdmin()
+          || isSuperAdmin()
+          || isOrgAdmin(request.resource.data.orgId)
+          || get(/databases/$(database)/documents/organizations/$(request.resource.data.orgId)).data.createdByUid
+            == request.auth.uid);
+      allow update, delete: if isAuthenticated()
+        && (isAdmin() || isSuperAdmin() || isOrgAdmin(request.resource.data.orgId));
+    }
+
+    // ========================================================================
+    // JOIN CODES
+    // ========================================================================
+
+    match /joinCodes/{code} {
+      allow read: if true;
+      allow create: if isAuthenticated()
+        && (isOrgAdmin(request.resource.data.orgId) || isOrgStaff(request.resource.data.orgId));
+      allow update, delete: if isAuthenticated()
+        && (isOrgAdmin(resource.data.orgId) || isOrgStaff(resource.data.orgId));
+    }
+
+    match /orgJoinRequests/{requestId} {
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'submitted';
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid
+          || isOrgAdmin(resource.data.orgId)
+          || isOrgStaff(resource.data.orgId)
+          || isAdmin()
+          || isSuperAdmin());
+      allow update: if isAuthenticated()
+        && (isOrgAdmin(resource.data.orgId) || isAdmin() || isSuperAdmin())
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'updatedAt', 'approvedByUid', 'approvedAt', 'rejectedByUid', 'rejectedAt', 'rejectionReason']);
+      allow delete: if false;
     }
 
     // ========================================================================
