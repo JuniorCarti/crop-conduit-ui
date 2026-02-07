@@ -157,7 +157,7 @@ export function CreatePostDialog({ open, onOpenChange, onCreated }: CreatePostDi
           <DialogTitle>Create Post</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 pb-24 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-4 pb-28 scroll-pb-28 space-y-5">
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">Message</label>
             <Textarea
@@ -274,7 +274,7 @@ export function CreatePostDialog({ open, onOpenChange, onCreated }: CreatePostDi
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border/60 px-6 py-4 flex flex-col sm:flex-row gap-2 sm:justify-end">
+        <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur border-t border-border/60 px-6 py-4 flex flex-col sm:flex-row gap-2 sm:justify-end">
           <Button type="button" variant="outline" className="h-11 px-6" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
