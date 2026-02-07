@@ -75,11 +75,19 @@ export function ListingCard({
               </Badge>
             )}
           </div>
-          {listing.sellerName && (
-            <Badge variant="outline" className="ml-2">
-              {listing.sellerName}
-            </Badge>
-          )}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {listing.sellerName && (
+              <Badge variant="outline">{listing.sellerName}</Badge>
+            )}
+            {listing.coopVerified && listing.coopName && (
+              <div className="flex flex-col items-end">
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
+                  Verified
+                </Badge>
+                <span className="text-[10px] text-emerald-700">by {listing.coopName}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2 text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, MapPin, Bell, Search, Loader2, Check, ChevronsUpDown } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -18,6 +18,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { Listing, Order } from "@/features/marketplace/models/types";
 import { uploadToR2 as uploadSingleToR2 } from "@/services/r2UploadService";
+import { getUserCoopMembership } from "@/services/cooperativeMembershipService";
 
 const LISTINGS_COLLECTION = "listings";
 const ORDERS_COLLECTION = "orders";
@@ -285,6 +286,19 @@ export async function createListingWithProfile(
   const profile = await getUserProfile(currentUser.uid);
   const sellerName = profile?.displayName || currentUser.displayName || null;
   const sellerPhone = profile?.phone || currentUser.phoneNumber || null;
+  const coopSnap = await getDoc(doc(db, "users", currentUser.uid, "coopVerification", "status"));
+  const coopData = coopSnap.exists() ? (coopSnap.data() as any) : null;
+  let coopVerified = coopData?.verified === true;
+  let coopId = coopVerified ? coopData?.orgId ?? null : null;
+  let coopName = coopVerified ? coopData?.orgName ?? null : null;
+  if (!coopVerified) {
+    const membership = await getUserCoopMembership(currentUser.uid);
+    if (membership?.status === "active") {
+      coopVerified = true;
+      coopId = membership.orgId;
+      coopName = membership.coopName ?? coopName;
+    }
+  }
 
   const payload: Record<string, unknown> = {
     ...listing,
@@ -304,6 +318,9 @@ export async function createListingWithProfile(
     avgRating: 0,
     reviewCount: 0,
     latestReviewSnippet: "",
+    coopVerified,
+    coopId,
+    coopName,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };

@@ -65,6 +65,9 @@ export interface Listing {
   sellerId: string;
   sellerName?: string;
   sellerPhone?: string;
+  coopVerified?: boolean;
+  coopId?: string | null;
+  coopName?: string | null;
   description?: string;
   tags?: string[];
   avgRating?: number;

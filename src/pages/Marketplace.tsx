@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Store, Search, MessageSquare, Star, Plus, Filter, Loader2 } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useListings, useTransactions, useChatMessages, useCreateListing } from "@/hooks/useApi";
@@ -107,6 +107,9 @@ export default function Marketplace() {
                   </div>
                   <div className="p-3">
                     <p className="font-medium text-foreground text-sm line-clamp-1">{listing.title}</p>
+                    {listing.coopVerified && listing.coopName && (
+                      <p className="text-xs text-emerald-700">Verified by {listing.coopName}</p>
+                    )}
                     <p className="text-lg font-bold text-primary mt-1">{formatKsh(listing.price)}</p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-muted-foreground">{listing.location}</span>

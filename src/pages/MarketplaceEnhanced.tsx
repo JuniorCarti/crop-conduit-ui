@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Store, Search, Plus, Filter, MapPin, MessageSquare, ShoppingCart } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,6 +68,7 @@ export default function MarketplaceEnhanced() {
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<ListingSortBy>("newest");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [farmerCount, setFarmerCount] = useState(0);
@@ -283,15 +284,17 @@ export default function MarketplaceEnhanced() {
     }
   };
 
-  const filteredListings = browseListings.filter((listing) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      listing.title.toLowerCase().includes(query) ||
-      listing.cropType.toLowerCase().includes(query) ||
-      listing.location.county.toLowerCase().includes(query)
-    );
-  });
+  const filteredListings = browseListings
+    .filter((listing) => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        listing.title.toLowerCase().includes(query) ||
+        listing.cropType.toLowerCase().includes(query) ||
+        listing.location.county.toLowerCase().includes(query)
+      );
+    })
+    .filter((listing) => (verifiedOnly ? listing.coopVerified === true : true));
 
   const sortedListings = [...filteredListings].sort((a, b) => {
     if (sortBy === "price_low") return a.pricePerUnit - b.pricePerUnit;
@@ -453,7 +456,7 @@ export default function MarketplaceEnhanced() {
         )}
 
         {/* Search and Filters */}
-        <div className="flex gap-2 animate-fade-up">
+        <div className="flex flex-wrap gap-2 animate-fade-up">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -463,6 +466,13 @@ export default function MarketplaceEnhanced() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <Button
+            type="button"
+            variant={verifiedOnly ? "default" : "outline"}
+            onClick={() => setVerifiedOnly((prev) => !prev)}
+          >
+            Verified farmers
+          </Button>
           <Select
             value={sortBy}
             onValueChange={(value) => setSortBy(value as ListingSortBy)}
