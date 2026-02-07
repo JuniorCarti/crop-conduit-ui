@@ -7,7 +7,7 @@ import {
   MapPin,
   AlertTriangle,
 } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

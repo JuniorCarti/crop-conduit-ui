@@ -5,8 +5,10 @@
 
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { doc, Timestamp, updateDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { db } from "@/lib/firebase";
 import * as NextHarvestService from "../services/nextHarvestService";
 import type { NextHarvest } from "../services/nextHarvestService";
 
@@ -130,10 +132,6 @@ export function useUpdateNextHarvest() {
       // In production, you might want a separate update function
       const existing = await NextHarvestService.getNextHarvest(updates.fieldId || "");
       if (existing?.id) {
-        const { updateDoc, doc } = await import("firebase/firestore");
-        const { db } = await import("@/lib/firebase");
-        const { Timestamp } = await import("firebase/firestore");
-        
         const docRef = doc(db, "next_harvest", existing.id);
         await updateDoc(docRef, {
           ...updates,
