@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Mail, Lock, ArrowRight, User, Phone, Loader2 } from "lucide-react";
+import { ArrowRight, Lock, Mail, Phone, ShieldCheck, Sprout, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { clearAuthDebug, ensureAuthToken } from "@/services/authService";
+import { getUserProfileDoc } from "@/services/userProfileService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmationResult } from "firebase/auth";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
+import { LandingShell } from "@/components/landing/LandingShell";
+import { HeroPanel } from "@/components/landing/HeroPanel";
+import { AuthCardShell } from "@/components/landing/AuthCardShell";
+import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -29,7 +34,78 @@ export default function Login() {
   const [phoneConfirmation, setPhoneConfirmation] = useState<ConfirmationResult | null>(null);
   const [authMethod, setAuthMethod] = useState<"email" | "phone" | "google">("email");
 
-  const from = (location.state as any)?.from?.pathname || "/dashboard";
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const fromLocation = (location.state as any)?.from;
+  const fromPath = fromLocation?.pathname
+    ? `${fromLocation.pathname}${fromLocation.search ?? ""}${fromLocation.hash ?? ""}`
+    : "";
+  const redirectParam = searchParams.get("redirect") ?? "";
+  const defaultRedirect = "/";
+  const authPaths = new Set(["/login", "/signup", "/reset-password"]);
+  const allowedPrefixes = [
+    "/market",
+    "/crops",
+    "/resources",
+    "/irrigation",
+    "/harvest",
+    "/finance",
+    "/marketplace",
+    "/marketplace/listings",
+    "/checkout",
+    "/market-prices",
+    "/community",
+    "/community/inbox",
+    "/community/chat",
+    "/climate",
+    "/asha",
+    "/profile",
+    "/upgrade",
+    "/farmer-registration",
+    "/registration",
+    "/buyer-registration",
+    "/org-registration",
+    "/org",
+    "/org/members",
+    "/org/market-dashboard",
+    "/org/training",
+    "/org/contracts",
+    "/org/traceability",
+    "/org/credit",
+    "/org/loans",
+    "/org/risk-alerts",
+    "/admin",
+    "/superadmin",
+    "/access-summary",
+  ];
+
+  const isSafeInternalPath = (path: string) => {
+    if (!path || typeof path !== "string") return false;
+    if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) return false;
+    const pathname = path.split(/[?#]/)[0] ?? "";
+    if (authPaths.has(pathname)) return false;
+    if (pathname === "/") return true;
+    return allowedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  };
+
+  const resolveRoleHome = async () => {
+    const tokenInfo = await ensureAuthToken();
+    const uid = tokenInfo?.uid;
+    if (!uid) return defaultRedirect;
+    const profile = await getUserProfileDoc(uid);
+    const role = profile?.role;
+    if (role === "buyer") return "/marketplace";
+    if (role === "org_admin" || role === "org_staff") return "/org";
+    if (role === "admin") return "/admin";
+    if (role === "superadmin") return "/superadmin";
+    return "/";
+  };
+
+  const getPostLoginPath = async () => {
+    const candidate = fromPath || redirectParam;
+    if (isSafeInternalPath(candidate)) return candidate;
+    return resolveRoleHome();
+  };
+
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,8 +120,8 @@ export default function Login() {
     try {
       clearAuthDebug();
       await login(formData.email, formData.password);
-      await ensureAuthToken();
-      navigate(from, { replace: true });
+      const destination = await getPostLoginPath();
+      navigate(destination, { replace: true });
     } catch (err: any) {
       setError(err.message || t("login.errors.failed"));
     } finally {
@@ -58,8 +134,8 @@ export default function Login() {
     try {
       clearAuthDebug();
       await signInWithGoogle();
-      await ensureAuthToken();
-      navigate(from, { replace: true });
+      const destination = await getPostLoginPath();
+      navigate(destination, { replace: true });
     } catch (err: any) {
       setError(err.message || t("login.errors.googleFailed"));
     } finally {
@@ -95,8 +171,8 @@ export default function Login() {
       setIsSubmitting(true);
       try {
         await verifyPhoneOTP(phoneConfirmation, formData.otp);
-        await ensureAuthToken();
-        navigate(from, { replace: true });
+        const destination = await getPostLoginPath();
+        navigate(destination, { replace: true });
       } catch (err: any) {
         setError(err.message || t("login.errors.otpInvalid"));
       } finally {
@@ -106,247 +182,300 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border/50 p-6 md:p-8">
-        <div className="flex justify-end mb-4">
-          <LanguageSwitcher />
-        </div>
-        <div className="text-center mb-6">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <User className="h-8 w-8 text-primary" />
+    <LandingShell
+      hero={
+        <HeroPanel>
+          <div className="inline-flex w-fit rounded-full border border-white/60 bg-white/70 px-4 py-2 shadow-sm backdrop-blur">
+            <AgriSmartLogo variant="inline" size="sm" showTagline={false} />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            {t("login.title")}
-          </h1>
-          <p className="text-sm text-muted-foreground">{t("login.subtitle")}</p>
-        </div>
 
-        {error && (
-          <AlertCard
-            type="danger"
-            title={t("login.errorTitle")}
-            message={error}
-            className="mb-4"
-            onDismiss={() => setError("")}
-          />
-        )}
+          <div className="space-y-4">
+            <h1 className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl lg:text-6xl whitespace-normal break-words">
+              The premium command center for modern farms.
+            </h1>
+            <p className="max-w-xl text-base text-foreground/70 sm:text-lg whitespace-normal break-words leading-relaxed">
+              Monitor climate, plan harvests, and trade confidently with real-time market
+              intelligence - all in one elegant workspace.
+            </p>
+          </div>
 
-        <div id="recaptcha-container"></div>
+          <div className="flex flex-wrap gap-3">
+            <Button size="lg" className="gap-2" onClick={() => navigate("/registration")}>
+              Get Started
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <a href="#features">Explore Features</a>
+            </Button>
+          </div>
 
-        <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as "email" | "phone" | "google")} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="email">{t("login.tabs.email")}</TabsTrigger>
-            <TabsTrigger value="phone">{t("login.tabs.phone")}</TabsTrigger>
-            <TabsTrigger value="google">{t("login.tabs.google")}</TabsTrigger>
-          </TabsList>
+          <div id="features" className="grid gap-4 sm:grid-cols-2">
+            {[
+              {
+                title: "Climate & crop insights",
+                description: "Stay ahead of weather shifts with AI-driven alerts and forecasts.",
+                icon: Sprout,
+              },
+              {
+                title: "Secure market operations",
+                description: "Track pricing, logistics, and sales with protected workflows.",
+                icon: ShieldCheck,
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl border border-white/50 bg-white/70 p-4 shadow-sm backdrop-blur"
+              >
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <item.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="text-sm sm:text-base font-semibold text-foreground whitespace-normal break-words">{item.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground whitespace-normal break-words leading-relaxed">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </HeroPanel>
+      }
+      card={
+        <AuthCardShell id="login">
+              <div className="flex justify-end mb-4">
+                <LanguageSwitcher />
+              </div>
+              <div className="text-center mb-6">
+                <AgriSmartLogo variant="stacked" size="lg" showTagline className="mb-4" />
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2 whitespace-normal break-words leading-snug">
+                  {t("login.title")}
+                </h1>
+                <p className="text-sm sm:text-base text-muted-foreground whitespace-normal break-words leading-relaxed">{t("login.subtitle")}</p>
+              </div>
 
-          <TabsContent value="email">
-            <form onSubmit={handleEmailLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="email" className="flex items-center gap-2 mb-2">
-                  <Mail className="h-4 w-4" />
-                  {t("login.emailLabel")}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t("login.emailPlaceholder")}
-                  value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  className="bg-background"
-                  required
+              {error && (
+                <AlertCard
+                  type="danger"
+                  title={t("login.errorTitle")}
+                  message={error}
+                  className="mb-4"
+                  onDismiss={() => setError("")}
                 />
-              </div>
+              )}
 
-              <div>
-                <Label htmlFor="password" className="flex items-center gap-2 mb-2">
-                  <Lock className="h-4 w-4" />
-                  {t("login.passwordLabel")}
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={t("login.passwordPlaceholder")}
-                  value={formData.password}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                  className="bg-background"
-                  required
-                />
-              </div>
+              <div id="recaptcha-container"></div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" className="rounded border-input" />
-                  <span className="text-muted-foreground">{t("login.rememberMe")}</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => navigate("/reset-password")}
-                  className="text-sm text-primary hover:underline"
-                >
-                  {t("login.forgotPassword")}
-                </button>
-              </div>
+              <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as "email" | "phone" | "google")} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-4">
+                  <TabsTrigger value="email">{t("login.tabs.email")}</TabsTrigger>
+                  <TabsTrigger value="phone">{t("login.tabs.phone")}</TabsTrigger>
+                  <TabsTrigger value="google">{t("login.tabs.google")}</TabsTrigger>
+                </TabsList>
 
-              <Button type="submit" disabled={isSubmitting} className="w-full gap-2 mt-6">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("login.signingIn")}
-                  </>
-                ) : (
-                  <>
-                    {t("login.signIn")}
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </form>
-          </TabsContent>
+                <TabsContent value="email">
+                  <form onSubmit={handleEmailLogin} className="space-y-4">
+                    <div>
+                      <Label htmlFor="email" className="flex items-center gap-2 mb-2 whitespace-normal break-words text-sm sm:text-base">
+                        <Mail className="h-4 w-4" />
+                        {t("login.emailLabel")}
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder={t("login.emailPlaceholder")}
+                        value={formData.email}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                        className="bg-background/80 w-full min-w-0"
+                        required
+                      />
+                    </div>
 
-          <TabsContent value="phone">
-            <form onSubmit={handlePhoneLogin} className="space-y-4">
-              {!phoneConfirmation ? (
-                <>
-                  <div>
-                    <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
-                      <Phone className="h-4 w-4" />
-                      {t("login.phoneLabel")}
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder={t("login.phonePlaceholder")}
-                      value={formData.phone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                      className="bg-background"
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">{t("login.phoneHint")}</p>
-                  </div>
+                    <div>
+                      <Label htmlFor="password" className="flex items-center gap-2 mb-2 whitespace-normal break-words text-sm sm:text-base">
+                        <Lock className="h-4 w-4" />
+                        {t("login.passwordLabel")}
+                      </Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder={t("login.passwordPlaceholder")}
+                        value={formData.password}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                        className="bg-background/80 w-full min-w-0"
+                        required
+                      />
+                    </div>
 
-                  <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {t("login.sendingCode")}
-                      </>
-                    ) : (
-                      <>
-                        {t("login.sendCode")}
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <Label htmlFor="otp" className="flex items-center gap-2 mb-2">
-                      <Lock className="h-4 w-4" />
-                      {t("login.otpLabel")}
-                    </Label>
-                    <Input
-                      id="otp"
-                      type="text"
-                      placeholder={t("login.otpPlaceholder")}
-                      value={formData.otp}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, otp: e.target.value }))}
-                      className="bg-background"
-                      maxLength={6}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("login.otpHint", { phone: formData.phone })}
-                    </p>
-                  </div>
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" className="rounded border-input" />
+                        <span className="text-muted-foreground">{t("login.rememberMe")}</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => navigate("/reset-password")}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        {t("login.forgotPassword")}
+                      </button>
+                    </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setPhoneConfirmation(null);
-                        setFormData((prev) => ({ ...prev, otp: "" }));
-                      }}
-                      className="flex-1"
-                    >
-                      {t("login.changeNumber")}
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting} className="flex-1 gap-2">
+                    <Button type="submit" disabled={isSubmitting} className="w-full gap-2 mt-6">
                       {isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          {t("login.verifying")}
+                          {t("login.signingIn")}
                         </>
                       ) : (
                         <>
-                          {t("login.verify")}
+                          {t("login.signIn")}
                           <ArrowRight className="h-4 w-4" />
                         </>
                       )}
                     </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="phone">
+                  <form onSubmit={handlePhoneLogin} className="space-y-4">
+                    {!phoneConfirmation ? (
+                      <>
+                        <div>
+                      <Label htmlFor="phone" className="flex items-center gap-2 mb-2 whitespace-normal break-words text-sm sm:text-base">
+                        <Phone className="h-4 w-4" />
+                        {t("login.phoneLabel")}
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder={t("login.phonePlaceholder")}
+                        value={formData.phone}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                        className="bg-background/80 w-full min-w-0"
+                        required
+                      />
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1 whitespace-normal break-words">{t("login.phoneHint")}</p>
+                    </div>
+
+                        <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              {t("login.sendingCode")}
+                            </>
+                          ) : (
+                            <>
+                              {t("login.sendCode")}
+                              <ArrowRight className="h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                      <Label htmlFor="otp" className="flex items-center gap-2 mb-2 whitespace-normal break-words text-sm sm:text-base">
+                        <Lock className="h-4 w-4" />
+                        {t("login.otpLabel")}
+                      </Label>
+                      <Input
+                        id="otp"
+                        type="text"
+                        placeholder={t("login.otpPlaceholder")}
+                        value={formData.otp}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, otp: e.target.value }))}
+                        className="bg-background/80 w-full min-w-0"
+                        maxLength={6}
+                        required
+                      />
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1 whitespace-normal break-words">
+                        {t("login.otpHint", { phone: formData.phone })}
+                      </p>
+                    </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setPhoneConfirmation(null);
+                              setFormData((prev) => ({ ...prev, otp: "" }));
+                            }}
+                            className="flex-1"
+                          >
+                            {t("login.changeNumber")}
+                          </Button>
+                          <Button type="submit" disabled={isSubmitting} className="flex-1 gap-2">
+                            {isSubmitting ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                {t("login.verifying")}
+                              </>
+                            ) : (
+                              <>
+                                {t("login.verify")}
+                                <ArrowRight className="h-4 w-4" />
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="google">
+                  <div className="space-y-4">
+                    <Button
+                      type="button"
+                      onClick={handleGoogleLogin}
+                      disabled={isSubmitting}
+                      className="w-full gap-2"
+                      variant="outline"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {t("login.signingIn")}
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-5 w-5" viewBox="0 0 24 24">
+                            <path
+                              fill="currentColor"
+                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            />
+                            <path
+                              fill="currentColor"
+                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            />
+                            <path
+                              fill="currentColor"
+                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                            />
+                            <path
+                              fill="currentColor"
+                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                            />
+                          </svg>
+                          {t("login.googleSignIn")}
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">{t("login.googleHint")}</p>
                   </div>
-                </>
-              )}
-            </form>
-          </TabsContent>
+                </TabsContent>
+              </Tabs>
 
-          <TabsContent value="google">
-            <div className="space-y-4">
-              <Button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={isSubmitting}
-                className="w-full gap-2"
-                variant="outline"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("login.signingIn")}
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-5 w-5" viewBox="0 0 24 24">
-                      <path
-                        fill="currentColor"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      />
-                      <path
-                        fill="currentColor"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                    {t("login.googleSignIn")}
-                  </>
-                )}
-              </Button>
-              <p className="text-xs text-center text-muted-foreground">{t("login.googleHint")}</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            {t("login.noAccount")}{" "}
-            <button
-              onClick={() => navigate("/farmer-registration")}
-              className="text-primary hover:underline font-medium"
-            >
-              {t("login.createAccount")}
-            </button>
-          </p>
-        </div>
-      </div>
-    </div>
+              <div className="mt-6 text-center">
+                <p className="text-sm sm:text-base text-muted-foreground whitespace-normal break-words">
+                  {t("login.noAccount")}{" "}
+                  <button
+                    onClick={() => navigate("/registration")}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {t("login.createAccount")}
+                  </button>
+                </p>
+              </div>
+        </AuthCardShell>
+      }
+    />
   );
 }

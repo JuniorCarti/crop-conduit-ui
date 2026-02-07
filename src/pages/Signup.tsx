@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Mail, Lock, Phone, User, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
+import { Mail, Lock, Phone, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +16,20 @@ import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ensureAuthToken } from "@/services/authService";
+import { upsertUserProfileDoc, type UserRole } from "@/services/userProfileService";
+import { applyJoinCode } from "@/services/joinCodeService";
+import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
 
 export default function Signup() {
   const navigate = useNavigate();
   const location = useLocation();
   const farmerData = location.state?.farmerData;
+  const searchParams = new URLSearchParams(location.search);
+  const joinCode = (location.state?.joinCode as string | undefined) || searchParams.get("joinCode") || undefined;
+  const joinMemberType =
+    (location.state?.memberType as "farmer" | "staff" | "buyer" | undefined) ||
+    (searchParams.get("memberType") as "farmer" | "staff" | "buyer" | null) ||
+    undefined;
   const { signup, signInWithGoogle, signInWithPhone, verifyPhoneOTP } = useAuth();
   const { t } = useTranslation();
 
@@ -72,6 +81,35 @@ export default function Signup() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const createAccountProfile = async (uid: string, email?: string | null) => {
+    if (joinCode && joinMemberType) {
+      await applyJoinCode(joinCode, uid, joinMemberType, formData.displayName, email ?? formData.email);
+      const joinRole: UserRole =
+        joinMemberType === "staff" ? "org_staff" : joinMemberType === "buyer" ? "buyer" : "farmer";
+      toast.success(`Role set: ${joinRole.replace("_", " ")}`);
+      return;
+    }
+
+    if (farmerData) {
+      await upsertUserProfileDoc(uid, {
+        role: "farmer",
+        orgId: null,
+        orgRole: null,
+        displayName: formData.displayName || undefined,
+        email: email || formData.email || undefined,
+        premium: false,
+      });
+      toast.success("Role set: farmer");
+      return;
+    }
+
+    await upsertUserProfileDoc(uid, {
+      displayName: formData.displayName || undefined,
+      email: email || formData.email || undefined,
+    });
+
   };
 
   const saveProfile = async (userId: string, emailOverride?: string | null) => {
@@ -151,6 +189,7 @@ export default function Signup() {
     try {
       const userCredential = await signup(formData.email, formData.password, formData.displayName);
       await ensureAuthToken();
+      await createAccountProfile(userCredential.user.uid, userCredential.user.email);
       if (farmerData && userCredential?.user?.uid) {
         try {
           await saveProfile(userCredential.user.uid, userCredential.user.email);
@@ -160,7 +199,17 @@ export default function Signup() {
           toast.error(t("signup.profileSaveError"));
         }
       }
-      navigate("/profile");
+      if (farmerData) {
+        navigate("/profile");
+      } else if (joinMemberType === "buyer") {
+        navigate("/marketplace");
+      } else if (joinMemberType === "staff") {
+        navigate("/org");
+      } else if (joinMemberType === "farmer") {
+        navigate("/registration");
+      } else {
+        navigate("/registration");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -171,6 +220,9 @@ export default function Signup() {
     try {
       const userCredential = await signInWithGoogle();
       await ensureAuthToken();
+      if (userCredential?.user?.uid) {
+        await createAccountProfile(userCredential.user.uid, userCredential.user.email);
+      }
       if (farmerData && userCredential?.user?.uid) {
         try {
           await saveProfile(userCredential.user.uid, userCredential.user.email);
@@ -180,7 +232,17 @@ export default function Signup() {
           toast.error(t("signup.profileSaveError"));
         }
       }
-      navigate("/profile");
+      if (farmerData) {
+        navigate("/profile");
+      } else if (joinMemberType === "buyer") {
+        navigate("/marketplace");
+      } else if (joinMemberType === "staff") {
+        navigate("/org");
+      } else if (joinMemberType === "farmer") {
+        navigate("/registration");
+      } else {
+        navigate("/registration");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -212,6 +274,9 @@ export default function Signup() {
       try {
         const userCredential = await verifyPhoneOTP(phoneConfirmation, formData.otp);
         await ensureAuthToken();
+        if (userCredential?.user?.uid) {
+          await createAccountProfile(userCredential.user.uid, userCredential.user.email);
+        }
         if (farmerData && userCredential?.user?.uid) {
           try {
             await saveProfile(userCredential.user.uid, userCredential.user.email);
@@ -221,35 +286,24 @@ export default function Signup() {
             toast.error(t("signup.profileSaveError"));
           }
         }
-        navigate("/profile");
+        if (farmerData) {
+          navigate("/profile");
+        } else if (joinMemberType === "buyer") {
+          navigate("/marketplace");
+        } else if (joinMemberType === "staff") {
+          navigate("/org");
+        } else if (joinMemberType === "farmer") {
+          navigate("/registration");
+        } else {
+          navigate("/registration");
+        }
       } finally {
         setIsSubmitting(false);
       }
     }
   };
 
-  if (!farmerData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border/50 p-6 md:p-8">
-          <div className="flex justify-end mb-4">
-            <LanguageSwitcher />
-          </div>
-          <AlertCard
-            type="warning"
-            title={t("signup.registrationRequiredTitle")}
-            message={t("signup.registrationRequiredMessage")}
-          />
-          <Button
-            onClick={() => navigate("/farmer-registration")}
-            className="w-full mt-4"
-          >
-            {t("signup.goToRegistration")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
+ 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5 flex items-center justify-center p-4">
@@ -257,20 +311,20 @@ export default function Signup() {
         <div className="flex justify-end mb-4">
           <LanguageSwitcher />
         </div>
-        <div className="mb-6 p-4 bg-success/10 border border-success/30 rounded-lg">
-          <div className="flex items-center gap-2 text-success">
-            <CheckCircle className="h-5 w-5" />
-            <span className="font-medium">{t("signup.registrationComplete")}</span>
+        {farmerData && (
+          <div className="mb-6 p-4 bg-success/10 border border-success/30 rounded-lg">
+            <div className="flex items-center gap-2 text-success">
+              <CheckCircle className="h-5 w-5" />
+              <span className="font-medium">{t("signup.registrationComplete")}</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              {t("signup.registrationWelcome", { name: farmerData.fullName })}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            {t("signup.registrationWelcome", { name: farmerData.fullName })}
-          </p>
-        </div>
+        )}
 
         <div className="text-center mb-6">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <User className="h-8 w-8 text-primary" />
-          </div>
+          <AgriSmartLogo variant="stacked" size="lg" showTagline className="mb-4" />
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
             {t("signup.title")}
           </h1>
@@ -278,6 +332,7 @@ export default function Signup() {
             {t("signup.subtitle")}
           </p>
         </div>
+
 
         <div id="recaptcha-container"></div>
 

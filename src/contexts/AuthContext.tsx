@@ -230,6 +230,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     syncLanguage();
   }, [currentUser?.uid, i18n]);
 
+
   const value: AuthContextType = {
     currentUser,
     loading,
