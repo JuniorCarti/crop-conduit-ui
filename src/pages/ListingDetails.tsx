@@ -146,6 +146,9 @@ export default function ListingDetails() {
 
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <p>Seller: {listing.sellerName || "Verified farmer"}</p>
+                  {listing.coopVerified && listing.coopName && (
+                    <p className="text-emerald-700">Verified by {listing.coopName}</p>
+                  )}
                   {listing.phoneNumber && <p>Phone: {listing.phoneNumber}</p>}
                 </div>
               </div>

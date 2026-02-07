@@ -14,6 +14,13 @@
  * - Community: Social/forum APIs
  */
 
+import { format, subDays, subWeeks, subMonths } from "date-fns";
+import { collection, getDocs, limit, orderBy, query, Timestamp, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { subscribeToCashFlowForecasts } from "./firestore-finance";
+import { getAveragePrice, getMarketPrices, syncMarketForecastWithFallback } from "./marketPriceService";
+import { getEstimatedSupply } from "./nextHarvestService";
+
 // Simulate network delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -271,9 +278,6 @@ export const oracleApi = {
    */
   async getCropPrices(): Promise<CropPrice[]> {
     try {
-      // Import market price service
-      const { getMarketPrices, getAveragePrice, syncMarketForecastWithFallback } = await import("./marketPriceService");
-      
       // Sync from Render API /predict endpoint (with fallback to cached data)
       // The sync function has built-in guards to prevent concurrent calls and loops
       // Run sync in background - don't wait for it to complete
@@ -351,9 +355,6 @@ export const oracleApi = {
    */
   async getPriceHistory(period: 'daily' | 'weekly' | 'monthly' = 'daily'): Promise<PriceHistory[]> {
     try {
-      const { getMarketPrices } = await import("./marketPriceService");
-      const { format, subDays, subWeeks, subMonths } = await import("date-fns");
-      
       // Calculate date range based on period
       let startDate: Date;
       const endDate = new Date();
@@ -447,8 +448,6 @@ export const oracleApi = {
    */
   async getRecommendedMarkets(crop?: string): Promise<RecommendedMarket[]> {
     try {
-      const { getMarketPrices } = await import("./marketPriceService");
-      
       // Get prices for the specified crop or all crops
       const prices = await getMarketPrices({
         commodity: crop,
@@ -486,7 +485,6 @@ export const oracleApi = {
           try {
             // Get estimated supply for the crop in this market's county
             // This helps recommend markets where supply might be lower (better prices)
-            const { getEstimatedSupply } = await import("./nextHarvestService");
             // Simplified - in production, get userId from context
             // For now, just return market as-is
             return market;
@@ -509,10 +507,6 @@ export const oracleApi = {
    */
   async getPricePredictions(crop?: string): Promise<PricePrediction[]> {
     try {
-      const { getMarketPrices, getAveragePrice } = await import("./marketPriceService");
-      const { getEstimatedSupply } = await import("./nextHarvestService");
-      const { useAuth } = await import("@/contexts/AuthContext");
-      
       // Get current user (simplified - in production pass userId)
       // For now, get prices for all users' crops
       const commodities = crop ? [crop] : ["Tomato", "Onion", "Avocado", "Mango", "Irish Potato", "Maize", "Wheat", "Sorghum"];
@@ -750,11 +744,6 @@ export const chancellorApi = {
    */
   async getCashflow(): Promise<CashflowData[]> {
     try {
-      // Import Firestore functions
-      const { collection, query, where, getDocs, orderBy, limit, Timestamp } = await import("firebase/firestore");
-      const { db } = await import("@/lib/firebase");
-      const { format, subMonths } = await import("date-fns");
-      
       // Get last 6 months of cashflow
       const startDate = subMonths(new Date(), 6);
       
@@ -1008,7 +997,6 @@ export const dashboardApi = {
       // Get alerts from various sources
       // 1. Price alerts (from market prices)
       try {
-        const { getMarketPrices } = await import("./marketPriceService");
         const recentPrices = await getMarketPrices({
           limitCount: 20,
         });
@@ -1050,7 +1038,6 @@ export const dashboardApi = {
       
       // 2. Finance alerts (from finance module)
       try {
-        const { subscribeToCashFlowForecasts } = await import("./firestore-finance");
         // This would need userId - for now, skip or use a different approach
       } catch (error) {
         console.warn("Error fetching finance alerts:", error);
