@@ -1,6 +1,16 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Upload, MapPin, User, Phone, Calendar, Package, AlertCircle } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Upload,
+  MapPin,
+  User,
+  Phone,
+  Calendar,
+  Package,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { toast } from "sonner";
 import { getCounties, getConstituencies, getWards } from "@/utils/kenyaAdminData";
@@ -249,7 +260,7 @@ export default function FarmerRegistration() {
       }
 
       toast.success("Profile saved.");
-      navigate("/profile");
+      navigate("/access-summary");
       setIsSaving(false);
       return;
     }
@@ -314,7 +325,7 @@ export default function FarmerRegistration() {
       }
     }
 
-    toast.success("Update submitted. It will be reviewed within 1â€“2 hours.");
+    toast.success("Update submitted. It will be reviewed within 1-2 hours.");
     navigate("/profile");
     setIsSaving(false);
   };
@@ -340,369 +351,413 @@ export default function FarmerRegistration() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-success/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-card rounded-2xl shadow-xl border border-border/50 p-6 md:p-8">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <User className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            {isEditing ? "Edit Farmer Profile" : "Farmer Registration"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Step {currentStep} of {totalSteps} â€¢ Tell us about your farm
-          </p>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
-        </div>
-
-        {/* Step 1: Basic Information */}
-        {currentStep === 1 && (
-          <div className="space-y-6 animate-fade-up">
-            <div>
-              <Label htmlFor="fullName" className="flex items-center gap-2 mb-2">
-                <User className="h-4 w-4" />
-                Full Name *
-              </Label>
-              <Input
-                id="fullName"
-                placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange("fullName", e.target.value)}
-                className="bg-background"
-              />
-            </div>
-
-            {!adminDataAvailable && (
-              <AlertCard
-                type="warning"
-                title="Administrative dataset unavailable"
-                message="Administrative dataset unavailable â€” manual entry enabled."
-              />
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="county" className="flex items-center gap-2 mb-2">
-                  <MapPin className="h-4 w-4" />
-                  County *
-                </Label>
-                {adminDataAvailable ? (
-                  <Select value={formData.county} onValueChange={handleCountyChange}>
-                    <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select county" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {countyOptions.map((county) => (
-                        <SelectItem key={county} value={county}>{county}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="county"
-                    placeholder="Enter county"
-                    value={formData.county}
-                    onChange={(e) => handleInputChange("county", e.target.value)}
-                    className="bg-background"
-                  />
-                )}
+    <div className="min-h-screen bg-background px-4 py-8">
+      <div className="mx-auto w-full max-w-4xl">
+        <Card className="border-border/60 shadow-xl">
+          <div className="flex flex-col max-h-[85vh]">
+            <CardHeader className="border-b border-border/60">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-xl sm:text-2xl">
+                    {isEditing ? "Edit Farmer Profile" : "Farmer Registration"}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Step {currentStep} of {totalSteps} · {currentStep === 1 ? "Identity" : currentStep === 2 ? "Farm details" : "Review & submit"}
+                  </p>
+                </div>
+                <Button variant="outline" onClick={handleBack}>
+                  {currentStep === 1 ? "Cancel" : "Back"}
+                </Button>
               </div>
-
-              <div>
-                <Label htmlFor="constituency" className="mb-2">Constituency *</Label>
-                {adminDataAvailable ? (
-                  <Select
-                    value={formData.constituency}
-                    onValueChange={handleConstituencyChange}
-                    disabled={!formData.county}
-                  >
-                    <SelectTrigger className="bg-background" disabled={!formData.county}>
-                      <SelectValue placeholder="Select constituency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {constituencyOptions.map((constituency) => (
-                        <SelectItem key={constituency} value={constituency}>{constituency}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="constituency"
-                    placeholder="Enter constituency"
-                    value={formData.constituency}
-                    onChange={(e) => handleInputChange("constituency", e.target.value)}
-                    className="bg-background"
-                  />
-                )}
+              <div className="pt-2 space-y-2">
+                <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
+                <div className="grid grid-cols-3 text-xs text-muted-foreground">
+                  <span className={currentStep === 1 ? "text-foreground font-semibold" : ""}>1. Identity</span>
+                  <span className={`text-center ${currentStep === 2 ? "text-foreground font-semibold" : ""}`}>2. Farm Details</span>
+                  <span className={`text-right ${currentStep === 3 ? "text-foreground font-semibold" : ""}`}>3. Review & Submit</span>
+                </div>
               </div>
-            </div>
+            </CardHeader>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="ward" className="mb-2">Ward *</Label>
-                {adminDataAvailable ? (
-                  <Select
-                    value={formData.ward}
-                    onValueChange={(value) => handleInputChange("ward", value)}
-                    disabled={!formData.constituency}
-                  >
-                    <SelectTrigger className="bg-background" disabled={!formData.constituency}>
-                      <SelectValue placeholder="Select ward" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {wardOptions.map((ward) => (
-                        <SelectItem key={ward} value={ward}>{ward}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="ward"
-                    placeholder="Enter ward"
-                    value={formData.ward}
-                    onChange={(e) => handleInputChange("ward", e.target.value)}
-                    className="bg-background"
-                  />
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="village" className="mb-2">Village *</Label>
-                <Input
-                  id="village"
-                  placeholder="Enter village"
-                  value={formData.village}
-                  onChange={(e) => handleInputChange("village", e.target.value)}
-                  className="bg-background"
+            <CardContent className="flex-1 overflow-y-auto pb-24 pt-4" style={{ scrollPaddingBottom: "120px" }}>
+              {!adminDataAvailable && (
+                <AlertCard
+                  type="warning"
+                  title="Administrative dataset unavailable"
+                  message="Administrative dataset unavailable - manual entry enabled."
                 />
-              </div>
-            </div>
+              )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="farmSize" className="mb-2">Farm Size (acres) *</Label>
-                <Input
-                  id="farmSize"
-                  type="number"
-                  placeholder="e.g., 5"
-                  value={formData.farmSize}
-                  onChange={(e) => handleInputChange("farmSize", e.target.value)}
-                  className="bg-background"
-                />
-              </div>
-
-              <div>
-                <Label className="mb-3 block">Type of Farming *</Label>
-                <RadioGroup
-                  value={formData.farmingType}
-                  onValueChange={(value) => handleInputChange("farmingType", value)}
-                  className="flex gap-4"
-                >
-                  {farmingTypes.map(type => (
-                    <div key={type} className="flex items-center space-x-2">
-                      <RadioGroupItem value={type} id={type} />
-                      <Label htmlFor={type} className="cursor-pointer">{type}</Label>
+              {currentStep === 1 && (
+                <div className="space-y-6 animate-fade-up">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="fullName" className="flex items-center gap-2 mb-2">
+                        <User className="h-4 w-4" />
+                        Full Name *
+                      </Label>
+                      <Input
+                        id="fullName"
+                        placeholder="Enter your full name"
+                        value={formData.fullName}
+                        onChange={(e) => handleInputChange("fullName", e.target.value)}
+                        className="bg-background w-full min-w-0"
+                      />
                     </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Crops/Livestock */}
-        {currentStep === 2 && (
-          <div className="space-y-6 animate-fade-up">
-            {(formData.farmingType === "Crop" || formData.farmingType === "Mixed") && (
-              <div>
-                <Label className="mb-3 block">Crops You Keep *</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {commonCrops.map(crop => (
-                    <label
-                      key={crop}
-                      className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
-                        formData.crops.includes(crop)
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-background hover:border-primary/50"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.crops.includes(crop)}
-                        onChange={() => handleMultiSelect("crops", crop)}
-                        className="rounded border-input"
+                    <div>
+                      <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
+                        <Phone className="h-4 w-4" />
+                        Phone Number *
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+254 712 345 678"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange("phone", e.target.value)}
+                        className="bg-background w-full min-w-0"
                       />
-                      <span className="text-sm">{crop}</span>
-                    </label>
-                  ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="county" className="flex items-center gap-2 mb-2">
+                        <MapPin className="h-4 w-4" />
+                        County *
+                      </Label>
+                      {adminDataAvailable ? (
+                        <Select value={formData.county} onValueChange={handleCountyChange}>
+                          <SelectTrigger className="bg-background w-full min-w-0">
+                            <SelectValue placeholder="Select county" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countyOptions.map((county) => (
+                              <SelectItem key={county} value={county}>{county}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          id="county"
+                          placeholder="Enter county"
+                          value={formData.county}
+                          onChange={(e) => handleInputChange("county", e.target.value)}
+                          className="bg-background w-full min-w-0"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="constituency" className="mb-2">Constituency *</Label>
+                      {adminDataAvailable ? (
+                        <Select
+                          value={formData.constituency}
+                          onValueChange={handleConstituencyChange}
+                          disabled={!formData.county}
+                        >
+                          <SelectTrigger className="bg-background w-full min-w-0" disabled={!formData.county}>
+                            <SelectValue placeholder="Select constituency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {constituencyOptions.map((constituency) => (
+                              <SelectItem key={constituency} value={constituency}>{constituency}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          id="constituency"
+                          placeholder="Enter constituency"
+                          value={formData.constituency}
+                          onChange={(e) => handleInputChange("constituency", e.target.value)}
+                          className="bg-background w-full min-w-0"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="ward" className="mb-2">Ward *</Label>
+                      {adminDataAvailable ? (
+                        <Select
+                          value={formData.ward}
+                          onValueChange={(value) => handleInputChange("ward", value)}
+                          disabled={!formData.constituency}
+                        >
+                          <SelectTrigger className="bg-background w-full min-w-0" disabled={!formData.constituency}>
+                            <SelectValue placeholder="Select ward" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {wardOptions.map((ward) => (
+                              <SelectItem key={ward} value={ward}>{ward}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          id="ward"
+                          placeholder="Enter ward"
+                          value={formData.ward}
+                          onChange={(e) => handleInputChange("ward", e.target.value)}
+                          className="bg-background w-full min-w-0"
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="village" className="mb-2">Village *</Label>
+                      <Input
+                        id="village"
+                        placeholder="Enter village"
+                        value={formData.village}
+                        onChange={(e) => handleInputChange("village", e.target.value)}
+                        className="bg-background w-full min-w-0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="farmSize" className="mb-2">Farm Size (acres) *</Label>
+                      <Input
+                        id="farmSize"
+                        type="number"
+                        placeholder="e.g., 5"
+                        value={formData.farmSize}
+                        onChange={(e) => handleInputChange("farmSize", e.target.value)}
+                        className="bg-background w-full min-w-0"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="mb-3 block">Type of Farming *</Label>
+                      <RadioGroup
+                        value={formData.farmingType}
+                        onValueChange={(value) => handleInputChange("farmingType", value)}
+                        className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+                      >
+                        {farmingTypes.map(type => (
+                          <div key={type} className="flex items-center space-x-2">
+                            <RadioGroupItem value={type} id={type} />
+                            <Label htmlFor={type} className="cursor-pointer">{type}</Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 2 && (
+                <div className="space-y-6 animate-fade-up">
+                  {(formData.farmingType === "Crop" || formData.farmingType === "Mixed") && (
+                    <div>
+                      <Label className="mb-3 block">Crops You Keep *</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {commonCrops.map(crop => (
+                          <label
+                            key={crop}
+                            className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                              formData.crops.includes(crop)
+                                ? "border-primary bg-primary/10"
+                                : "border-border bg-background hover:border-primary/50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.crops.includes(crop)}
+                              onChange={() => handleMultiSelect("crops", crop)}
+                              className="rounded border-input"
+                            />
+                            <span className="text-sm">{crop}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(formData.farmingType === "Livestock" || formData.farmingType === "Mixed") && (
+                    <div>
+                      <Label className="mb-3 block">Livestock You Keep *</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {commonLivestock.map(animal => (
+                          <label
+                            key={animal}
+                            className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                              formData.livestock.includes(animal)
+                                ? "border-primary bg-primary/10"
+                                : "border-border bg-background hover:border-primary/50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.livestock.includes(animal)}
+                              onChange={() => handleMultiSelect("livestock", animal)}
+                              className="rounded border-input"
+                            />
+                            <span className="text-sm">{animal}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentStep === 3 && (
+                <div className="space-y-6 animate-fade-up">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="experience" className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-4 w-4" />
+                        Farm Experience (years)
+                      </Label>
+                      <Input
+                        id="experience"
+                        type="number"
+                        placeholder="e.g., 5"
+                        value={formData.experience}
+                        onChange={(e) => handleInputChange("experience", e.target.value)}
+                        className="bg-background w-full min-w-0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="monthlyProduction" className="mb-2">Estimated Monthly Production</Label>
+                      <Input
+                        id="monthlyProduction"
+                        placeholder="e.g., 500kg maize, 200kg tomatoes"
+                        value={formData.monthlyProduction}
+                        onChange={(e) => handleInputChange("monthlyProduction", e.target.value)}
+                        className="bg-background w-full min-w-0"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="tools" className="flex items-center gap-2 mb-2">
+                      <Package className="h-4 w-4" />
+                      Tools or Equipment You Own
+                    </Label>
+                    <Textarea
+                      id="tools"
+                      placeholder="e.g., Tractor, Plow, Irrigation system..."
+                      value={formData.tools}
+                      onChange={(e) => handleInputChange("tools", e.target.value)}
+                      className="bg-background min-h-[80px] w-full min-w-0"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="challenges" className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Primary Challenges You Face
+                    </Label>
+                    <Textarea
+                      id="challenges"
+                      placeholder="e.g., Water scarcity, Pest control, Market access..."
+                      value={formData.challenges}
+                      onChange={(e) => handleInputChange("challenges", e.target.value)}
+                      className="bg-background min-h-[80px] w-full min-w-0"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="farmPhoto" className="flex items-center gap-2 mb-2">
+                      <Upload className="h-4 w-4" />
+                      Upload Farm Photo (Optional)
+                    </Label>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                      <Input
+                        id="farmPhoto"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="bg-background w-full min-w-0"
+                      />
+                      {formData.farmPhoto && (
+                        <span className="text-sm text-muted-foreground">
+                          {formData.farmPhoto.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <Card className="border-border/60">
+                    <CardHeader>
+                      <CardTitle className="text-base">Review</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Full name</p>
+                        <p className="font-semibold">{formData.fullName || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Phone</p>
+                        <p className="font-semibold">{formData.phone || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Location</p>
+                        <p className="font-semibold">
+                          {[formData.village, formData.ward, formData.constituency, formData.county].filter(Boolean).join(", ") || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Farm size</p>
+                        <p className="font-semibold">{formData.farmSize || "—"} acres</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Farming type</p>
+                        <p className="font-semibold">{formData.farmingType || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Crops/Livestock</p>
+                        <p className="font-semibold">
+                          {[...formData.crops, ...formData.livestock].join(", ") || "—"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </CardContent>
+
+            <div className="sticky bottom-0 z-10 border-t border-border/60 bg-background/95 backdrop-blur px-6 py-4">
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  className="gap-2 w-full sm:w-auto"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {currentStep === 1 ? "Cancel" : "Back"}
+                </Button>
+                <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
+                  <Button
+                    onClick={handleNext}
+                    disabled={!canProceed() || isSaving}
+                    className="gap-2 w-full sm:w-auto"
+                  >
+                    {currentStep === totalSteps
+                      ? currentUser
+                        ? isEditing
+                          ? isSaving
+                            ? "Submitting..."
+                            : "Submit for Review"
+                          : isSaving
+                            ? "Saving..."
+                            : "Save Profile"
+                        : "Continue to Signup"
+                      : "Next"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            )}
-
-            {(formData.farmingType === "Livestock" || formData.farmingType === "Mixed") && (
-              <div>
-                <Label className="mb-3 block">Livestock You Keep *</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {commonLivestock.map(animal => (
-                    <label
-                      key={animal}
-                      className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
-                        formData.livestock.includes(animal)
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-background hover:border-primary/50"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.livestock.includes(animal)}
-                        onChange={() => handleMultiSelect("livestock", animal)}
-                        className="rounded border-input"
-                      />
-                      <span className="text-sm">{animal}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 3: Additional Details */}
-        {currentStep === 3 && (
-          <div className="space-y-6 animate-fade-up">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="experience" className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4" />
-                  Farm Experience (years)
-                </Label>
-                <Input
-                  id="experience"
-                  type="number"
-                  placeholder="e.g., 5"
-                  value={formData.experience}
-                  onChange={(e) => handleInputChange("experience", e.target.value)}
-                  className="bg-background"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="phone" className="flex items-center gap-2 mb-2">
-                  <Phone className="h-4 w-4" />
-                  Phone Number *
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+254 712 345 678"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="bg-background"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="tools" className="flex items-center gap-2 mb-2">
-                <Package className="h-4 w-4" />
-                Tools or Equipment You Own
-              </Label>
-              <Textarea
-                id="tools"
-                placeholder="e.g., Tractor, Plow, Irrigation system..."
-                value={formData.tools}
-                onChange={(e) => handleInputChange("tools", e.target.value)}
-                className="bg-background min-h-[80px]"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="challenges" className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4" />
-                Primary Challenges You Face
-              </Label>
-              <Textarea
-                id="challenges"
-                placeholder="e.g., Water scarcity, Pest control, Market access..."
-                value={formData.challenges}
-                onChange={(e) => handleInputChange("challenges", e.target.value)}
-                className="bg-background min-h-[80px]"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="monthlyProduction" className="mb-2">Estimated Monthly Production</Label>
-              <Input
-                id="monthlyProduction"
-                placeholder="e.g., 500kg maize, 200kg tomatoes"
-                value={formData.monthlyProduction}
-                onChange={(e) => handleInputChange("monthlyProduction", e.target.value)}
-                className="bg-background"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="farmPhoto" className="flex items-center gap-2 mb-2">
-                <Upload className="h-4 w-4" />
-                Upload Farm Photo (Optional)
-              </Label>
-              <div className="flex items-center gap-4">
-                <Input
-                  id="farmPhoto"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="bg-background"
-                />
-                {formData.farmPhoto && (
-                  <span className="text-sm text-muted-foreground">
-                    {formData.farmPhoto.name}
-                  </span>
-                )}
-              </div>
             </div>
           </div>
-        )}
-
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {currentStep === 1 ? "Cancel" : "Back"}
-          </Button>
-
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed() || isSaving}
-            className="gap-2"
-          >
-            <>
-              {currentStep === totalSteps
-                ? currentUser
-                  ? isEditing
-                    ? isSaving
-                      ? "Submitting..."
-                      : "Submit for Review"
-                    : isSaving
-                      ? "Saving..."
-                      : "Save Profile"
-                  : "Continue to Signup"
-                : "Next"}
-              <ArrowRight className="h-4 w-4" />
-            </>
-          </Button>
-        </div>
+        </Card>
       </div>
     </div>
   );
 }
-

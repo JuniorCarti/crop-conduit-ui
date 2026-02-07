@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -12,6 +13,13 @@ import { startConversation } from "@/services/dmService";
 import { toast } from "sonner";
 import { db } from "@/lib/firebase";
 import { deleteDoc, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  getLatestJoinRequestForUser,
+  getSubmittedJoinRequestForUser,
+  getUserCoopMembership,
+  submitMembershipRequestWithJoinCode,
+} from "@/services/cooperativeMembershipService";
 
 type PendingUpdate = {
   payload?: Partial<FarmerProfile>;
@@ -36,9 +44,14 @@ const toDate = (value?: Date | Timestamp | string) => {
 export default function FarmerProfile() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const { role } = useUserRole();
   const [profile, setProfile] = useState<FarmerProfile | null>(null);
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(null);
   const [loading, setLoading] = useState(true);
+  const [coopStatus, setCoopStatus] = useState<{ verified: boolean; orgName?: string | null; status?: string | null } | null>(null);
+  const [latestJoinRequest, setLatestJoinRequest] = useState<any | null>(null);
+  const [joinCode, setJoinCode] = useState("");
+  const [joinLoading, setJoinLoading] = useState(false);
 
   const DEBUG_PROFILE = import.meta.env.DEV && import.meta.env.VITE_DEBUG_PROFILE === "true";
   const DEMO_AUTO_APPROVE =
@@ -103,10 +116,35 @@ export default function FarmerProfile() {
 
         setProfile(profileData);
         setPendingUpdate(pendingData);
+
+        const membership = await getUserCoopMembership(currentUser.uid);
+        if (membership?.status === "active") {
+          setCoopStatus({ verified: true, orgName: membership.coopName ?? null, status: "active" });
+          return;
+        }
+        const submitted = await getSubmittedJoinRequestForUser(currentUser.uid);
+        const latest = await getLatestJoinRequestForUser(currentUser.uid);
+        setLatestJoinRequest(latest);
+        if (submitted) {
+          setCoopStatus({ verified: false, orgName: membership?.coopName ?? null, status: "submitted" });
+          return;
+        }
+        const coopSnap = await getDoc(doc(db, "users", currentUser.uid, "coopVerification", "status"));
+        if (coopSnap.exists()) {
+          const data = coopSnap.data() as any;
+          setCoopStatus({
+            verified: Boolean(data.verified),
+            orgName: data.orgName ?? null,
+            status: data.status ?? (data.verified ? "active" : "submitted"),
+          });
+        } else {
+          setCoopStatus({ verified: false });
+        }
       } catch (error) {
         console.error("Failed to load farmer profile:", error);
         setProfile(null);
         setPendingUpdate(null);
+        setCoopStatus(null);
       } finally {
         setLoading(false);
       }
@@ -141,6 +179,24 @@ export default function FarmerProfile() {
     );
   }
 
+  if (role === "buyer" || role === "org_admin" || role === "org_staff") {
+    return (
+      <div className="min-h-screen bg-background">
+        <PageHeader title="Profile" subtitle="Access restricted" />
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-4">
+          <AlertCard
+            type="warning"
+            title="Access restricted"
+            message="Your account type does not have access to farmer profile details."
+          />
+          <Button onClick={() => navigate(role === "buyer" ? "/marketplace" : "/org")}>
+            Go to your home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const handleMessageFarmer = async () => {
     if (!profile?.uid || profile.uid === currentUser?.uid) return;
     try {
@@ -150,6 +206,36 @@ export default function FarmerProfile() {
       }
     } catch (error: any) {
       toast.error(error?.message || "Unable to start conversation");
+    }
+  };
+
+  const handleJoinCooperative = async () => {
+    if (!currentUser?.uid) {
+      navigate("/login");
+      return;
+    }
+    if (!joinCode.trim()) {
+      toast.error("Enter a join code.");
+      return;
+    }
+    setJoinLoading(true);
+    try {
+      const result = await submitMembershipRequestWithJoinCode({
+        code: joinCode,
+        uid: currentUser.uid,
+        fullName: profile?.fullName ?? currentUser.displayName ?? "Farmer",
+        phone: profile?.phone ?? currentUser.phoneNumber ?? null,
+        email: profile?.email ?? currentUser.email ?? null,
+      });
+      setCoopStatus({ verified: false, orgName: result.coopName, status: "submitted" });
+      const latest = await getLatestJoinRequestForUser(currentUser.uid);
+      setLatestJoinRequest(latest);
+      setJoinCode("");
+      toast.success("Request sent to cooperative for approval.");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to submit join request.");
+    } finally {
+      setJoinLoading(false);
     }
   };
 
@@ -176,6 +262,15 @@ export default function FarmerProfile() {
         </div>
       </PageHeader>
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-6">
+        {role === "unassigned" && (
+          <AlertCard
+            type="info"
+            title="Complete registration"
+            message="Choose a registration type to unlock the right tools."
+            action="Complete registration"
+            onAction={() => navigate("/registration")}
+          />
+        )}
         {loading ? (
           <Card className="border-border/60">
             <CardHeader>
@@ -193,7 +288,7 @@ export default function FarmerProfile() {
               title="No farmer profile yet"
               message="Complete registration to create your farmer profile."
             />
-            <Button onClick={() => navigate("/farmer-registration")}>
+            <Button onClick={() => navigate("/registration")}>
               Complete registration
             </Button>
           </div>
@@ -284,6 +379,76 @@ export default function FarmerProfile() {
                         {formatValue(profile.farmExperienceYears ?? profile.experienceYears)}
                       </p>
                     </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/60">
+                  <CardHeader>
+                    <CardTitle>My cooperative</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {coopStatus?.verified ? (
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">{coopStatus.orgName ?? "Cooperative"}</p>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Active</Badge>
+                      </div>
+                    ) : coopStatus?.status === "submitted" ? (
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">{coopStatus.orgName ?? "Cooperative"}</p>
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">Submitted</Badge>
+                      </div>
+                    ) : coopStatus?.status === "rejected" ? (
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">{coopStatus.orgName ?? "Cooperative"}</p>
+                        <Badge className="bg-rose-100 text-rose-800 border-rose-200 hover:bg-rose-100">Rejected</Badge>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No active cooperative membership.
+                      </p>
+                    )}
+
+                    {!coopStatus?.verified && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Join a Cooperative</p>
+                        <Input
+                          placeholder="Enter join code"
+                          value={joinCode}
+                          onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
+                        />
+                        <Button size="sm" onClick={handleJoinCooperative} disabled={joinLoading}>
+                          {joinLoading ? "Submitting..." : "Submit join code"}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/60">
+                  <CardHeader>
+                    <CardTitle>My join request status</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {!latestJoinRequest ? (
+                      <p className="text-sm text-muted-foreground">No join request submitted yet.</p>
+                    ) : latestJoinRequest.status === "submitted" ? (
+                      <div className="space-y-1">
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">Awaiting cooperative approval</Badge>
+                        <p className="text-xs text-muted-foreground">Submitted on {latestJoinRequest.createdAt?.toDate?.()?.toLocaleString?.() || "-"}</p>
+                      </div>
+                    ) : latestJoinRequest.status === "approved" ? (
+                      <div className="space-y-1">
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Approved</Badge>
+                        <p className="text-xs text-muted-foreground">Approved on {latestJoinRequest.approvedAt?.toDate?.()?.toLocaleString?.() || "-"}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Badge className="bg-rose-100 text-rose-800 border-rose-200 hover:bg-rose-100">Rejected</Badge>
+                        <p className="text-xs text-muted-foreground">
+                          Reason: {latestJoinRequest.rejectionReason || "No reason provided."}
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
