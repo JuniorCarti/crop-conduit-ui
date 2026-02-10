@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { brand } from "@/theme/brand";
 
 type LogoVariant = "stacked" | "inline";
 type LogoSize = "sm" | "md" | "lg";
@@ -28,9 +29,18 @@ const taglineSizeMap: Record<LogoSize, string> = {
   lg: "text-sm",
 };
 
+const BRAND_COLORS = {
+  agri: brand.colors.primaryGreen,
+  dot: brand.colors.accentLime,
+  smartStart: brand.colors.accentLime,
+  smartEnd: brand.colors.accentLime2,
+  icon: brand.colors.iconGreen,
+  tagline: brand.colors.farmSubtext,
+};
+
 function SproutIcon({ size }: { size: LogoSize }) {
   return (
-    <div className={cn("rounded-full bg-primary/10 flex items-center justify-center", iconSizeMap[size])}>
+    <div className={cn("rounded-full flex items-center justify-center", iconSizeMap[size])} style={{ backgroundColor: "rgba(24,71,1,0.10)" }}>
       <svg viewBox="0 0 64 64" aria-hidden="true" className="h-[68%] w-[68%]">
         <path
           d="M31 52V34"
@@ -38,7 +48,7 @@ function SproutIcon({ size }: { size: LogoSize }) {
           stroke="currentColor"
           strokeWidth="3.8"
           strokeLinecap="round"
-          className="text-primary"
+          style={{ color: BRAND_COLORS.icon }}
         />
         <path
           d="M31 37c-9 0-16-7-16-16 9 0 16 7 16 16Z"
@@ -46,7 +56,7 @@ function SproutIcon({ size }: { size: LogoSize }) {
           stroke="currentColor"
           strokeWidth="3.2"
           strokeLinejoin="round"
-          className="text-primary"
+          style={{ color: BRAND_COLORS.icon }}
         />
         <path
           d="M33 33c0-9 7-16 16-16 0 9-7 16-16 16Z"
@@ -54,7 +64,7 @@ function SproutIcon({ size }: { size: LogoSize }) {
           stroke="currentColor"
           strokeWidth="3.2"
           strokeLinejoin="round"
-          className="text-primary"
+          style={{ color: BRAND_COLORS.icon }}
         />
         <path
           d="M20 52h24"
@@ -62,10 +72,47 @@ function SproutIcon({ size }: { size: LogoSize }) {
           stroke="currentColor"
           strokeWidth="3.8"
           strokeLinecap="round"
-          className="text-primary/80"
+          style={{ color: BRAND_COLORS.icon, opacity: 0.8 }}
         />
       </svg>
     </div>
+  );
+}
+
+function Wordmark({ size }: { size: LogoSize }) {
+  return (
+    <span className={cn("font-semibold leading-tight", titleSizeMap[size])}>
+      <span style={{ color: BRAND_COLORS.agri }}>Agr</span>
+      <span className="relative inline-block" style={{ color: BRAND_COLORS.agri }}>
+        i
+        <span
+          className="absolute left-1/2 -translate-x-1/2 rounded-full"
+          style={{ top: "-0.25em", width: "0.26em", height: "0.26em", backgroundColor: BRAND_COLORS.dot }}
+          aria-hidden="true"
+        />
+      </span>
+      <span
+        style={{
+          background: `linear-gradient(90deg, ${BRAND_COLORS.smartStart} 0%, ${BRAND_COLORS.smartEnd} 100%)`,
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+        }}
+      >
+        Smart
+      </span>
+    </span>
+  );
+}
+
+function Tagline({ size }: { size: LogoSize }) {
+  return (
+    <p
+      className={cn("leading-tight", taglineSizeMap[size])}
+      style={{ color: BRAND_COLORS.tagline, marginInlineStart: "4ch" }}
+    >
+      Farm Intelligence
+    </p>
   );
 }
 
@@ -77,12 +124,10 @@ export function AgriSmartLogo({
 }: AgriSmartLogoProps) {
   if (variant === "stacked") {
     return (
-      <div className={cn("flex flex-col items-center text-center", className)}>
+      <div className={cn("flex flex-col items-start text-left", className)}>
         <SproutIcon size={size} />
-        <p className={cn("mt-2 font-semibold leading-tight text-foreground", titleSizeMap[size])}>AgriSmart</p>
-        {showTagline && (
-          <p className={cn("leading-tight text-muted-foreground", taglineSizeMap[size])}>Farm Intelligence</p>
-        )}
+        <p className="mt-2"><Wordmark size={size} /></p>
+        {showTagline && <Tagline size={size} />}
       </div>
     );
   }
@@ -91,12 +136,9 @@ export function AgriSmartLogo({
     <div className={cn("flex items-center gap-2", className)}>
       <SproutIcon size={size} />
       <div className="min-w-0">
-        <p className={cn("font-semibold leading-tight text-foreground", titleSizeMap[size])}>AgriSmart</p>
-        {showTagline && (
-          <p className={cn("leading-tight text-muted-foreground", taglineSizeMap[size])}>Farm Intelligence</p>
-        )}
+        <p><Wordmark size={size} /></p>
+        {showTagline && <Tagline size={size} />}
       </div>
     </div>
   );
 }
-

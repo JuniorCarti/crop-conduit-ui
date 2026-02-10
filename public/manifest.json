@@ -4,8 +4,8 @@
   "description": "Farm intelligence platform for market forecasting, crop intelligence, and resource optimization.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2E7D32",
+  "background_color": "#dce9ff",
+  "theme_color": "#dce9ff",
   "icons": [
     {
       "src": "/favicon.svg",

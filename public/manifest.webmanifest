@@ -1,8 +1,8 @@
 {
   "name": "AgriSmart",
   "short_name": "AgriSmart",
-  "theme_color": "#2E7D32",
-  "background_color": "#ffffff",
+  "theme_color": "#dce9ff",
+  "background_color": "#dce9ff",
   "icons": [
     {
       "src": "/favicon.svg",
