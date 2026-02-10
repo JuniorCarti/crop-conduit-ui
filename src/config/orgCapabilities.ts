@@ -3,6 +3,8 @@ export const ORG_CAPABILITIES = {
   enterprise: [],
   bank: [],
   ngo: [],
+  government_national: [],
+  gov_national: [],
 } as const;
 
 export type OrgType = keyof typeof ORG_CAPABILITIES;
