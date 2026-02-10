@@ -2,17 +2,35 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Calendar, FileText, Mail, MapPin, Phone, Upload, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCounties, getLocations, getSubCounties, getWards } from "@/data/kenyaLocations";
 import { toast } from "sonner";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { uploadToR2WithKey } from "@/services/r2UploadService";
 
-const orgTypes = ["Cooperative", "Enterprise", "Bank", "NGO"] as const;
+const orgTypes = [
+  { label: "Cooperative", value: "cooperative" },
+  { label: "Enterprise", value: "enterprise" },
+  { label: "Bank", value: "bank" },
+  { label: "NGO", value: "ngo" },
+  { label: "Government - National", value: "government_national" },
+  { label: "Government - County", value: "gov_county" },
+  { label: "Regulatory / SAGA", value: "saga" },
+  { label: "Development Partner", value: "development_partner" },
+] as const;
+
+const alignedProgramOptions = [
+  "ASTGS (2019-2029)",
+  "NAVCDP",
+  "KCSAP",
+  "BETA Agenda",
+  "Other",
+] as const;
 
 const bankBranches: Record<string, string[]> = {
   "Equity Bank": ["Kericho Branch", "Eldoret Branch", "Kisumu Branch", "Nairobi CBD"],
@@ -30,6 +48,10 @@ const bankBranches: Record<string, string[]> = {
 
 const documentChecklist = [
   "Certificate of Registration",
+  "Government introduction / authority letter (optional)",
+  "Authorization letter (optional)",
+  "Appointment letter (optional)",
+  "National ID (front/back optional)",
   "KRA PIN Certificate",
   "Business Permit (County)",
   "Directors/Officials ID list (optional)",
@@ -40,6 +62,11 @@ const documentChecklist = [
 
 const documentUploads = [
   { key: "registrationCert", label: "Certificate of Registration" },
+  { key: "governmentLetter", label: "Government letter (optional)" },
+  { key: "authorizationLetter", label: "Authorization letter (optional)" },
+  { key: "appointmentLetter", label: "Appointment letter (optional)" },
+  { key: "nationalIdFront", label: "National ID Front (optional)" },
+  { key: "nationalIdBack", label: "National ID Back (optional)" },
   { key: "kraPin", label: "KRA PIN Certificate" },
   { key: "businessPermit", label: "Business Permit (County)" },
   { key: "directorsList", label: "Directors/Officials ID list (optional)" },
@@ -82,10 +109,27 @@ export default function OrgRegistration() {
     subCounty: "",
     ward: "",
     location: "",
+    governmentLevel: "",
+    ministryOrDepartment: "",
+    ministryName: "Ministry of Agriculture & Livestock Development",
+    department: "",
+    officeLevel: "National",
+    officialWorkEmail: "",
+    jurisdictionCoverage: [] as string[],
+    agencyCategory: "",
+    exampleHint: "",
+    partnerType: "",
+    focusArea: "",
+    alignedPrograms: [] as string[],
   });
 
   const [docs, setDocs] = useState<Record<DocumentKey, File | null>>({
     registrationCert: null,
+    governmentLetter: null,
+    authorizationLetter: null,
+    appointmentLetter: null,
+    nationalIdFront: null,
+    nationalIdBack: null,
     kraPin: null,
     businessPermit: null,
     directorsList: null,
@@ -108,6 +152,12 @@ export default function OrgRegistration() {
   }, [formData.county, formData.subCounty, formData.ward]);
 
   const branches = formData.bankName ? bankBranches[formData.bankName] ?? [] : [];
+  const isGovLike = formData.orgType === "government_national" || formData.orgType === "gov_national" || formData.orgType === "gov_county" || formData.orgType === "saga";
+  const isSaga = formData.orgType === "saga";
+  const isDevelopmentPartner = formData.orgType === "development_partner";
+
+  const toggleFromArray = (current: string[], value: string) =>
+    current.includes(value) ? current.filter((item) => item !== value) : [...current, value];
 
   const computeYears = (value: string) => {
     if (!value) return "";
@@ -148,7 +198,7 @@ export default function OrgRegistration() {
       return;
     }
 
-    if (formData.orgType === "Bank") {
+    if (formData.orgType === "bank") {
       if (!formData.bankName) {
         toast.error("Please select a bank.");
         return;
@@ -163,18 +213,30 @@ export default function OrgRegistration() {
       }
     }
 
-    if (formData.orgType === "NGO" && !formData.orgName && !formData.ngoName) {
+    if (formData.orgType === "ngo" && !formData.orgName && !formData.ngoName) {
       toast.error("NGO name is required.");
       return;
     }
 
-    if (formData.orgType === "Enterprise" && !formData.orgName && !formData.enterpriseName) {
+    if (formData.orgType === "enterprise" && !formData.orgName && !formData.enterpriseName) {
       toast.error("Enterprise name is required.");
       return;
     }
 
-    if (formData.orgType === "Cooperative" && !formData.orgName && !formData.cooperativeName) {
+    if (formData.orgType === "cooperative" && !formData.orgName && !formData.cooperativeName) {
       toast.error("Cooperative name is required.");
+      return;
+    }
+
+    if (
+      formData.orgType &&
+      formData.orgType !== "bank" &&
+      !formData.orgName &&
+      !formData.cooperativeName &&
+      !formData.enterpriseName &&
+      !formData.ngoName
+    ) {
+      toast.error("Organization name is required.");
       return;
     }
 
@@ -188,6 +250,11 @@ export default function OrgRegistration() {
 
       const uploadedDocs: Record<string, string | null> = {
         registrationCert: null,
+        governmentLetter: null,
+        authorizationLetter: null,
+        appointmentLetter: null,
+        nationalIdFront: null,
+        nationalIdBack: null,
         kraPin: null,
         businessPermit: null,
         directorsList: null,
@@ -202,9 +269,9 @@ export default function OrgRegistration() {
         if (!file) continue;
         const extension = file.name.split(".").pop()?.toLowerCase() || "pdf";
         try {
-          const storageRef = ref(storage, `org_verification/${uid}/${Date.now()}_${key}.${extension}`);
-          await uploadBytes(storageRef, file);
-          uploadedDocs[key] = await getDownloadURL(storageRef);
+          const path = `org_verification/${uid}/${Date.now()}_${key}.${extension}`;
+          const upload = await uploadToR2WithKey(file, path);
+          uploadedDocs[key] = upload.url;
         } catch (uploadError) {
           uploadWarnings += 1;
           console.warn("[OrgRegistration] document upload skipped", { key, error: uploadError });
@@ -218,29 +285,29 @@ export default function OrgRegistration() {
       const orgId = orgRef.id;
 
       const orgName =
-        formData.orgType === "Bank"
+        formData.orgType === "bank"
           ? formData.bankName === "Other"
             ? formData.otherBankName
             : formData.bankName
-          : formData.orgType === "NGO"
+          : formData.orgType === "ngo"
           ? formData.orgName || formData.ngoName
-          : formData.orgType === "Enterprise"
+          : formData.orgType === "enterprise"
           ? formData.orgName || formData.enterpriseName
           : formData.orgName || formData.cooperativeName;
 
       const branchName =
-        formData.orgType === "Bank"
+        formData.orgType === "bank"
           ? formData.bankName === "Other"
             ? formData.otherBankBranch
             : formData.bankBranch
           : formData.regionBranch;
 
       const orgData = {
-        orgType: formData.orgType.toLowerCase(),
+        orgType: formData.orgType,
         orgName,
         branchName: branchName || null,
-        bankName: formData.orgType === "Bank" ? orgName : null,
-        bankBranch: formData.orgType === "Bank" ? branchName || null : null,
+        bankName: formData.orgType === "bank" ? orgName : null,
+        bankBranch: formData.orgType === "bank" ? branchName || null : null,
         membershipSize: formData.membershipSize || null,
         countiesServed: formData.countiesServed || null,
         regionBranch: formData.regionBranch || null,
@@ -255,11 +322,46 @@ export default function OrgRegistration() {
         subCounty: formData.subCounty,
         ward: formData.ward,
         location: formData.location,
-        status: "pending",
+        status: formData.orgType === "government_national" ? "pending" : "pending_verification",
         verificationStatus: "pending",
         verifiedAt: null,
         verifiedBy: null,
         rejectionReason: null,
+        ministryName: formData.orgType === "government_national" ? formData.ministryName || "Ministry of Agriculture & Livestock Development" : null,
+        department: formData.orgType === "government_national" ? formData.department || null : null,
+        officeLevel: formData.orgType === "government_national" ? formData.officeLevel || "National" : null,
+        officialWorkEmail: formData.orgType === "government_national" ? formData.officialWorkEmail || null : null,
+        governmentInfo: isGovLike
+          ? {
+              governmentLevel: formData.governmentLevel || null,
+              ministryOrDepartment: formData.ministryOrDepartment || null,
+              jurisdictionCoverage: formData.jurisdictionCoverage || [],
+            }
+          : null,
+        sagaInfo:
+          formData.orgType === "saga"
+            ? {
+                agencyCategory: formData.agencyCategory || null,
+                exampleHint: formData.exampleHint || null,
+              }
+            : null,
+        partnerInfo:
+          formData.orgType === "development_partner"
+            ? {
+                partnerType: formData.partnerType || null,
+                focusArea: formData.focusArea || null,
+              }
+            : null,
+        alignedPrograms: formData.alignedPrograms || [],
+        verificationDocs: {
+          registrationCertificate: uploadedDocs.registrationCert || null,
+          governmentLetter: uploadedDocs.governmentLetter || null,
+          authorizationLetter: uploadedDocs.authorizationLetter || null,
+          appointmentLetter: uploadedDocs.appointmentLetter || null,
+          nationalIdFront: uploadedDocs.nationalIdFront || null,
+          nationalIdBack: uploadedDocs.nationalIdBack || null,
+          taxCertificate: uploadedDocs.taxCompliance || null,
+        },
         createdByUid: uid,
         createdAt: serverTimestamp(),
       };
@@ -313,6 +415,31 @@ export default function OrgRegistration() {
         throw writeError;
       }
 
+      const governmentDocKeys: Array<{ key: string; type: string }> = [
+        { key: "authorizationLetter", type: "authorization_letter" },
+        { key: "appointmentLetter", type: "appointment_letter" },
+        { key: "nationalIdFront", type: "national_id_front" },
+        { key: "nationalIdBack", type: "national_id_back" },
+      ];
+      for (const item of governmentDocKeys) {
+        const storageUrl = uploadedDocs[item.key];
+        if (!storageUrl) continue;
+        try {
+          await setDoc(
+            doc(collection(db, "orgs", orgId, "docs")),
+            {
+              type: item.type,
+              storageUrl,
+              uploadedAt: serverTimestamp(),
+              uploadedBy: uid,
+            },
+            { merge: true }
+          );
+        } catch (docsError) {
+          console.warn("[OrgRegistration] optional government docs metadata write failed", { item, docsError });
+        }
+      }
+
       const memberPayload = {
         uid,
         role: "org_admin",
@@ -340,7 +467,7 @@ export default function OrgRegistration() {
       const userPayload = {
         role: "org_admin",
         orgId,
-        orgType: formData.orgType.toLowerCase(),
+        orgType: formData.orgType,
         profileComplete: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -379,6 +506,29 @@ export default function OrgRegistration() {
           error: writeError,
         });
         throw writeError;
+      }
+
+      try {
+        await setDoc(
+          doc(db, "orgs", orgId, "settings", "features"),
+          {
+            invitesV2: true,
+            analyticsV2: true,
+            notificationsV2: true,
+            membershipsMirrorV2: true,
+            phase3Partners: true,
+            phase3Sponsorships: true,
+            phase3RevenueShare: true,
+            phase3SellOnBehalf: true,
+            phase3Impact: true,
+            phase3Reports: true,
+            phase3DonorExports: true,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } catch (writeError: any) {
+        console.warn("[OrgRegistration] org feature flags init failed (non-blocking)", writeError);
       }
       console.log("[OrgRegistration] core org docs committed");
 
@@ -471,6 +621,17 @@ export default function OrgRegistration() {
                     bankBranch: "",
                     otherBankName: "",
                     otherBankBranch: "",
+                    governmentLevel: "",
+                    ministryOrDepartment: "",
+                    ministryName: "Ministry of Agriculture & Livestock Development",
+                    department: "",
+                    officeLevel: "National",
+                    officialWorkEmail: "",
+                    jurisdictionCoverage: [],
+                    agencyCategory: "",
+                    exampleHint: "",
+                    partnerType: "",
+                    focusArea: "",
                   }))
                 }
               >
@@ -479,14 +640,14 @@ export default function OrgRegistration() {
                 </SelectTrigger>
                 <SelectContent>
                   {orgTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {formData.orgType && formData.orgType !== "Bank" && (
+            {formData.orgType && formData.orgType !== "bank" && (
               <div>
                 <Label htmlFor="org-name" className="mb-2 block">
                   Organization name *
@@ -499,7 +660,7 @@ export default function OrgRegistration() {
                 />
               </div>
             )}
-            {formData.orgType === "Bank" && (
+            {formData.orgType === "bank" && (
               <div>
                 <Label className="mb-2 block">Bank *</Label>
                 <Select
@@ -523,7 +684,7 @@ export default function OrgRegistration() {
             )}
           </div>
 
-          {formData.orgType === "Bank" && formData.bankName && formData.bankName !== "Other" && (
+          {formData.orgType === "bank" && formData.bankName && formData.bankName !== "Other" && (
             <div>
               <Label className="mb-2 block">Branch *</Label>
               <Select
@@ -544,7 +705,7 @@ export default function OrgRegistration() {
             </div>
           )}
 
-          {formData.orgType === "Bank" && formData.bankName === "Other" && (
+          {formData.orgType === "bank" && formData.bankName === "Other" && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="other-bank" className="mb-2 block">
@@ -571,7 +732,7 @@ export default function OrgRegistration() {
             </div>
           )}
 
-          {formData.orgType === "Cooperative" && (
+          {formData.orgType === "cooperative" && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="coop-name" className="mb-2 block">
@@ -609,7 +770,7 @@ export default function OrgRegistration() {
             </div>
           )}
 
-          {formData.orgType === "Enterprise" && (
+          {formData.orgType === "enterprise" && (
             <div>
               <Label htmlFor="enterprise-name" className="mb-2 block">
                 Enterprise name *
@@ -623,7 +784,7 @@ export default function OrgRegistration() {
             </div>
           )}
 
-          {formData.orgType === "NGO" && (
+          {formData.orgType === "ngo" && (
             <div>
               <Label htmlFor="ngo-name" className="mb-2 block">
                 NGO name *
@@ -637,7 +798,7 @@ export default function OrgRegistration() {
             </div>
           )}
 
-          {(formData.orgType === "Enterprise" || formData.orgType === "NGO") && (
+          {(formData.orgType === "enterprise" || formData.orgType === "ngo" || formData.orgType === "government_national" || formData.orgType === "gov_national" || formData.orgType === "gov_county" || formData.orgType === "saga" || formData.orgType === "development_partner") && (
             <div>
               <Label htmlFor="region" className="mb-2 block">
                 Registration region / branch (optional)
@@ -650,6 +811,202 @@ export default function OrgRegistration() {
               />
             </div>
           )}
+
+          {isGovLike && (
+            <div className="space-y-4 rounded-lg border border-border/60 p-4">
+              <p className="text-sm font-semibold text-foreground">Government details (optional)</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="mb-2 block">Government level</Label>
+                  <Select
+                    value={formData.governmentLevel}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, governmentLevel: value }))}
+                  >
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="national">national</SelectItem>
+                      <SelectItem value="county">county</SelectItem>
+                      <SelectItem value="sub_county">sub_county</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="ministry" className="mb-2 block">Ministry / department</Label>
+                  <Input
+                    id="ministry"
+                    value={formData.ministryOrDepartment}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, ministryOrDepartment: event.target.value }))}
+                    placeholder="Ministry of Agriculture"
+                  />
+                </div>
+              </div>
+              {formData.orgType === "government_national" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="ministry-name" className="mb-2 block">Ministry name</Label>
+                    <Input
+                      id="ministry-name"
+                      value={formData.ministryName}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, ministryName: event.target.value }))}
+                      placeholder="Ministry of Agriculture & Livestock Development"
+                    />
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Department</Label>
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) => setFormData((prev) => ({ ...prev, department: value }))}
+                    >
+                      <SelectTrigger className="w-full min-w-0">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="agriculture">Agriculture</SelectItem>
+                        <SelectItem value="livestock">Livestock</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="office-level" className="mb-2 block">Office level</Label>
+                    <Input
+                      id="office-level"
+                      value={formData.officeLevel}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, officeLevel: event.target.value }))}
+                      placeholder="National"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="official-email" className="mb-2 block">Official work email</Label>
+                    <Input
+                      id="official-email"
+                      type="email"
+                      value={formData.officialWorkEmail}
+                      onChange={(event) => setFormData((prev) => ({ ...prev, officialWorkEmail: event.target.value }))}
+                      placeholder="name@kilimo.go.ke"
+                    />
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label className="mb-2 block">Jurisdiction coverage</Label>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {counties.map((county) => (
+                    <label key={`jurisdiction-${county}`} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={formData.jurisdictionCoverage.includes(county)}
+                        onCheckedChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            jurisdictionCoverage: toggleFromArray(prev.jurisdictionCoverage, county),
+                          }))
+                        }
+                      />
+                      {county}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isSaga && (
+            <div className="space-y-4 rounded-lg border border-border/60 p-4">
+              <p className="text-sm font-semibold text-foreground">SAGA / Regulatory details (optional)</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="mb-2 block">Agency category</Label>
+                  <Select
+                    value={formData.agencyCategory}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, agencyCategory: value }))}
+                  >
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="research">research</SelectItem>
+                      <SelectItem value="regulation">regulation</SelectItem>
+                      <SelectItem value="finance">finance</SelectItem>
+                      <SelectItem value="marketing">marketing</SelectItem>
+                      <SelectItem value="quality_control">quality_control</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="saga-example" className="mb-2 block">Example hint</Label>
+                  <Input
+                    id="saga-example"
+                    value={formData.exampleHint}
+                    onChange={(event) => setFormData((prev) => ({ ...prev, exampleHint: event.target.value }))}
+                    placeholder="AFA, KALRO, KEPHIS, AFC, NCPB"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isDevelopmentPartner && (
+            <div className="space-y-4 rounded-lg border border-border/60 p-4">
+              <p className="text-sm font-semibold text-foreground">Development partner details (optional)</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="mb-2 block">Partner type</Label>
+                  <Select
+                    value={formData.partnerType}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, partnerType: value }))}
+                  >
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Select partner type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="donor">donor</SelectItem>
+                      <SelectItem value="implementing_partner">implementing_partner</SelectItem>
+                      <SelectItem value="research_partner">research_partner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="mb-2 block">Focus area</Label>
+                  <Select
+                    value={formData.focusArea}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, focusArea: value }))}
+                  >
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="Select focus area" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="climate">climate</SelectItem>
+                      <SelectItem value="food_security">food_security</SelectItem>
+                      <SelectItem value="value_chains">value_chains</SelectItem>
+                      <SelectItem value="livestock">livestock</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3 rounded-lg border border-border/60 p-4">
+            <p className="text-sm font-semibold text-foreground">Program alignment (optional)</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {alignedProgramOptions.map((program) => (
+                <label key={program} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={formData.alignedPrograms.includes(program)}
+                    onCheckedChange={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        alignedPrograms: toggleFromArray(prev.alignedPrograms, program),
+                      }))
+                    }
+                  />
+                  {program}
+                </label>
+              ))}
+            </div>
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

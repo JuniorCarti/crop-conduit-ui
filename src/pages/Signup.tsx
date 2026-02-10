@@ -85,9 +85,16 @@ export default function Signup() {
 
   const createAccountProfile = async (uid: string, email?: string | null) => {
     if (joinCode && joinMemberType) {
-      await applyJoinCode(joinCode, uid, joinMemberType, formData.displayName, email ?? formData.email);
       const joinRole: UserRole =
         joinMemberType === "staff" ? "org_staff" : joinMemberType === "buyer" ? "buyer" : "farmer";
+      const resolvedEmail = (email ?? formData.email) || undefined;
+      await upsertUserProfileDoc(uid, {
+        role: joinRole,
+        displayName: formData.displayName || undefined,
+        email: resolvedEmail,
+        phone: formData.phone || farmerData?.phone || undefined,
+      });
+      await applyJoinCode(joinCode, uid, joinMemberType, formData.displayName, resolvedEmail);
       toast.success(`Role set: ${joinRole.replace("_", " ")}`);
       return;
     }

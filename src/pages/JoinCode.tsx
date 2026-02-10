@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,16 +8,22 @@ import { applyJoinCode, getJoinCode, isJoinCodeValid, type JoinCodeType } from "
 import { getUserProfileDoc } from "@/services/userProfileService";
 
 export default function JoinCode() {
-  const { code } = useParams();
+  const { code: pathCode } = useParams();
+  const [searchParams] = useSearchParams();
+  const code = pathCode ?? searchParams.get("code") ?? "";
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [status, setStatus] = useState<"loading" | "invalid" | "ready" | "joined">("loading");
   const [memberType, setMemberType] = useState<JoinCodeType>("farmer");
+  const [orgName, setOrgName] = useState<string>("organization");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
 
   useEffect(() => {
-    if (!code) return;
+    if (!code) {
+      setStatus("invalid");
+      return;
+    }
     getJoinCode(code)
       .then((doc) => {
         if (!doc || !isJoinCodeValid(doc)) {
@@ -25,6 +31,7 @@ export default function JoinCode() {
           return;
         }
         setMemberType(doc.type);
+        setOrgName(doc.orgName ?? "organization");
         setStatus("ready");
       })
       .catch(() => setStatus("invalid"));
@@ -78,7 +85,8 @@ export default function JoinCode() {
             {status === "ready" && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  You are joining as <span className="font-semibold">{memberType}</span>.
+                  Join <span className="font-semibold">{orgName}</span> as{" "}
+                  <span className="font-semibold">{memberType}</span>.
                 </p>
                 {!currentUser ? (
                   <Button

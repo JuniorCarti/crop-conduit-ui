@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCard } from "@/components/shared/AlertCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { clearAuthDebug, ensureAuthToken } from "@/services/authService";
-import { getUserProfileDoc } from "@/services/userProfileService";
+import { clearAuthDebug, ensureAuthToken, waitForAuth } from "@/services/authService";
+import { getUserProfileDoc, upsertUserProfileDoc } from "@/services/userProfileService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmationResult } from "firebase/auth";
 import { useTranslation } from "react-i18next";
@@ -73,6 +73,17 @@ export default function Login() {
     "/org/credit",
     "/org/loans",
     "/org/risk-alerts",
+    "/gov",
+    "/gov/overview",
+    "/gov/national-stats",
+    "/gov/markets",
+    "/gov/climate",
+    "/gov/food-security",
+    "/gov/cooperatives",
+    "/gov/value-chains",
+    "/gov/reports",
+    "/gov/alerts",
+    "/gov/settings",
     "/admin",
     "/superadmin",
     "/access-summary",
@@ -92,9 +103,15 @@ export default function Login() {
     const uid = tokenInfo?.uid;
     if (!uid) return defaultRedirect;
     const profile = await getUserProfileDoc(uid);
-    const role = profile?.role;
+    const role = String(profile?.role ?? "");
+    const hasOrg = Boolean(profile?.orgId);
+    const orgType = String((profile as any)?.orgType ?? "");
     if (role === "buyer") return "/marketplace";
+    if (role === "gov_admin" || role === "gov_analyst" || role === "gov_viewer") return "/gov/overview";
+    if ((role === "org_admin" || role === "org_staff") && (orgType === "government_national" || orgType === "gov_national")) return "/gov/overview";
     if (role === "org_admin" || role === "org_staff") return "/org";
+    if (role === "partner_admin" || role === "partner_analyst" || role === "partner_finance") return "/partner";
+    if ((role === "admin" || role === "staff") && hasOrg) return "/org";
     if (role === "admin") return "/admin";
     if (role === "superadmin") return "/superadmin";
     return "/";
@@ -102,8 +119,18 @@ export default function Login() {
 
   const getPostLoginPath = async () => {
     const candidate = fromPath || redirectParam;
-    if (isSafeInternalPath(candidate)) return candidate;
+    if (isSafeInternalPath(candidate) && candidate !== "/") return candidate;
     return resolveRoleHome();
+  };
+
+  const hydrateUserDirectory = async () => {
+    const user = await waitForAuth();
+    if (!user?.uid) return;
+    await upsertUserProfileDoc(user.uid, {
+      displayName: user.displayName || undefined,
+      email: user.email || undefined,
+      phone: user.phoneNumber || undefined,
+    });
   };
 
 
@@ -120,6 +147,7 @@ export default function Login() {
     try {
       clearAuthDebug();
       await login(formData.email, formData.password);
+      await hydrateUserDirectory();
       const destination = await getPostLoginPath();
       navigate(destination, { replace: true });
     } catch (err: any) {
@@ -134,6 +162,7 @@ export default function Login() {
     try {
       clearAuthDebug();
       await signInWithGoogle();
+      await hydrateUserDirectory();
       const destination = await getPostLoginPath();
       navigate(destination, { replace: true });
     } catch (err: any) {
@@ -171,6 +200,7 @@ export default function Login() {
       setIsSubmitting(true);
       try {
         await verifyPhoneOTP(phoneConfirmation, formData.otp);
+        await hydrateUserDirectory();
         const destination = await getPostLoginPath();
         navigate(destination, { replace: true });
       } catch (err: any) {
@@ -185,10 +215,6 @@ export default function Login() {
     <LandingShell
       hero={
         <HeroPanel>
-          <div className="inline-flex w-fit rounded-full border border-white/60 bg-white/70 px-4 py-2 shadow-sm backdrop-blur">
-            <AgriSmartLogo variant="inline" size="sm" showTagline={false} />
-          </div>
-
           <div className="space-y-4">
             <h1 className="text-4xl font-semibold leading-tight text-foreground sm:text-5xl lg:text-6xl whitespace-normal break-words">
               The premium command center for modern farms.
@@ -237,12 +263,19 @@ export default function Login() {
         </HeroPanel>
       }
       card={
-        <AuthCardShell id="login">
+        <AuthCardShell id="login" className="pt-8 md:pt-10">
               <div className="flex justify-end mb-4">
                 <LanguageSwitcher />
               </div>
-              <div className="text-center mb-6">
-                <AgriSmartLogo variant="stacked" size="lg" showTagline className="mb-4" />
+              <div className="mb-6 text-center">
+                <div className="mb-5 flex justify-center">
+                  <AgriSmartLogo
+                    variant="inline"
+                    size="md"
+                    showTagline
+                    className="items-center [&>div:first-child]:scale-110"
+                  />
+                </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-2 whitespace-normal break-words leading-snug">
                   {t("login.title")}
                 </h1>

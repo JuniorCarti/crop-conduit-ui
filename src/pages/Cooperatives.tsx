@@ -23,15 +23,26 @@ export default function Cooperatives() {
   const [joinCode, setJoinCode] = useState("");
   const [joinLoading, setJoinLoading] = useState(false);
   const [coopStatus, setCoopStatus] = useState<{ verified: boolean; orgName?: string | null; status?: string | null } | null>(null);
+  const [membership, setMembership] = useState<any | null>(null);
+  const [latestRequestReason, setLatestRequestReason] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStatus = async () => {
       if (!currentUser?.uid) return;
       const membership = await getUserCoopMembership(currentUser.uid);
+      setMembership(membership);
       if (membership?.status === "active") {
+        let resolvedName = membership.coopName ?? null;
+        if (!resolvedName && membership.orgId) {
+          const orgSnap = await getDoc(doc(db, "orgs", membership.orgId));
+          if (orgSnap.exists()) {
+            const orgData = orgSnap.data() as any;
+            resolvedName = orgData?.orgName ?? orgData?.name ?? null;
+          }
+        }
         setCoopStatus({
           verified: true,
-          orgName: membership.coopName ?? null,
+          orgName: resolvedName,
           status: "active",
         });
         return;
@@ -47,6 +58,7 @@ export default function Cooperatives() {
       }
       const latest = await getLatestJoinRequestForUser(currentUser.uid);
       if (latest?.status === "rejected") {
+        setLatestRequestReason(latest.rejectionReason ?? null);
         setCoopStatus({
           verified: false,
           orgName: membership?.coopName ?? null,
@@ -64,6 +76,8 @@ export default function Cooperatives() {
         });
       } else {
         setCoopStatus({ verified: false });
+        setMembership(null);
+        setLatestRequestReason(null);
       }
     };
     loadStatus().catch(() => setCoopStatus({ verified: false }));
@@ -125,6 +139,8 @@ export default function Cooperatives() {
             <div className="space-y-1">
               <p className="text-sm font-semibold">{coopStatus.orgName ?? "Cooperative"}</p>
               <p className="text-xs text-emerald-700">Status: Active</p>
+              <p className="text-xs text-muted-foreground">Seat: {membership?.seatType ?? "none"}</p>
+              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100">Verified badge</Badge>
             </div>
           ) : coopStatus?.status === "submitted" ? (
             <div className="space-y-1">
@@ -135,12 +151,24 @@ export default function Cooperatives() {
             <div className="space-y-1">
               <p className="text-sm font-semibold">{coopStatus.orgName ?? "Cooperative"}</p>
               <Badge className="bg-rose-100 text-rose-800 border-rose-200 hover:bg-rose-100">Rejected</Badge>
+              {latestRequestReason && (
+                <p className="text-xs text-muted-foreground">Reason: {latestRequestReason}</p>
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
               No active cooperative membership. Join with a code to request verification.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-base">Coop announcements</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No announcements available.</p>
         </CardContent>
       </Card>
     </div>
