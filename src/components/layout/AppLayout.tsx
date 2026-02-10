@@ -7,8 +7,10 @@ export function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="md:ml-64 pb-20 md:pb-0">
-        <Outlet />
+      <main className="bg-background pb-20 md:ml-64 md:pb-0">
+        <div className="app-page-shell">
+          <Outlet />
+        </div>
       </main>
       <PremiumModal />
       <BottomNav />

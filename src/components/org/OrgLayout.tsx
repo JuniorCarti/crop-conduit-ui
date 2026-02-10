@@ -1,16 +1,17 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Building2, Users, UserCog, BarChart3, GraduationCap, FileText, Trophy, Award } from "lucide-react";
+import { Building2, Users, UserCog, BarChart3, GraduationCap, FileText, Trophy, Award, Handshake, PackageCheck, Wallet, LineChart, FileSpreadsheet } from "lucide-react";
 import { useUserAccount } from "@/hooks/useUserAccount";
 import { useEffect, useState } from "react";
 import { getOrganization } from "@/services/orgService";
 import type { OrganizationDoc } from "@/services/orgService";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useOrgType } from "@/hooks/useOrgType";
 import { hasOrgCapability } from "@/config/orgCapabilities";
 import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
+import { getOrgFeatureFlags } from "@/services/orgFeaturesService";
+import { StatusPill } from "@/components/shared/StatusPill";
 
 const navItems = [
   { to: "/org", label: "Dashboard", icon: Building2, capability: "members" as const, feature: null },
@@ -21,13 +22,19 @@ const navItems = [
   { to: "/org/training", label: "Training", icon: GraduationCap, capability: "training" as const, feature: "training" },
   { to: "/org/certificates", label: "Certificates", icon: Award, capability: "certificates" as const, feature: "certificates" },
   { to: "/org/targets", label: "Targets & Rewards", icon: Trophy, capability: "targets" as const, feature: "targetsRewards" },
-  { to: "/org/billing", label: "Billing", icon: FileText, capability: "billing" as const, feature: null },
+  { to: "/org/billing", label: "Billing", icon: FileText, capability: "billing" as const, feature: null, settingsFlag: null },
+  { to: "/org/sponsorships", label: "Sponsorships", icon: Handshake, capability: "members" as const, feature: null, settingsFlag: "phase3Sponsorships" },
+  { to: "/org/sales-batches", label: "Sales Batches", icon: PackageCheck, capability: "members" as const, feature: null, settingsFlag: "phase3SellOnBehalf" },
+  { to: "/org/revenue-model", label: "Revenue Model", icon: Wallet, capability: "billing" as const, feature: null, settingsFlag: "phase3RevenueShare" },
+  { to: "/org/impact", label: "Impact", icon: LineChart, capability: "members" as const, feature: null, settingsFlag: "phase3Impact" },
+  { to: "/org/reports", label: "Reports", icon: FileSpreadsheet, capability: "members" as const, feature: null, settingsFlag: "phase3Reports" },
 ];
 
 export function OrgLayout() {
   const accountQuery = useUserAccount();
   const [org, setOrg] = useState<OrganizationDoc | null>(null);
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({});
+  const [orgSettingsFlags, setOrgSettingsFlags] = useState<Record<string, boolean>>({});
   const { orgType } = useOrgType();
   const navigate = useNavigate();
 
@@ -35,6 +42,14 @@ export function OrgLayout() {
     const orgId = accountQuery.data?.orgId;
     if (!orgId) return;
     getOrganization(orgId).then(setOrg).catch(() => setOrg(null));
+  }, [accountQuery.data?.orgId, accountQuery.isFetched]);
+
+  useEffect(() => {
+    const orgId = accountQuery.data?.orgId;
+    if (!orgId) return;
+    getOrgFeatureFlags(orgId)
+      .then((flags) => setOrgSettingsFlags(flags as unknown as Record<string, boolean>))
+      .catch(() => setOrgSettingsFlags({}));
   }, [accountQuery.data?.orgId, accountQuery.isFetched]);
 
   useEffect(() => {
@@ -97,14 +112,11 @@ export function OrgLayout() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {org?.type && (
-              <Badge variant="secondary" className="w-fit text-xs capitalize">
-                {org.type}
-              </Badge>
-            )}
-            <Badge variant="outline" className="w-fit text-xs capitalize">
-              {(org as any)?.verificationStatus ?? org?.status ?? "active"}
-            </Badge>
+            {org?.type && <StatusPill label={org.type} variant="none" />}
+            <StatusPill
+              label={(org as any)?.verificationStatus ?? org?.status ?? "active"}
+              variant={((org as any)?.verificationStatus ?? org?.status ?? "active") === "approved" || ((org as any)?.verificationStatus ?? org?.status ?? "active") === "active" ? "active" : (((org as any)?.verificationStatus ?? org?.status ?? "active") === "pending" ? "pending" : "none")}
+            />
             <Button size="sm" variant="outline" onClick={() => navigate("/org")}>
               Back to Dashboard
             </Button>
@@ -113,8 +125,12 @@ export function OrgLayout() {
 
         <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
           <nav className="flex gap-2 overflow-x-auto lg:flex-col">
-            {(navItems.filter((item) => hasOrgCapability(orgType, item.capability) && (item.feature ? featureFlags[item.feature] !== false : true)).length
-              ? navItems.filter((item) => hasOrgCapability(orgType, item.capability) && (item.feature ? featureFlags[item.feature] !== false : true))
+            {(navItems.filter((item) => hasOrgCapability(orgType, item.capability)
+              && (item.feature ? featureFlags[item.feature] !== false : true)
+              && (item.settingsFlag ? orgSettingsFlags[item.settingsFlag] === true : true)).length
+              ? navItems.filter((item) => hasOrgCapability(orgType, item.capability)
+                && (item.feature ? featureFlags[item.feature] !== false : true)
+                && (item.settingsFlag ? orgSettingsFlags[item.settingsFlag] === true : true))
               : [{ to: "/org", label: "Dashboard", icon: Building2, capability: "members" as const, feature: null }]
             ).map((item) => (
               <NavLink

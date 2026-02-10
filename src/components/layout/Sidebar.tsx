@@ -70,7 +70,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col bg-card border-r border-border z-40">
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col bg-sidebar border-r border-sidebar-border z-40">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
         <AgriSmartLogo variant="stacked" size="md" showTagline />
       </div>
