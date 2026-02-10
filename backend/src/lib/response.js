@@ -82,6 +82,8 @@ const badRequest = (event, message, details) =>
   safeJsonResponse(event, 400, { message, details });
 const unauthorized = (event, message = 'Unauthorized') =>
   safeJsonResponse(event, 401, { message });
+const forbidden = (event, message = 'Forbidden') =>
+  safeJsonResponse(event, 403, { message });
 const notFound = (event, message = 'Not Found') =>
   safeJsonResponse(event, 404, { message });
 const tooManyRequests = (event, message = 'Too Many Requests') =>
@@ -113,6 +115,7 @@ module.exports = {
   created,
   badRequest,
   unauthorized,
+  forbidden,
   notFound,
   tooManyRequests,
   serverError

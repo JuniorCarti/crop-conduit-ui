@@ -42,6 +42,21 @@ Parameters:
   DmBlocksTableName:
     Type: String
     Default: agrismart-dm-blocks
+  CoopSnapshotsTableName:
+    Type: String
+    Default: agrismart-insights-coop-snapshots
+  GovAggregatesTableName:
+    Type: String
+    Default: agrismart-insights-gov-aggregates
+  ApiAuditLogTableName:
+    Type: String
+    Default: agrismart-insights-api-audit-log
+  FirestoreServiceAccountSecretArn:
+    Type: String
+    Default: arn:aws:secretsmanager:us-east-1:123456789012:secret:replace-me
+  CoopSnapshotRateLimitPerMinute:
+    Type: Number
+    Default: 30
 
 Globals:
   Function:
@@ -61,6 +76,11 @@ Globals:
         DM_MESSAGES_TABLE: !Ref DmMessagesTableName
         DM_CONTACT_REQUESTS_TABLE: !Ref DmContactRequestsTableName
         DM_BLOCKS_TABLE: !Ref DmBlocksTableName
+        COOP_SNAPSHOTS_TABLE: !Ref CoopSnapshotsTableName
+        GOV_AGGREGATES_TABLE: !Ref GovAggregatesTableName
+        API_AUDIT_LOG_TABLE: !Ref ApiAuditLogTableName
+        FIRESTORE_SERVICE_ACCOUNT_SECRET_ARN: !Ref FirestoreServiceAccountSecretArn
+        COOP_SNAPSHOT_RATE_LIMIT_PER_MINUTE: !Ref CoopSnapshotRateLimitPerMinute
 
 Resources:
   HttpApi:
@@ -242,6 +262,63 @@ Resources:
         - AttributeName: blockerUid
           KeyType: HASH
         - AttributeName: blockedUid
+          KeyType: RANGE
+
+  CoopSnapshotsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref CoopSnapshotsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: orgId
+          AttributeType: S
+        - AttributeName: periodId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orgId
+          KeyType: HASH
+        - AttributeName: periodId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: PeriodIndex
+          KeySchema:
+            - AttributeName: periodId
+              KeyType: HASH
+            - AttributeName: orgId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  GovAggregatesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref GovAggregatesTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: scope
+          AttributeType: S
+        - AttributeName: periodId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: scope
+          KeyType: HASH
+        - AttributeName: periodId
+          KeyType: RANGE
+
+  ApiAuditLogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ApiAuditLogTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: date
+          AttributeType: S
+        - AttributeName: requestId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: date
+          KeyType: HASH
+        - AttributeName: requestId
           KeyType: RANGE
 
   MediaBucket:
@@ -508,6 +585,130 @@ Resources:
           VOICE_RATE_LIMIT_MAX: !Ref VoiceRateLimitMax
           VOICE_RATE_LIMIT_WINDOW_MS: !Ref VoiceRateLimitWindowMs
 
+  PostCoopSnapshotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/postCoopSnapshot.handler
+      Timeout: 20
+      Events:
+        PostCoopSnapshot:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /coop/snapshots
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CoopSnapshotsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ApiAuditLogTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
+  GetCoopSnapshotsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/getCoopSnapshots.handler
+      Timeout: 20
+      Events:
+        GetCoopSnapshots:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /coop/snapshots
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:Query
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CoopSnapshotsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ApiAuditLogTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
+  ComputeGovAggregatesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/computeGovAggregates.handler
+      Timeout: 30
+      Events:
+        ComputeGovAggregates:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /gov/compute
+            Method: POST
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:Query
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CoopSnapshotsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CoopSnapshotsTableName}/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GovAggregatesTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ApiAuditLogTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
+  GetGovInsightsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/getGovInsights.handler
+      Timeout: 20
+      Events:
+        GetGovInsights:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /gov/insights
+            Method: GET
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GovAggregatesTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ApiAuditLogTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
 Outputs:
   ApiBaseUrl:
     Description: HTTP API base URL
@@ -527,3 +728,12 @@ Outputs:
   DmBlocksTableName:
     Description: DM blocks table name
     Value: !Ref DmBlocksTableName
+  CoopSnapshotsTableName:
+    Description: Coop snapshots table name
+    Value: !Ref CoopSnapshotsTableName
+  GovAggregatesTableName:
+    Description: Government aggregates table name
+    Value: !Ref GovAggregatesTableName
+  ApiAuditLogTableName:
+    Description: API audit log table name
+    Value: !Ref ApiAuditLogTableName
