@@ -12,7 +12,7 @@ import {
 import { db } from "@/lib/firebase";
 import type { OrgType } from "@/config/orgCapabilities";
 
-export type OrganizationType = "cooperative" | "enterprise" | "bank" | "ngo";
+export type OrganizationType = "cooperative" | "enterprise" | "bank" | "ngo" | "government_national" | "gov_national";
 export type OrganizationStatus = "active" | "suspended";
 
 export interface OrganizationDoc {
@@ -21,6 +21,7 @@ export interface OrganizationDoc {
   createdByUid: string;
   createdAt: any;
   status: OrganizationStatus;
+  verificationStatus?: "pending" | "approved" | "rejected";
   joinEnabled: boolean;
 }
 
@@ -67,6 +68,9 @@ export async function getOrganization(orgId: string): Promise<OrganizationDoc | 
       createdByUid: data.createdByUid ?? data.createdBy ?? "",
       createdAt: data.createdAt ?? Timestamp.now(),
       status: data.status ?? "active",
+      verificationStatus:
+        data.verificationStatus ??
+        ((data.status ?? "active") === "pending" ? "pending" : "approved"),
       joinEnabled: data.joinEnabled ?? true,
     };
   }
@@ -74,7 +78,18 @@ export async function getOrganization(orgId: string): Promise<OrganizationDoc | 
   const ref = doc(db, "organizations", orgId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  return snap.data() as OrganizationDoc;
+  const data = snap.data() as any;
+  return {
+    name: data.name ?? "Organization",
+    type: (data.type ?? "cooperative") as OrganizationType,
+    createdByUid: data.createdByUid ?? "",
+    createdAt: data.createdAt ?? Timestamp.now(),
+    status: data.status ?? "active",
+    verificationStatus:
+      data.verificationStatus ??
+      ((data.status ?? "active") === "pending" ? "pending" : "approved"),
+    joinEnabled: data.joinEnabled ?? true,
+  };
 }
 
 export async function getOrgTypeById(orgId: string): Promise<OrgType | null> {

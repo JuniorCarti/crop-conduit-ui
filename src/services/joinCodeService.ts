@@ -1,4 +1,4 @@
-import { doc, getDoc, runTransaction, setDoc, Timestamp } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, runTransaction, setDoc, Timestamp, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { addOrganizationMember } from "@/services/orgService";
 import { getUserProfileDoc, upsertUserProfileDoc, type UserRole } from "@/services/userProfileService";
@@ -7,6 +7,7 @@ import { findActiveJoinCode, submitMembershipRequestWithJoinCode } from "@/servi
 export type JoinCodeType = "staff" | "farmer" | "buyer";
 
 export interface JoinCodeDoc {
+  id?: string;
   code?: string;
   orgId: string;
   type: JoinCodeType;
@@ -14,6 +15,7 @@ export interface JoinCodeDoc {
   expiresAt: any;
   maxUses: number;
   uses: number;
+  usedCount?: number;
   isActive?: boolean;
   status: "active" | "disabled";
   orgName?: string | null;
@@ -52,6 +54,7 @@ export async function createJoinCode(params: {
       expiresAt: params.expiresAt ? Timestamp.fromDate(params.expiresAt) : null,
       maxUses: params.maxUses ?? 50,
       uses: 0,
+      usedCount: 0,
       isActive: true,
       status: "active" as const,
       createdAt: Timestamp.now(),
@@ -75,7 +78,8 @@ export async function getJoinCode(code: string): Promise<JoinCodeDoc | null> {
 export function isJoinCodeValid(docData: JoinCodeDoc): boolean {
   const activeFlag = docData.isActive === undefined ? docData.status === "active" : docData.isActive;
   if (!activeFlag) return false;
-  if (docData.maxUses != null && docData.uses >= docData.maxUses) return false;
+  const currentUses = Number(docData.usedCount ?? docData.uses ?? 0);
+  if (docData.maxUses != null && currentUses >= docData.maxUses) return false;
   if (docData.expiresAt && docData.expiresAt.toDate) {
     return docData.expiresAt.toDate().getTime() > Date.now();
   }
@@ -99,9 +103,11 @@ export async function applyJoinCode(
   const ref = doc(db, "joinCodes", (data.code ?? code).toUpperCase());
   await runTransaction(db, async (tx) => {
     const legacySnap = await tx.get(ref);
+    const nextUses = Number(data.usedCount ?? data.uses ?? 0) + 1;
     if (legacySnap.exists()) {
       tx.update(ref, {
-        uses: (data.uses || 0) + 1,
+        uses: nextUses,
+        usedCount: nextUses,
         updatedAt: Timestamp.now(),
       });
     }
@@ -109,7 +115,8 @@ export async function applyJoinCode(
     const nestedSnap = await tx.get(nestedRef);
     if (nestedSnap.exists()) {
       tx.update(nestedRef, {
-        uses: (data.uses || 0) + 1,
+        uses: nextUses,
+        usedCount: nextUses,
         updatedAt: Timestamp.now(),
       });
     }
@@ -132,7 +139,7 @@ export async function applyJoinCode(
       role: profile?.role ?? "farmer",
       displayName: displayName ?? profile?.displayName ?? undefined,
       email: email ?? profile?.email ?? undefined,
-      phone: resolvedPhone || profile?.phone,
+      phone: phone ?? profile?.phone,
     });
     return;
   }
@@ -168,3 +175,33 @@ export async function applyJoinCode(
     email: email ?? undefined,
   });
 }
+
+export async function listOrgJoinCodes(orgId: string): Promise<JoinCodeDoc[]> {
+  const snap = await getDocs(query(collection(db, "orgs", orgId, "joinCodes"), where("orgId", "==", orgId)));
+  return snap.docs.map((row) => ({ id: row.id, ...(row.data() as any) } as JoinCodeDoc));
+}
+
+export async function updateOrgJoinCodeStatus(orgId: string, code: string, isActive: boolean): Promise<void> {
+  const normalized = code.toUpperCase();
+  await setDoc(
+    doc(db, "orgs", orgId, "joinCodes", normalized),
+    {
+      isActive,
+      status: isActive ? "active" : "disabled",
+      updatedAt: Timestamp.now(),
+    },
+    { merge: true }
+  );
+  await setDoc(
+    doc(db, "joinCodes", normalized),
+    {
+      isActive,
+      status: isActive ? "active" : "disabled",
+      updatedAt: Timestamp.now(),
+    },
+    { merge: true }
+  );
+}
+
+export const buildJoinDeepLink = (code: string) => `agrismart://join?code=${encodeURIComponent(code)}`;
+export const buildJoinWebLink = (code: string) => `/join?code=${encodeURIComponent(code)}`;
