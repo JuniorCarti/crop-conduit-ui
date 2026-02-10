@@ -31,8 +31,18 @@ import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { getCounties, getLocations, getSubCounties, getWards } from "@/data/kenyaLocations";
 import { generateMemberId, getOrgProfile } from "@/services/cooperativeService";
-import { createJoinCode } from "@/services/joinCodeService";
+import {
+  buildJoinDeepLink,
+  buildJoinWebLink,
+  createJoinCode,
+  listOrgJoinCodes,
+  updateOrgJoinCodeStatus,
+  type JoinCodeDoc,
+} from "@/services/joinCodeService";
 import { uploadOrgMemberDoc } from "@/services/orgMemberDocsUploadService";
+import { getOrgFeatureFlags, type OrgFeatureFlags } from "@/services/orgFeaturesService";
+import { createUserNotification } from "@/services/notificationService";
+import { assignSponsorSeatFromPool, listSponsorPools } from "@/services/phase3Service";
 
 
 type UploadMeta = {
@@ -106,6 +116,13 @@ type OrgJoinRequest = {
   userName?: string | null;
   userEmail?: string | null;
   userPhone?: string | null;
+};
+
+type SponsorPoolOption = {
+  id: string;
+  title?: string;
+  partnerId?: string | null;
+  remaining: number;
 };
 
 
@@ -232,6 +249,22 @@ export default function OrgMembers() {
   const [joinCodeOpen, setJoinCodeOpen] = useState(false);
   const [joinCodeValue, setJoinCodeValue] = useState<string | null>(null);
   const [joinCodeLoading, setJoinCodeLoading] = useState(false);
+  const [inviteCodes, setInviteCodes] = useState<JoinCodeDoc[]>([]);
+  const [inviteCodesLoading, setInviteCodesLoading] = useState(false);
+  const [togglingCodeId, setTogglingCodeId] = useState<string | null>(null);
+  const [featureFlags, setFeatureFlags] = useState<OrgFeatureFlags>({
+    invitesV2: false,
+    analyticsV2: false,
+    notificationsV2: false,
+    membershipsMirrorV2: false,
+    phase3Partners: false,
+    phase3Sponsorships: false,
+    phase3RevenueShare: false,
+    phase3SellOnBehalf: false,
+    phase3Impact: false,
+    phase3Reports: false,
+    phase3DonorExports: false,
+  });
   const [joinCodeForm, setJoinCodeForm] = useState({
     type: "farmer" as "farmer" | "staff" | "buyer",
     maxUses: "50",
@@ -256,6 +289,8 @@ export default function OrgMembers() {
   const [seatFilter, setSeatFilter] = useState<"all" | SeatType>("all");
   const [seatMember, setSeatMember] = useState<any | null>(null);
   const [seatTypeChoice, setSeatTypeChoice] = useState<"paid" | "sponsored">("paid");
+  const [sponsorPools, setSponsorPools] = useState<SponsorPoolOption[]>([]);
+  const [selectedSponsoredPool, setSelectedSponsoredPool] = useState<string>("general");
   const [seatSaving, setSeatSaving] = useState(false);
   const [subscriptionSeats, setSubscriptionSeats] = useState<SubscriptionSeats>({
     paidSeatsTotal: 0,
@@ -296,6 +331,7 @@ export default function OrgMembers() {
   const [rejectJoinRequest, setRejectJoinRequest] = useState<OrgJoinRequest | null>(null);
   const [rejectJoinRequestReason, setRejectJoinRequestReason] = useState("");
   const [rejectingJoinRequestId, setRejectingJoinRequestId] = useState<string | null>(null);
+  const [qrPreviewCode, setQrPreviewCode] = useState<string | null>(null);
 
   const actorRole = accountQuery.data?.role ?? "";
   const isOrgAdmin = ["org_admin", "admin", "superadmin"].includes(actorRole);
@@ -306,6 +342,20 @@ export default function OrgMembers() {
     const loadOrg = async () => {
       const profile = await getOrgProfile(orgId);
       setOrgName(profile?.name ?? profile?.orgName ?? "Cooperative");
+      const flags = await getOrgFeatureFlags(orgId).catch(() => ({
+        invitesV2: false,
+        analyticsV2: false,
+        notificationsV2: false,
+        membershipsMirrorV2: false,
+        phase3Partners: false,
+        phase3Sponsorships: false,
+        phase3RevenueShare: false,
+        phase3SellOnBehalf: false,
+        phase3Impact: false,
+        phase3Reports: false,
+        phase3DonorExports: false,
+      }));
+      setFeatureFlags(flags);
     };
     loadOrg().catch(() => setOrgName("Cooperative"));
   }, [orgId]);
@@ -354,6 +404,27 @@ export default function OrgMembers() {
       toast.error("Failed to load member applications.");
     } finally {
       setApplicationsLoading(false);
+    }
+  };
+
+  const loadInviteCodes = async () => {
+    if (!orgId || !featureFlags.invitesV2 || !isOrgAdmin) {
+      setInviteCodes([]);
+      return;
+    }
+    setInviteCodesLoading(true);
+    try {
+      const rows = await listOrgJoinCodes(orgId);
+      rows.sort((a, b) => {
+        const aTime = (a as any)?.createdAt?.toMillis?.() ?? 0;
+        const bTime = (b as any)?.createdAt?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      });
+      setInviteCodes(rows);
+    } catch {
+      setInviteCodes([]);
+    } finally {
+      setInviteCodesLoading(false);
     }
   };
 
@@ -487,6 +558,36 @@ export default function OrgMembers() {
   useEffect(() => {
     loadSubscriptionSeats().catch(() => undefined);
   }, [orgId]);
+
+  useEffect(() => {
+    if (!orgId || !featureFlags.phase3Sponsorships) {
+      setSponsorPools([]);
+      setSelectedSponsoredPool("general");
+      return;
+    }
+    listSponsorPools(orgId)
+      .then((rows) => {
+        setSponsorPools(
+          rows.map((row: any) => ({
+            id: row.id,
+            title: row.title ?? null,
+            partnerId: row.partnerId ?? null,
+            remaining: Number(row.remaining ?? 0),
+          }))
+        );
+      })
+      .catch(() => setSponsorPools([]));
+  }, [orgId, featureFlags.phase3Sponsorships]);
+
+  useEffect(() => {
+    loadInviteCodes().catch(() => undefined);
+  }, [orgId, isOrgAdmin, featureFlags.invitesV2]);
+
+  useEffect(() => {
+    if (!seatMember) {
+      setSelectedSponsoredPool("general");
+    }
+  }, [seatMember]);
 
   useEffect(() => {
     const loadVerifiers = async () => {
@@ -831,15 +932,19 @@ export default function OrgMembers() {
         { merge: true }
       );
       await setDoc(
-        doc(db, "users", user.id),
+        doc(db, "users", user.id, "memberships", orgId),
         {
-          primaryOrgId: orgId,
-          orgMemberships: {
-            [orgId]: {
-              status: linkTargetMember.status ?? linkTargetMember.verificationStatus ?? "submitted",
-              roleInOrg: linkTargetMember.membershipRole ?? "member",
-            },
-          },
+          orgId,
+          role: "member",
+          status: linkTargetMember.status ?? linkTargetMember.verificationStatus ?? "submitted",
+          coopName: orgName ?? null,
+          seatType:
+            linkTargetMember.seatType ??
+            linkTargetMember.seatStatus ??
+            linkTargetMember.premiumSeatType ??
+            "none",
+          joinedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         },
         { merge: true }
       );
@@ -854,7 +959,14 @@ export default function OrgMembers() {
       setLinkModalOpen(false);
       setLinkTargetMember(null);
       await loadMembers();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("[OrgMembers] link member failed", {
+        orgId,
+        memberId: linkTargetMember.id,
+        targetUserUid: user?.id,
+        code: error?.code,
+        message: error?.message,
+      });
       toast.error("Failed to link member.");
     }
   };
@@ -990,8 +1102,33 @@ export default function OrgMembers() {
             },
             { merge: true }
           );
+
+          if (featureFlags.membershipsMirrorV2) {
+            tx.set(
+              doc(db, "users", appData.memberUid, "memberships", orgId),
+              {
+                orgId,
+                role: "member",
+                status: "active",
+                seatType: "none",
+                joinedAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              },
+              { merge: true }
+            );
+          }
         }
       });
+
+      if (featureFlags.notificationsV2 && application.memberUid) {
+        await createUserNotification({
+          uid: application.memberUid,
+          orgId,
+          type: "membership_approved",
+          title: "Membership approved",
+          message: `${orgName} approved your membership.`,
+        }).catch(() => undefined);
+      }
 
       toast.success("Application approved and member activated.");
       await Promise.all([loadMembers(), loadPendingApplications()]);
@@ -1036,6 +1173,7 @@ export default function OrgMembers() {
     if (!orgId || !currentUser?.uid || !isOrgAdmin) return;
     setApprovingJoinRequestId(joinRequest.id);
     try {
+      let seatAssigned = false;
       await runTransaction(db, async (tx) => {
         const requestRef = doc(db, "orgJoinRequests", joinRequest.id);
         const requestSnap = await tx.get(requestRef);
@@ -1047,6 +1185,18 @@ export default function OrgMembers() {
         const memberSnap = await tx.get(memberRef);
         const existing = memberSnap.exists() ? (memberSnap.data() as any) : {};
         const memberUniqueId = existing.memberUniqueId ?? existing.memberId ?? requestData.uid;
+
+        const subscriptionRef = doc(db, "orgs", orgId, "subscription", "current");
+        const subscriptionSnap = await tx.get(subscriptionRef);
+        const subscription = subscriptionSnap.exists() ? (subscriptionSnap.data() as any) : {};
+        const paidTotal = Number(subscription?.seats?.paidTotal ?? subscription?.paidSeatsTotal ?? 0);
+        const sponsoredTotal = Number(subscription?.seats?.sponsoredTotal ?? subscription?.sponsoredSeatsTotal ?? 0);
+        const paidUsed = Number(subscription?.seats?.paidUsed ?? subscription?.paidSeatsUsed ?? 0);
+        const sponsoredUsed = Number(subscription?.seats?.sponsoredUsed ?? subscription?.sponsoredSeatsUsed ?? 0);
+        const sponsoredRemaining = Math.max(0, sponsoredTotal - sponsoredUsed);
+        const assignedSeatType: SeatType = sponsoredRemaining > 0 ? "sponsored" : "none";
+        seatAssigned = assignedSeatType === "sponsored";
+        const nextSponsoredUsed = assignedSeatType === "sponsored" ? sponsoredUsed + 1 : sponsoredUsed;
 
         tx.set(
           memberRef,
@@ -1065,10 +1215,33 @@ export default function OrgMembers() {
             coopName: existing.coopName ?? orgName,
             status: "active",
             verificationStatus: "active",
-            seatType: existing.seatType ?? "none",
+            seatType: assignedSeatType,
+            seatStatus: assignedSeatType,
+            premiumSeatType: assignedSeatType,
+            seatAssignedAt: assignedSeatType === "none" ? null : serverTimestamp(),
+            seatAssignedBy: assignedSeatType === "none" ? null : currentUser.uid,
+            seatAssignedByName: assignedSeatType === "none" ? null : verifierName,
             verifiedAt: serverTimestamp(),
             verifiedByUid: currentUser.uid,
             verifiedByName: verifierName,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        tx.set(
+          subscriptionRef,
+          {
+            seats: {
+              paidTotal,
+              sponsoredTotal,
+              paidUsed,
+              sponsoredUsed: nextSponsoredUsed,
+            },
+            paidSeatsTotal: paidTotal,
+            sponsoredSeatsTotal: sponsoredTotal,
+            paidSeatsUsed: paidUsed,
+            sponsoredSeatsUsed: nextSponsoredUsed,
             updatedAt: serverTimestamp(),
           },
           { merge: true }
@@ -1098,6 +1271,21 @@ export default function OrgMembers() {
           },
           { merge: true }
         );
+
+        if (featureFlags.membershipsMirrorV2) {
+          tx.set(
+            doc(db, "users", requestData.uid, "memberships", orgId),
+            {
+              orgId,
+              role: "member",
+              status: "active",
+              seatType: assignedSeatType,
+              joinedAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
       });
 
       await setDoc(
@@ -1115,7 +1303,25 @@ export default function OrgMembers() {
         { merge: true }
       );
 
-      toast.success("Join request approved.");
+      if (featureFlags.notificationsV2) {
+        await createUserNotification({
+          uid: joinRequest.uid,
+          orgId,
+          type: "membership_approved",
+          title: "Cooperative request approved",
+          message:
+            "Your cooperative membership is active." +
+            (seatAssigned
+              ? " A sponsored seat has been assigned."
+              : " Seat will activate when available."),
+        }).catch(() => undefined);
+      }
+
+      toast.success(
+        seatAssigned
+          ? "Join request approved and sponsored seat assigned."
+          : "Join request approved. Seat will activate when available."
+      );
       await Promise.all([loadPendingJoinRequests(), loadMembers()]);
     } catch (error: any) {
       toast.error(error?.message || "Failed to approve join request.");
@@ -1327,6 +1533,48 @@ export default function OrgMembers() {
     if (!orgId || !seatMember || !currentUser?.uid) return;
     setSeatSaving(true);
     try {
+      const useSponsorPool =
+        featureFlags.phase3Sponsorships &&
+        seatTypeChoice === "sponsored" &&
+        selectedSponsoredPool !== "general";
+
+      if (useSponsorPool) {
+        const currentSeat = getSeatValue(seatMember);
+        if (currentSeat === "sponsored") {
+          toast.info("Member already has a sponsored seat.");
+          setSeatMember(null);
+          return;
+        }
+        const sponsorResult = await assignSponsorSeatFromPool({
+          orgId,
+          sponsorshipId: selectedSponsoredPool,
+          memberDocId: seatMember.id,
+          actorUid: currentUser.uid,
+        });
+        if (!sponsorResult.assigned) {
+          if (sponsorResult.reason === "no_remaining") {
+            throw new Error("Selected sponsor pool has no seats remaining.");
+          }
+          throw new Error("Failed to assign sponsor seat.");
+        }
+        await logAudit(seatMember.memberUniqueId || seatMember.memberId || seatMember.id, "seat_assigned", "sponsored");
+        const targetUid = seatMember.memberUid ?? seatMember.userUid ?? seatMember.linkedUserUid ?? null;
+        if (featureFlags.notificationsV2 && targetUid) {
+          await createUserNotification({
+            uid: targetUid,
+            orgId,
+            type: "seat_assigned",
+            title: "Seat assigned",
+            message: `You have been assigned a sponsored seat in ${orgName}.`,
+          }).catch(() => undefined);
+        }
+        toast.success("Sponsor-funded seat assigned.");
+        setSeatMember(null);
+        setSelectedSponsoredPool("general");
+        await Promise.all([loadMembers(), loadSubscriptionSeats()]);
+        return;
+      }
+
       const memberRef = doc(db, "orgs", orgId, "members", seatMember.id);
       const subscriptionRef = doc(db, "orgs", orgId, "subscription", "current");
       const orgRef = doc(db, "orgs", orgId);
@@ -1424,8 +1672,19 @@ export default function OrgMembers() {
       });
 
       await logAudit(seatMember.memberUniqueId || seatMember.memberId || seatMember.id, "seat_assigned", seatTypeChoice);
+      const targetUid = seatMember.memberUid ?? seatMember.userUid ?? seatMember.linkedUserUid ?? null;
+      if (featureFlags.notificationsV2 && targetUid) {
+        await createUserNotification({
+          uid: targetUid,
+          orgId,
+          type: "seat_assigned",
+          title: "Seat assigned",
+          message: `You have been assigned a ${seatTypeChoice} seat in ${orgName}.`,
+        }).catch(() => undefined);
+      }
       toast.success(`Seat assigned: ${seatTypeChoice}.`);
       setSeatMember(null);
+      setSelectedSponsoredPool("general");
       await Promise.all([loadMembers(), loadSubscriptionSeats()]);
     } catch (error: any) {
       toast.error(error?.message || "Failed to assign seat.");
@@ -1580,10 +1839,25 @@ export default function OrgMembers() {
       });
       setJoinCodeValue(code);
       toast.success("Join code created.");
+      await loadInviteCodes();
     } catch (error) {
       toast.error("Failed to create join code.");
     } finally {
       setJoinCodeLoading(false);
+    }
+  };
+
+  const handleToggleInviteCode = async (code: string, isActive: boolean) => {
+    if (!orgId || !isOrgAdmin) return;
+    setTogglingCodeId(code);
+    try {
+      await updateOrgJoinCodeStatus(orgId, code, !isActive);
+      toast.success(!isActive ? "Code enabled." : "Code disabled.");
+      await loadInviteCodes();
+    } catch {
+      toast.error("Failed to update code status.");
+    } finally {
+      setTogglingCodeId(null);
     }
   };
 
@@ -2064,6 +2338,17 @@ export default function OrgMembers() {
                           Copy
                         </Button>
                       </div>
+                      {featureFlags.invitesV2 && (
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          <p>Deep link: {buildJoinDeepLink(joinCodeValue)}</p>
+                          <p>Web fallback: {`${window.location.origin}${buildJoinWebLink(joinCodeValue)}`}</p>
+                          <img
+                            className="mt-2 h-32 w-32 rounded border border-border/60 bg-white p-1"
+                            src={`https://quickchart.io/qr?text=${encodeURIComponent(`${window.location.origin}${buildJoinWebLink(joinCodeValue)}`)}&size=180`}
+                            alt={`QR for ${joinCodeValue}`}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                   <Button onClick={handleCreateJoinCode} disabled={joinCodeLoading}>
@@ -2116,7 +2401,7 @@ export default function OrgMembers() {
                   <DialogTitle>Assign seat</DialogTitle>
                 </DialogHeader>
                 {seatMember && (
-                  <div className="space-y-4">
+                    <div className="space-y-4">
                     <div className="rounded-lg border border-border/60 p-3 text-sm">
                       <p className="font-semibold">{seatMember.fullName || "Member"}</p>
                       <p className="text-xs text-muted-foreground">
@@ -2149,6 +2434,24 @@ export default function OrgMembers() {
                         </SelectContent>
                       </Select>
                     </div>
+                    {featureFlags.phase3Sponsorships && seatTypeChoice === "sponsored" && (
+                      <div>
+                        <Label>Sponsor pool</Label>
+                        <Select value={selectedSponsoredPool} onValueChange={setSelectedSponsoredPool}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select sponsor pool" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="general">General sponsored pool</SelectItem>
+                            {sponsorPools.map((pool) => (
+                              <SelectItem key={pool.id} value={pool.id} disabled={pool.remaining <= 0}>
+                                Sponsor: {pool.title || pool.partnerId || pool.id} (Remaining {pool.remaining})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setSeatMember(null)} disabled={seatSaving}>
                         Cancel
@@ -2239,6 +2542,121 @@ export default function OrgMembers() {
               )}
             </CardContent>
           </Card>
+
+          {isOrgAdmin && featureFlags.invitesV2 && (
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle className="text-sm">Invite Codes (V2)</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 overflow-x-hidden">
+                {inviteCodesLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading invite codes...</p>
+                ) : inviteCodes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No invite codes yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                  <Table className="w-full">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Usage</TableHead>
+                        <TableHead>Expires</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {inviteCodes.map((row) => {
+                        const code = (row.code ?? row.id ?? "").toUpperCase();
+                        const active = row.isActive === undefined ? row.status !== "disabled" : row.isActive;
+                        const used = Number(row.usedCount ?? row.uses ?? 0);
+                        const max = Number(row.maxUses ?? 0);
+                        const webLink = `${window.location.origin}${buildJoinWebLink(code)}`;
+                        const qrDeepLink = buildJoinDeepLink(code);
+                        return (
+                          <TableRow key={code}>
+                            <TableCell className="font-semibold tracking-widest">{code}</TableCell>
+                            <TableCell>{row.type}</TableCell>
+                            <TableCell>{used}/{max || "--"}</TableCell>
+                            <TableCell>{row.expiresAt?.toDate?.()?.toLocaleDateString?.() || "--"}</TableCell>
+                            <TableCell>
+                              <Badge variant={active ? "secondary" : "outline"}>
+                                {active ? "active" : "disabled"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="ml-auto flex max-w-[320px] flex-wrap justify-end gap-1">
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => navigator.clipboard.writeText(code)}>
+                                  Copy
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => navigator.clipboard.writeText(webLink)}>
+                                  Copy link
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() =>
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(`Join ${orgName}: ${webLink}`)}`, "_blank")
+                                  }
+                                >
+                                  WhatsApp
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setQrPreviewCode(code)}>
+                                  Show QR
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => navigator.clipboard.writeText(qrDeepLink)}>
+                                  QR link
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-xs"
+                                  onClick={() => handleToggleInviteCode(code, active)}
+                                  disabled={togglingCodeId === code}
+                                >
+                                  {togglingCodeId === code ? "Saving..." : active ? "Disable" : "Enable"}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          <Dialog open={!!qrPreviewCode} onOpenChange={(open) => { if (!open) setQrPreviewCode(null); }}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Invite QR Code</DialogTitle>
+              </DialogHeader>
+              {qrPreviewCode && (
+                <div className="space-y-3">
+                  <div className="flex justify-center">
+                    <img
+                      className="h-52 w-52 rounded border border-border/60 bg-white p-2"
+                      src={`https://quickchart.io/qr?text=${encodeURIComponent(`${window.location.origin}${buildJoinWebLink(qrPreviewCode)}`)}&size=320`}
+                      alt={`QR for ${qrPreviewCode}`}
+                    />
+                  </div>
+                  <p className="text-center text-xs text-muted-foreground">{`${window.location.origin}${buildJoinWebLink(qrPreviewCode)}`}</p>
+                  <div className="flex justify-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(buildJoinDeepLink(qrPreviewCode))}>
+                      Copy deep link
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}${buildJoinWebLink(qrPreviewCode)}`)}>
+                      Copy web link
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {isOrgAdmin && (
             <Card className="border-border/60">

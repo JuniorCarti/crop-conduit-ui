@@ -6,6 +6,8 @@ import { useUserAccount } from "@/hooks/useUserAccount";
 import { db } from "@/lib/firebase";
 import { getMarketPricesToday, resolveOrgCropsAndMarket } from "@/services/marketOracleService";
 import { useNavigate } from "react-router-dom";
+import { getOrgFeatureFlags } from "@/services/orgFeaturesService";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 
 type PriceSignal = {
@@ -40,6 +42,12 @@ export default function OrgDashboard() {
   const [priceError, setPriceError] = useState<string | null>(null);
   const [marketOptions, setMarketOptions] = useState<string[]>([]);
   const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
+  const [analyticsV2Enabled, setAnalyticsV2Enabled] = useState(false);
+  const [sponsoredTotal, setSponsoredTotal] = useState(0);
+  const [sponsoredUsed, setSponsoredUsed] = useState(0);
+  const [paidTotal, setPaidTotal] = useState(0);
+  const [paidUsed, setPaidUsed] = useState(0);
+  const [joinedPerMonth, setJoinedPerMonth] = useState<Array<{ month: string; joined: number }>>([]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -63,6 +71,19 @@ export default function OrgDashboard() {
       setActiveMembers(active);
       setPendingMembers(pending);
       setNewMembers(recent);
+      const monthBuckets = new Map<string, number>();
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() as any;
+        const date = data.joinedAt?.toDate?.() ?? data.createdAt?.toDate?.() ?? null;
+        if (!date) return;
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        monthBuckets.set(key, (monthBuckets.get(key) ?? 0) + 1);
+      });
+      const timeline = Array.from(monthBuckets.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .slice(-6)
+        .map(([month, joined]) => ({ month, joined }));
+      setJoinedPerMonth(timeline);
     };
 
     fetchMembers().catch(() => {
@@ -70,6 +91,7 @@ export default function OrgDashboard() {
       setActiveMembers(0);
       setPendingMembers(0);
       setNewMembers(0);
+      setJoinedPerMonth([]);
     });
   }, [orgId, selectedMarket]);
 
@@ -86,6 +108,40 @@ export default function OrgDashboard() {
     };
     fetchCollections().catch(() => setNextCollection(null));
   }, [orgId, selectedMarket]);
+
+  useEffect(() => {
+    const loadFlags = async () => {
+      if (!orgId) return;
+      const flags = await getOrgFeatureFlags(orgId);
+      setAnalyticsV2Enabled(Boolean(flags.analyticsV2));
+    };
+    loadFlags().catch(() => setAnalyticsV2Enabled(false));
+  }, [orgId]);
+
+  useEffect(() => {
+    const loadSeatUsage = async () => {
+      if (!orgId || !analyticsV2Enabled) return;
+      const subSnap = await getDoc(doc(db, "orgs", orgId, "subscription", "current"));
+      if (!subSnap.exists()) {
+        setPaidTotal(0);
+        setPaidUsed(0);
+        setSponsoredTotal(0);
+        setSponsoredUsed(0);
+        return;
+      }
+      const data = subSnap.data() as any;
+      setPaidTotal(Number(data?.seats?.paidTotal ?? data?.paidSeatsTotal ?? 0));
+      setPaidUsed(Number(data?.seats?.paidUsed ?? data?.paidSeatsUsed ?? 0));
+      setSponsoredTotal(Number(data?.seats?.sponsoredTotal ?? data?.sponsoredSeatsTotal ?? 0));
+      setSponsoredUsed(Number(data?.seats?.sponsoredUsed ?? data?.sponsoredSeatsUsed ?? 0));
+    };
+    loadSeatUsage().catch(() => {
+      setPaidTotal(0);
+      setPaidUsed(0);
+      setSponsoredTotal(0);
+      setSponsoredUsed(0);
+    });
+  }, [orgId, analyticsV2Enabled, memberCount]);
 
   useEffect(() => {
     const loadMarkets = async () => {
@@ -250,6 +306,52 @@ export default function OrgDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {analyticsV2Enabled && (
+        <Card className="border-border/60">
+          <CardHeader>
+            <CardTitle>Analytics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="rounded border border-border/60 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Total Members</p>
+                <p className="font-semibold">{memberCount || "--"}</p>
+              </div>
+              <div className="rounded border border-border/60 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Active Members</p>
+                <p className="font-semibold">{activeMembers || "--"}</p>
+              </div>
+              <div className="rounded border border-border/60 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Pending Approvals</p>
+                <p className="font-semibold">{pendingMembers || "--"}</p>
+              </div>
+              <div className="rounded border border-border/60 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Sponsored Used / Total</p>
+                <p className="font-semibold">{sponsoredUsed}/{sponsoredTotal}</p>
+              </div>
+              <div className="rounded border border-border/60 p-3 text-sm">
+                <p className="text-xs text-muted-foreground">Paid Used / Total</p>
+                <p className="font-semibold">{paidUsed}/{paidTotal}</p>
+              </div>
+            </div>
+            <div className="h-56 rounded border border-border/60 p-2">
+              {joinedPerMonth.length === 0 ? (
+                <p className="p-4 text-sm text-muted-foreground">--</p>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={joinedPerMonth}>
+                    <XAxis dataKey="month" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="joined" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-border/60">
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
