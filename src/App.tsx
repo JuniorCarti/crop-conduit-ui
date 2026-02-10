@@ -64,6 +64,30 @@ import OrgCertificates from "./pages/org/OrgCertificates";
 import OrgUnderReview from "./pages/org/OrgUnderReview";
 import OrgStaff from "./pages/org/OrgStaff";
 import Cooperatives from "./pages/Cooperatives";
+import OrgSponsorships from "./pages/org/OrgSponsorships";
+import OrgSalesBatches from "./pages/org/OrgSalesBatches";
+import OrgRevenueModel from "./pages/org/OrgRevenueModel";
+import OrgImpact from "./pages/org/OrgImpact";
+import OrgReports from "./pages/org/OrgReports";
+import { PartnerLayout } from "@/components/partner/PartnerLayout";
+import PartnerOverview from "./pages/partner/PartnerOverview";
+import PartnerSponsorships from "./pages/partner/PartnerSponsorships";
+import PartnerImpact from "./pages/partner/PartnerImpact";
+import PartnerReports from "./pages/partner/PartnerReports";
+import { GovTypeGuard } from "@/components/auth/GovTypeGuard";
+import { GovLayout } from "@/components/gov/GovLayout";
+import GovOverview from "./pages/gov/GovOverview";
+import GovNationalStats from "./pages/gov/GovNationalStats";
+import GovMarkets from "./pages/gov/GovMarkets";
+import GovClimate from "./pages/gov/GovClimate";
+import GovFoodSecurity from "./pages/gov/GovFoodSecurity";
+import GovCooperatives from "./pages/gov/GovCooperatives";
+import GovCooperativeDetail from "./pages/gov/GovCooperativeDetail";
+import GovValueChains from "./pages/gov/GovValueChains";
+import GovReports from "./pages/gov/GovReports";
+import GovAlerts from "./pages/gov/GovAlerts";
+import GovSettings from "./pages/gov/GovSettings";
+import GovUnderReview from "./pages/gov/GovUnderReview";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +129,7 @@ const App = () => (
             <Route element={<PublicRoute><Signup /></PublicRoute>} path="/signup" />
             <Route element={<PublicRoute><Login /></PublicRoute>} path="/login" />
             <Route element={<PublicRoute><ResetPassword /></PublicRoute>} path="/reset-password" />
+            <Route path="/join" element={<Join />} />
             <Route path="/join/:code" element={<Join />} />
 
             {/* Protected Main App Routes */}
@@ -238,6 +263,11 @@ const App = () => (
                     </OrgApprovalGuard>
                   }
                 />
+                <Route path="sponsorships" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgSponsorships /></OrgTypeGuard></OrgApprovalGuard>} />
+                <Route path="sales-batches" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgSalesBatches /></OrgTypeGuard></OrgApprovalGuard>} />
+                <Route path="revenue-model" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgRevenueModel /></OrgTypeGuard></OrgApprovalGuard>} />
+                <Route path="impact" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgImpact /></OrgTypeGuard></OrgApprovalGuard>} />
+                <Route path="reports" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgReports /></OrgTypeGuard></OrgApprovalGuard>} />
                 <Route path="market-dashboard" element={<OrgApprovalGuard><OrgMarketDashboard /></OrgApprovalGuard>} />
                 <Route path="contracts" element={<OrgApprovalGuard><OrgContracts /></OrgApprovalGuard>} />
                 <Route path="traceability" element={<OrgApprovalGuard><OrgTraceability /></OrgApprovalGuard>} />
@@ -252,6 +282,50 @@ const App = () => (
                 element={
                   <RoleGuard allowed={["org_admin", "org_staff", "admin"]} redirectTo="/marketplace">
                     <OrgUnderReview />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/partner"
+                element={
+                  <RoleGuard allowed={["partner_admin", "partner_analyst", "partner_finance", "admin"]} redirectTo="/marketplace">
+                    <PartnerLayout />
+                  </RoleGuard>
+                }
+              >
+                <Route index element={<PartnerOverview />} />
+                <Route path="sponsorships" element={<PartnerSponsorships />} />
+                <Route path="impact" element={<PartnerImpact />} />
+                <Route path="reports" element={<PartnerReports />} />
+              </Route>
+              <Route
+                path="/gov"
+                element={
+                  <RoleGuard allowed={["org_admin", "org_staff", "gov_admin", "gov_analyst", "gov_viewer", "admin", "superadmin"]} redirectTo="/profile">
+                    <GovTypeGuard />
+                  </RoleGuard>
+                }
+              >
+                <Route element={<GovLayout />}>
+                  <Route index element={<Navigate to="/gov/overview" replace />} />
+                  <Route path="overview" element={<GovOverview />} />
+                  <Route path="national-stats" element={<GovNationalStats />} />
+                  <Route path="markets" element={<GovMarkets />} />
+                  <Route path="climate" element={<GovClimate />} />
+                  <Route path="food-security" element={<GovFoodSecurity />} />
+                  <Route path="cooperatives" element={<GovCooperatives />} />
+                  <Route path="cooperatives/:orgId" element={<GovCooperativeDetail />} />
+                  <Route path="value-chains" element={<GovValueChains />} />
+                  <Route path="reports" element={<GovReports />} />
+                  <Route path="alerts" element={<GovAlerts />} />
+                  <Route path="settings" element={<GovSettings />} />
+                </Route>
+              </Route>
+              <Route
+                path="/gov/under-review"
+                element={
+                  <RoleGuard allowed={["org_admin", "org_staff", "gov_admin", "gov_analyst", "gov_viewer", "admin", "superadmin"]} redirectTo="/profile">
+                    <GovUnderReview />
                   </RoleGuard>
                 }
               />
