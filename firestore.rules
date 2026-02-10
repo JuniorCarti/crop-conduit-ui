@@ -55,6 +55,29 @@ service cloud.firestore {
         : null;
     }
 
+    function userPartnerId() {
+      return isAuthenticated()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.partnerId
+        : null;
+    }
+
+    function isGovernmentOrgType(orgType) {
+      return orgType in ['government_national', 'gov_national'];
+    }
+
+    function isGovernmentOrg(orgId) {
+      return exists(/databases/$(database)/documents/orgs/$(orgId))
+        && isGovernmentOrgType(get(/databases/$(database)/documents/orgs/$(orgId)).data.orgType)
+        && get(/databases/$(database)/documents/orgs/$(orgId)).data.verificationStatus == 'approved';
+    }
+
+    function isGovernmentUser() {
+      return isAuthenticated()
+        && userOrgId() is string
+        && isGovernmentOrg(userOrgId())
+        && userRole() in ['org_admin', 'org_staff', 'gov_admin', 'gov_analyst', 'gov_viewer', 'admin', 'superadmin'];
+    }
+
     function isOrgMember(orgId) {
       return isAuthenticated()
         && (exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
@@ -67,7 +90,7 @@ service cloud.firestore {
         && ((exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
             && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role == 'admin')
           || (exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid))
-            && get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.role in ['org_admin', 'admin'])
+            && get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.role in ['org_admin', 'admin', 'gov_admin'])
           || (exists(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid))
             && get(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid)).data.role == 'org_admin'));
     }
@@ -77,7 +100,7 @@ service cloud.firestore {
         && ((exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
             && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role == 'staff')
           || (exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid))
-            && get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.role in ['org_staff', 'staff'])
+            && get(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid)).data.role in ['org_staff', 'staff', 'gov_analyst', 'gov_viewer'])
           || (exists(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid))
             && get(/databases/$(database)/documents/orgs/$(orgId)/memberships/$(request.auth.uid)).data.role == 'org_staff'));
     }
@@ -111,6 +134,17 @@ service cloud.firestore {
         || isSuperAdmin();
     }
 
+    function isPartnerMember(partnerId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/partners/$(partnerId)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/partners/$(partnerId)/members/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function isPartnerAdmin(partnerId) {
+      return isPartnerMember(partnerId)
+        && get(/databases/$(database)/documents/partners/$(partnerId)/members/$(request.auth.uid)).data.role == 'partner_admin';
+    }
+
     function canStaffManageBilling(orgId) {
       return isOrgStaff(orgId)
         && exists(/databases/$(database)/documents/orgs/$(orgId)/billing/settings)
@@ -133,7 +167,7 @@ service cloud.firestore {
     function isOrgAdminWritingStaffProfile(userId) {
       return isAuthenticated()
         && request.resource.data.uid == userId
-        && request.resource.data.role == 'org_staff'
+        && request.resource.data.role in ['org_staff', 'gov_admin', 'gov_analyst', 'gov_viewer']
         && request.resource.data.orgId is string
         && isOrgAdmin(request.resource.data.orgId);
     }
@@ -234,6 +268,29 @@ service cloud.firestore {
       allow write: if isOwner(userId) || isSuperAdmin() || isOrgAdminWritingStaffProfile(userId);
     }
 
+    match /users/{userId}/memberships/{orgId} {
+      allow read: if isOwner(userId) || isOrgManager(orgId) || isAdmin() || isSuperAdmin();
+      allow create, update: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+      allow delete: if false;
+    }
+
+    match /users/{userId}/notifications/{notifId} {
+      allow read: if isOwner(userId) || isAdmin() || isSuperAdmin();
+      allow create: if isOrgManager(request.resource.data.orgId)
+        || isAdmin()
+        || isSuperAdmin()
+        || isOwner(userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'updatedAt']);
+      allow delete: if isOwner(userId) || isAdmin() || isSuperAdmin();
+    }
+
+    match /users/{userId}/rateLimits/{docId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+
     match /users/{userId}/coopVerification/{docId} {
       allow read: if isAuthenticated();
       allow create, update: if isOwner(userId)
@@ -293,6 +350,24 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+    }
+
+    match /partners/{partnerId} {
+      allow read: if isPartnerMember(partnerId) || isAdmin() || isSuperAdmin();
+      allow create: if isAdmin() || isSuperAdmin();
+      allow update: if isPartnerAdmin(partnerId) || isAdmin() || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+
+      match /members/{uid} {
+        allow read: if isPartnerMember(partnerId) || isAdmin() || isSuperAdmin();
+        allow create, update, delete: if isPartnerAdmin(partnerId) || isAdmin() || isSuperAdmin();
+      }
+
+      match /impact/{impactId} {
+        allow read: if isPartnerMember(partnerId) || isAdmin() || isSuperAdmin();
+        allow create, update: if isPartnerAdmin(partnerId) || isAdmin() || isSuperAdmin();
+        allow delete: if false;
+      }
     }
 
     match /orgs/{orgId} {
@@ -356,6 +431,66 @@ service cloud.firestore {
               .affectedKeys()
               .hasOnly(['memberUid', 'updatedAt']));
         allow delete: if false;
+      }
+
+      match /sponsorships/{sponsorshipId} {
+        allow read: if (isOrgApproved(orgId) && isOrgManager(orgId))
+          || (isAuthenticated()
+            && resource.data.partnerId is string
+            && isPartnerMember(resource.data.partnerId))
+          || isAdmin()
+          || isSuperAdmin();
+        allow create: if (isOrgApproved(orgId) && isOrgAdmin(orgId))
+          || (request.resource.data.partnerId is string && isPartnerAdmin(request.resource.data.partnerId))
+          || isAdmin()
+          || isSuperAdmin();
+        allow update: if (isOrgApproved(orgId) && isOrgAdmin(orgId))
+          || (resource.data.partnerId is string && isPartnerAdmin(resource.data.partnerId))
+          || isAdmin()
+          || isSuperAdmin();
+        allow delete: if isAdmin() || isSuperAdmin();
+      }
+
+      match /salesBatches/{batchId} {
+        allow read: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+        allow create, update: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+        allow delete: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+
+        match /contributions/{contribId} {
+          allow read: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+          allow create, update: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+          allow delete: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+        }
+
+        match /settlements/{settlementId} {
+          allow read: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+          allow create, update: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+          allow delete: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+        }
+      }
+
+      match /revenueModel/{docId} {
+        allow read: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+        allow create, update: if (isOrgApproved(orgId) && isOrgAdmin(orgId)) || isAdmin() || isSuperAdmin();
+        allow delete: if false;
+
+        match /ledger/{entryId} {
+          allow read: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+          allow create: if (isOrgApproved(orgId) && isOrgAdmin(orgId)) || isAdmin() || isSuperAdmin();
+          allow update, delete: if false;
+        }
+      }
+
+      match /impact/{monthId} {
+        allow read: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+        allow create, update: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+        allow delete: if false;
+      }
+
+      match /reports/{reportId} {
+        allow read: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+        allow create: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+        allow update, delete: if false;
       }
 
       match /collections/{collectionId} {
@@ -451,6 +586,20 @@ match /priceSnapshots/{snapshotId} {
         allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
       }
 
+      match /settings/features {
+        allow read: if isOrgAffiliated(orgId);
+        allow create, update: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+        allow delete: if false;
+      }
+
+      match /docs/{docId} {
+        allow read: if isOrgAffiliated(orgId) || isAdmin() || isSuperAdmin();
+        allow create: if isOrgManager(orgId)
+          || (isAuthenticated() && get(/databases/$(database)/documents/orgs/$(orgId)).data.createdByUid == request.auth.uid);
+        allow update: if isOrgManager(orgId) || isAdmin() || isSuperAdmin();
+        allow delete: if isOrgAdmin(orgId) || isAdmin() || isSuperAdmin();
+      }
+
       match /joinCodes/{code} {
         allow read: if isAuthenticated();
         allow create: if isOrgAdmin(orgId) || isOrgStaff(orgId) || isAdmin() || isSuperAdmin();
@@ -503,6 +652,20 @@ match /priceSnapshots/{snapshotId} {
           .affectedKeys()
           .hasOnly(['status', 'updatedAt', 'approvedByUid', 'approvedAt', 'rejectedByUid', 'rejectedAt', 'rejectionReason']);
       allow delete: if false;
+    }
+
+    match /govAggregates/{docId}/{document=**} {
+      allow read: if isGovernmentUser()
+        || isAdmin()
+        || isSuperAdmin()
+        || (docId == 'alerts'
+          && isAuthenticated()
+          && userOrgId() is string
+          && isOrgApproved(userOrgId())
+          && userRole() in ['org_admin', 'org_staff']);
+      allow create, update, delete: if (isGovernmentUser() && userRole() in ['gov_admin', 'org_admin', 'admin', 'superadmin'])
+        || isAdmin()
+        || isSuperAdmin();
     }
 
     // ========================================================================

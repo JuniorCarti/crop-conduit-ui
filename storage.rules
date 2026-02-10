@@ -23,6 +23,10 @@ service firebase.storage {
       allow read, write: if isOrgMember(orgId);
     }
 
+    match /org_reports/{orgId}/{file=**} {
+      allow read, write: if isOrgMember(orgId);
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
