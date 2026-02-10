@@ -3,7 +3,21 @@ import { Loader2 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface RoleGuardProps {
-  allowed: Array<"farmer" | "buyer" | "org_admin" | "org_staff" | "admin" | "superadmin" | "unassigned">;
+  allowed: Array<
+    | "farmer"
+    | "buyer"
+    | "org_admin"
+    | "org_staff"
+    | "gov_admin"
+    | "gov_analyst"
+    | "gov_viewer"
+    | "partner_admin"
+    | "partner_analyst"
+    | "partner_finance"
+    | "admin"
+    | "superadmin"
+    | "unassigned"
+  >;
   redirectTo?: string;
   ctaLabel?: string;
   children: React.ReactNode;
@@ -33,6 +47,8 @@ export function RoleGuard({ allowed, redirectTo = "/", ctaLabel, children }: Rol
         ? "Go to Marketplace"
         : target.startsWith("/org")
         ? "Go to Org Portal"
+        : target.startsWith("/gov")
+        ? "Go to Government Portal"
         : target.startsWith("/profile")
         ? "Go to Profile"
         : target.startsWith("/registration")

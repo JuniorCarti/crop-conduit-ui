@@ -7,6 +7,12 @@ export function useUserRole() {
     | "buyer"
     | "org_admin"
     | "org_staff"
+    | "gov_admin"
+    | "gov_analyst"
+    | "gov_viewer"
+    | "partner_admin"
+    | "partner_analyst"
+    | "partner_finance"
     | "admin"
     | "superadmin"
     | "unassigned") ?? "unassigned";
