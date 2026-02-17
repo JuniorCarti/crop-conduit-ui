@@ -1,0 +1,6 @@
+name = "agrismart-buyer-api"
+main = "src/index.ts"
+compatibility_date = "2025-02-01"
+
+[vars]
+ENV = "prod"
