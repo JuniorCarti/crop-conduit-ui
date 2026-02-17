@@ -1,4 +1,5 @@
 import { CheckCircle2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +62,88 @@ export function AdvisoryCard({
   t,
   onUpgrade,
 }: AdvisoryCardProps) {
+  const copyAdvisory = async () => {
+    const advisoryText = [aiSummary, ...(aiActions || []), ...(aiRisks || [])].filter(Boolean).join("\n");
+    if (!advisoryText) return;
+    try {
+      await navigator.clipboard.writeText(advisoryText);
+    } catch {
+      // no-op
+    }
+  };
+
+  const downloadAdvisoryPdf = async () => {
+    if (!aiData) return;
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 40;
+      const maxWidth = pageWidth - margin * 2;
+      let y = margin;
+
+      const writeLine = (text: string, fontSize = 11, bold = false) => {
+        doc.setFont("helvetica", bold ? "bold" : "normal");
+        doc.setFontSize(fontSize);
+        const wrapped = doc.splitTextToSize(text, maxWidth);
+        if (y + wrapped.length * (fontSize + 4) > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(wrapped, margin, y);
+        y += wrapped.length * (fontSize + 4) + 6;
+      };
+
+      writeLine("AgriSmart Climate Advisory", 16, true);
+      writeLine(`Generated: ${new Date().toLocaleString()}`, 10, false);
+      writeLine(`Crop: ${aiCrop}    Growth stage: ${aiStage}`, 10, false);
+
+      writeLine("Summary", 12, true);
+      writeLine(aiSummary || "Summary unavailable.", 11, false);
+
+      writeLine("What to do today", 12, true);
+      if (aiActions.length) {
+        aiActions.forEach((item) => writeLine(`- ${item}`, 11, false));
+      } else {
+        writeLine("- No actions returned yet.", 11, false);
+      }
+
+      writeLine("What to watch this week", 12, true);
+      if (aiWeeklyWatch.length) {
+        aiWeeklyWatch.forEach((item: string) => writeLine(`- ${item}`, 11, false));
+      } else {
+        writeLine("- No weekly watch points available.", 11, false);
+      }
+
+      writeLine("Market angle", 12, true);
+      writeLine(aiMarketAdvice || "Market guidance unavailable.", 11, false);
+
+      writeLine("Risk alerts", 12, true);
+      if (aiRisks.length) {
+        aiRisks.forEach((item) => writeLine(`- ${item}`, 11, false));
+      } else {
+        writeLine("- No risks returned yet.", 11, false);
+      }
+
+      writeLine("Data used", 12, true);
+      writeLine(`Location: ${aiLocationName || "Unknown"}`, 11, false);
+      if (aiWeatherSource) {
+        writeLine(`Weather source: ${aiWeatherSource}${aiWeatherTimestamp ? ` (${aiWeatherTimestamp})` : ""}`, 11, false);
+      }
+      if (aiMarketTimestamp) {
+        writeLine(`Market updated: ${aiMarketTimestamp}`, 11, false);
+      }
+
+      const safeName = `${aiCrop || "advisory"}-${new Date().toISOString().slice(0, 10)}.pdf`
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]/g, "-");
+      doc.save(safeName);
+      toast.success("Advisory PDF downloaded.");
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to download PDF.");
+    }
+  };
   if (isLoading) {
     return (
       <Card className="border-border/60">
@@ -79,6 +162,8 @@ export function AdvisoryCard({
   const aiSummary = aiData?.summary || aiData?.title || "";
   const aiActions = aiData?.actions ?? [];
   const aiRisks = aiData?.risks ?? [];
+  const aiWeeklyWatch = (aiData as any)?.weeklyWatch ?? [];
+  const aiMarketAdvice = (aiData as any)?.marketAdvice ?? "";
   const aiLocationName =
     aiData?.dataUsed?.locationName || aiDataUsed?.locationName || "";
   const aiHighlights =
@@ -136,6 +221,19 @@ export function AdvisoryCard({
             >
               {aiLoading ? t("climate.aiAdvisory.generating") : t("climate.aiAdvisory.generate")}
             </Button>
+            {aiData ? (
+              <>
+                <Button type="button" size="sm" variant="outline" onClick={copyAdvisory}>
+                  Copy
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={downloadAdvisoryPdf}>
+                  Download PDF
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={onGenerateAi} disabled={aiLoading}>
+                  Regenerate
+                </Button>
+              </>
+            ) : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -234,6 +332,26 @@ export function AdvisoryCard({
                   </div>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">What to watch this week</p>
+                {aiWeeklyWatch.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No weekly watch points available.</p>
+                ) : (
+                  <ul className="list-disc space-y-1 pl-4 text-sm">
+                    {aiWeeklyWatch.map((item: string, index: number) => (
+                      <li key={`${item}-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {aiMarketAdvice ? (
+                <div className="rounded-md border border-border/60 p-3 text-sm">
+                  <p className="text-xs text-muted-foreground">Market angle</p>
+                  <p className="mt-1">{aiMarketAdvice}</p>
+                </div>
+              ) : null}
 
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">{t("climate.aiAdvisory.risks")}</p>

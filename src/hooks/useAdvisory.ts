@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { generateAdvisory } from "@/services/advisoryService";
 import type { AdvisoryGenerateResponse } from "@/types/advisory";
 import { auth } from "@/lib/firebase";
+import type { AdvisoryContext } from "@/types/advisoryContext";
 
 type PendingConfirm = {
   farm?: Record<string, any>;
@@ -23,8 +24,76 @@ export function useAdvisory() {
   const mutation = useMutation<AdvisoryGenerateResponse, Error, Record<string, any>>({
     mutationFn: async (payload) => {
       const token = await auth.currentUser?.getIdToken();
-      const data = await generateAdvisory(payload, { token });
-      return data as AdvisoryGenerateResponse;
+      const context = payload as AdvisoryContext;
+      const weatherDay = context.weather?.daily?.[0];
+      const bestMarket = context.market?.bestMarket;
+      const topMarket = context.market?.topMarkets?.[0];
+
+      const requestPayload = {
+        crop: context.crop?.name || payload?.crop?.name || "",
+        growthStage: context.crop?.stage || payload?.crop?.stage || "",
+        language: context.language || "en",
+        farmId: payload?.farmId ?? null,
+        farmContext: {
+          county: context.farm?.county || "",
+          ward: context.farm?.ward || "",
+          lat: context.farm?.lat ?? null,
+          lon: context.farm?.lng ?? null,
+          crops: payload?.farmContext?.crops || [],
+          mainCrop: context.crop?.name || "",
+        },
+        climateContext: {
+          forecastSummary: context.weather?.summary || "",
+          rainfallChance: weatherDay?.rainChancePct ?? null,
+          tempMin: weatherDay?.minTempC ?? null,
+          tempMax: weatherDay?.maxTempC ?? null,
+          alerts: (context.weather?.alerts || []).map((row) => row?.message).filter(Boolean),
+          daily: context.weather?.daily || [],
+        },
+        marketContext: {
+          marketName: bestMarket?.market || topMarket?.market || "",
+          pricePerKg: bestMarket?.netPrice ?? topMarket?.retail ?? topMarket?.wholesale ?? null,
+          priceTrend: topMarket?.trend7d === "up" || topMarket?.trend7d === "down" ? topMarket?.trend7d : "flat",
+          updatedAt: topMarket?.lastUpdated || null,
+          topMarkets: context.market?.topMarkets || [],
+        },
+        dataUsed: payload?.dataUsed ?? null,
+      };
+
+      const data = await generateAdvisory(requestPayload, { token });
+      const nested = (data?.advisory && typeof data.advisory === "object") ? data.advisory : null;
+      const nestedBullets = Array.isArray(nested?.bullets) ? nested.bullets : [];
+      const nestedActions = nestedBullets
+        .flatMap((group: any) => (Array.isArray(group?.points) ? group.points : []))
+        .map((item: any) => String(item || "").trim())
+        .filter(Boolean);
+      const nestedRisks = Array.isArray(nested?.watchOuts)
+        ? nested.watchOuts.map((item: any) => String(item || "").trim()).filter(Boolean)
+        : [];
+      const nestedSummary =
+        (typeof nested?.summary === "string" ? nested.summary : "") ||
+        (typeof nested?.title === "string" ? nested.title : "") ||
+        "";
+
+      return {
+        ...(data as AdvisoryGenerateResponse),
+        summary: data?.summary || nestedSummary || (typeof data?.advisory === "string" ? data.advisory : ""),
+        actions:
+          Array.isArray(data?.actions) && data.actions.length
+            ? data.actions
+            : nestedActions,
+        risks:
+          Array.isArray(data?.risks) && data.risks.length
+            ? data.risks
+            : nestedRisks,
+        weeklyWatch:
+          Array.isArray((data as any)?.weeklyWatch) && (data as any).weeklyWatch.length
+            ? (data as any).weeklyWatch
+            : nestedRisks,
+        marketAdvice:
+          (data as any)?.marketAdvice ||
+          (typeof nested?.marketAngle === "string" ? nested.marketAngle : ""),
+      } as AdvisoryGenerateResponse;
     },
   });
 
