@@ -162,6 +162,7 @@ export default function Chat() {
       <ChatWindow
         conversation={conversation}
         currentUserId={currentUser?.uid || ""}
+        otherUid={otherUid}
         messages={messages}
         loading={loadingMessages}
         contactStatus={contactStatus}

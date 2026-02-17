@@ -13,6 +13,8 @@ import { CommunityFilters } from "@/components/community/CommunityFilters";
 import { PostCard } from "@/components/community/PostCard";
 import { CreatePostDialog } from "@/components/community/CreatePostDialog";
 import { CommentsDrawer } from "@/components/community/CommentsDrawer";
+import { CommunityMembersDiscovery } from "@/components/community/CommunityMembersDiscovery";
+import { CommunityEventsSection } from "@/components/community/CommunityEventsSection";
 import { listPosts, reactToPost } from "@/services/communityService";
 import { startConversation } from "@/services/dmService";
 import type { CommunityPost } from "@/types/community";
@@ -22,6 +24,7 @@ const TOPIC_OPTIONS = ["Market", "Weather", "Pests", "Inputs", "Irrigation", "Ha
 const CROP_OPTIONS = ["Maize", "Tomatoes", "Potatoes", "Beans", "Millet", "Dairy", "Poultry"];
 const BOOKMARK_STORAGE_KEY = "community.bookmarks";
 const LIKE_STORAGE_KEY = "community.likes";
+const COMMUNITY_FARMD_ENABLED = (import.meta.env.VITE_ENABLE_COMMUNITY_FARMD ?? "true") === "true";
 
 function loadStoredIds(key: string) {
   if (typeof window === "undefined") return [] as string[];
@@ -44,6 +47,7 @@ export default function Community() {
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
   const [tab, setTab] = useState("feed");
+  const [communityView, setCommunityView] = useState<"feed" | "members" | "events">("feed");
   const [bookmarks, setBookmarks] = useState<string[]>(() => loadStoredIds(BOOKMARK_STORAGE_KEY));
   const [likedPostIds, setLikedPostIds] = useState<string[]>(() => loadStoredIds(LIKE_STORAGE_KEY));
 
@@ -227,6 +231,48 @@ export default function Community() {
       <div className="mx-auto max-w-6xl px-4 md:px-6 py-6 space-y-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
+            {COMMUNITY_FARMD_ENABLED ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={communityView === "feed" ? "default" : "outline"}
+                  className={communityView === "feed" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                  onClick={() => setCommunityView("feed")}
+                >
+                  Feed
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={communityView === "members" ? "default" : "outline"}
+                  className={communityView === "members" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                  onClick={() => setCommunityView("members")}
+                >
+                  Members
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={communityView === "events" ? "default" : "outline"}
+                  className={communityView === "events" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                  onClick={() => setCommunityView("events")}
+                >
+                  Events
+                </Button>
+              </div>
+            ) : null}
+
+            {communityView === "members" && COMMUNITY_FARMD_ENABLED ? (
+              <CommunityMembersDiscovery uid={currentUser.uid} />
+            ) : null}
+
+            {communityView === "events" && COMMUNITY_FARMD_ENABLED ? (
+              <CommunityEventsSection uid={currentUser.uid} />
+            ) : null}
+
+            {communityView === "feed" ? (
+              <>
             <div className="relative">
               <Input
                 value={searchQuery}
@@ -301,33 +347,41 @@ export default function Community() {
                 </Button>
               ) : null}
             </div>
+            </>
+            ) : null}
           </div>
 
           <aside className="hidden lg:block">
             <div className="sticky top-28 space-y-3">
-              <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Bookmark className="h-4 w-4 text-emerald-600" />
-                  <p className="text-sm font-semibold">Bookmarks</p>
-                </div>
-                {postsByTab.bookmarks.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No bookmarks yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {postsByTab.bookmarks.slice(0, 3).map((post) => (
-                      <button
-                        key={post.id}
-                        type="button"
-                        onClick={() => setSelectedPost(post)}
-                        className="w-full text-left rounded-xl border border-border/60 p-3 hover:border-emerald-600/60 transition"
-                      >
-                        <p className="text-sm font-medium line-clamp-2">{post.text}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{post.authorName || "Farmer"}</p>
-                      </button>
-                    ))}
+              {communityView === "feed" ? (
+                <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Bookmark className="h-4 w-4 text-emerald-600" />
+                    <p className="text-sm font-semibold">Bookmarks</p>
                   </div>
-                )}
-              </div>
+                  {postsByTab.bookmarks.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No bookmarks yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {postsByTab.bookmarks.slice(0, 3).map((post) => (
+                        <button
+                          key={post.id}
+                          type="button"
+                          onClick={() => setSelectedPost(post)}
+                          className="w-full text-left rounded-xl border border-border/60 p-3 hover:border-emerald-600/60 transition"
+                        >
+                          <p className="text-sm font-medium line-clamp-2">{post.text}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{post.authorName || "Farmer"}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-border/60 bg-card/70 p-4 text-sm text-muted-foreground">
+                  Community insights update as members and events load.
+                </div>
+              )}
             </div>
           </aside>
         </div>
