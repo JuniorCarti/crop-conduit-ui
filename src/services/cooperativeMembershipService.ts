@@ -11,7 +11,7 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { getOrgFeatureFlags } from "@/services/orgFeaturesService";
 import { createUserNotification } from "@/services/notificationService";
 
@@ -20,10 +20,12 @@ type JoinCodeLookup = {
   orgId: string;
   type: "staff" | "farmer" | "buyer";
   isActive?: boolean;
+  active?: boolean;
   status?: "active" | "disabled";
   orgName?: string | null;
   expiresAt?: any;
   maxUses?: number;
+  limit?: number;
   usedCount?: number;
   uses?: number;
 };
@@ -63,15 +65,35 @@ const normalizeMembershipStatus = (value: string | null | undefined) => {
 
 const normalizeCode = (value: string) => value.trim().toUpperCase();
 
+const CLOCK_SKEW_BUFFER_MS = 2 * 60 * 1000;
+
+const toDateValue = (value: any): Date | null => {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value?.toDate === "function") {
+    const parsed = value.toDate();
+    return parsed instanceof Date && !Number.isNaN(parsed.getTime()) ? parsed : null;
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+};
+
 const isJoinCodeActive = (code: JoinCodeLookup) => {
-  const activeByFlag = code.isActive === undefined ? code.status !== "disabled" : code.isActive === true;
+  const activeByFlag =
+    code.isActive !== undefined
+      ? code.isActive === true
+      : code.active !== undefined
+      ? code.active === true
+      : code.status !== "disabled";
   const currentUses = Number(code.usedCount ?? code.uses ?? 0);
-  const underUseLimit = code.maxUses == null || currentUses < Number(code.maxUses);
-  const notExpired =
-    !code.expiresAt ||
-    (typeof code.expiresAt?.toDate === "function"
-      ? code.expiresAt.toDate().getTime() > Date.now()
-      : true);
+  const maxUsesRaw = code.maxUses ?? code.limit;
+  const maxUses = maxUsesRaw == null ? null : Number(maxUsesRaw);
+  const underUseLimit = maxUses == null || !Number.isFinite(maxUses) || currentUses < maxUses;
+  const expiresAt = toDateValue(code.expiresAt);
+  const notExpired = !expiresAt || expiresAt.getTime() >= Date.now() - CLOCK_SKEW_BUFFER_MS;
   return activeByFlag && underUseLimit && notExpired;
 };
 
@@ -79,24 +101,41 @@ export async function findActiveJoinCode(code: string): Promise<JoinCodeLookup |
   const normalized = normalizeCode(code);
   if (!normalized) return null;
 
-  const groupBase = collectionGroup(db, "joinCodes");
-  const byCode = await getDocs(query(groupBase, where("code", "==", normalized), limit(20)));
-  if (!byCode.empty) {
-    const activeDoc = byCode.docs.find((row) => {
-      const data = row.data() as JoinCodeLookup;
-      return isJoinCodeActive(data);
-    });
-    if (activeDoc) {
-      const data = activeDoc.data() as JoinCodeLookup;
-      return { ...data, code: normalized };
+  try {
+    const groupBase = collectionGroup(db, "joinCodes");
+    const byCode = await getDocs(query(groupBase, where("code", "==", normalized), limit(20)));
+    if (!byCode.empty) {
+      const activeDoc = byCode.docs.find((row) => {
+        const data = row.data() as JoinCodeLookup;
+        return isJoinCodeActive(data);
+      });
+      if (activeDoc) {
+        const data = activeDoc.data() as JoinCodeLookup;
+        return { ...data, code: normalized };
+      }
+    }
+  } catch (error: any) {
+    if (import.meta.env.DEV) {
+      console.debug("[JoinCode] collectionGroup lookup denied/failure, using legacy fallback", {
+        code: normalized,
+        message: error?.message,
+      });
     }
   }
 
   // Backward compatibility with legacy top-level joinCodes collection.
   const legacySnap = await getDoc(doc(db, "joinCodes", normalized));
-  if (!legacySnap.exists()) return null;
-  const data = legacySnap.data() as JoinCodeLookup;
-  return { ...data, code: normalized };
+  if (legacySnap.exists()) {
+    const data = legacySnap.data() as JoinCodeLookup;
+    return isJoinCodeActive(data) ? { ...data, code: normalized } : null;
+  }
+
+  const legacyByField = await getDocs(
+    query(collection(db, "joinCodes"), where("code", "==", normalized), limit(1))
+  ).catch(() => null);
+  if (!legacyByField || legacyByField.empty) return null;
+  const data = legacyByField.docs[0].data() as JoinCodeLookup;
+  return isJoinCodeActive(data) ? { ...data, code: normalized } : null;
 }
 
 export async function getUserCoopMembership(uid: string): Promise<CoopMembershipRecord | null> {
@@ -226,6 +265,17 @@ export async function submitMembershipRequestWithJoinCode(params: {
   phone?: string | null;
   email?: string | null;
 }) {
+  const authedUid = auth.currentUser?.uid ?? params.uid;
+  if (!authedUid) {
+    throw new Error("Please log in and try again.");
+  }
+  if (authedUid !== params.uid && import.meta.env.DEV) {
+    console.debug("[JoinCode] UID mismatch, using authenticated UID", {
+      providedUid: params.uid,
+      authedUid,
+    });
+  }
+
   const resolved = await findActiveJoinCode(params.code);
   if (!resolved || !isJoinCodeActive(resolved)) {
     throw new Error("Invalid code");
@@ -235,7 +285,7 @@ export async function submitMembershipRequestWithJoinCode(params: {
   }
 
   const orgId = resolved.orgId;
-  const coopStatusSnap = await getDoc(doc(db, "users", params.uid, "coopVerification", "status"));
+  const coopStatusSnap = await getDoc(doc(db, "users", authedUid, "coopVerification", "status"));
   if (coopStatusSnap.exists()) {
     const coopStatus = coopStatusSnap.data() as any;
     if (coopStatus?.verified === true && coopStatus?.orgId === orgId) {
@@ -246,20 +296,38 @@ export async function submitMembershipRequestWithJoinCode(params: {
     }
   }
 
-  const existingSubmitted = await getDocs(
-    query(collection(db, "orgJoinRequests"), where("uid", "==", params.uid), limit(50))
-  );
-  const hasPendingForOrg = existingSubmitted.docs.some((row) => {
-    const data = row.data() as any;
-    return data.orgId === orgId && data.status === "submitted";
-  });
+  const stableRequestRef = doc(db, "orgJoinRequests", `${orgId}_${authedUid}`);
+  const stableRequestSnap = await getDoc(stableRequestRef).catch(() => null);
+  const hasStablePending =
+    stableRequestSnap?.exists() && String((stableRequestSnap.data() as any)?.status ?? "") === "submitted";
+
+  let hasPendingForOrg = hasStablePending;
+  if (!hasPendingForOrg) {
+    try {
+      const existingSubmitted = await getDocs(
+        query(collection(db, "orgJoinRequests"), where("uid", "==", authedUid), limit(50))
+      );
+      hasPendingForOrg = existingSubmitted.docs.some((row) => {
+        const data = row.data() as any;
+        return data.orgId === orgId && data.status === "submitted";
+      });
+    } catch (error: any) {
+      if (import.meta.env.DEV) {
+        console.debug("[JoinCode] orgJoinRequests query denied/failure; using stable request check only", {
+          uid: authedUid,
+          orgId,
+          message: error?.message,
+        });
+      }
+    }
+  }
   if (hasPendingForOrg) {
     throw new Error("You already have a pending membership request.");
   }
 
   // Anti-abuse: limit join attempts per user per UTC day.
   const today = new Date().toISOString().slice(0, 10);
-  const rateRef = doc(db, "users", params.uid, "rateLimits", "joinRequests");
+  const rateRef = doc(db, "users", authedUid, "rateLimits", "joinRequests");
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(rateRef);
     const data = snap.exists() ? (snap.data() as any) : {};
@@ -280,15 +348,17 @@ export async function submitMembershipRequestWithJoinCode(params: {
     );
   });
 
-  const requestId = `${orgId}_${params.uid}_${Date.now()}`;
-  const requestRef = doc(db, "orgJoinRequests", requestId);
+  const requestRef = stableRequestRef;
   const coopName = resolved.orgName ?? "Cooperative";
   await setDoc(
     requestRef,
     {
-      uid: params.uid,
+      uid: authedUid,
       orgId,
       joinCode: normalizeCode(params.code),
+      userName: params.fullName ?? null,
+      userPhone: params.phone ?? null,
+      userEmail: params.email ?? null,
       status: "submitted",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -302,7 +372,7 @@ export async function submitMembershipRequestWithJoinCode(params: {
   );
 
   await setDoc(
-    doc(db, "users", params.uid, "coopVerification", "status"),
+    doc(db, "users", authedUid, "coopVerification", "status"),
     {
       verified: false,
       status: "submitted",
@@ -317,7 +387,7 @@ export async function submitMembershipRequestWithJoinCode(params: {
     const flags = await getOrgFeatureFlags(orgId);
     if (flags.membershipsMirrorV2) {
       await setDoc(
-        doc(db, "users", params.uid, "memberships", orgId),
+        doc(db, "users", authedUid, "memberships", orgId),
         {
           orgId,
           role: "member",
@@ -331,7 +401,7 @@ export async function submitMembershipRequestWithJoinCode(params: {
     }
     if (flags.notificationsV2) {
       await createUserNotification({
-        uid: params.uid,
+        uid: authedUid,
         orgId,
         type: "join_request_submitted",
         title: "Join request submitted",

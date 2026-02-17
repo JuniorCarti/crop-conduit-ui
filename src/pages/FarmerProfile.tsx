@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   getUserCoopMembership,
   submitMembershipRequestWithJoinCode,
 } from "@/services/cooperativeMembershipService";
+import { getFollowCounts, listFollowingUsers } from "@/services/communityMembersService";
 
 type PendingUpdate = {
   payload?: Partial<FarmerProfile>;
@@ -162,6 +164,18 @@ export default function FarmerProfile() {
   const isPending = profile?.pending?.status === "pending" || pendingUpdate?.status === "pending";
   const cropsCount = profile?.crops?.length ?? 0;
   const farmingType = profile?.typeOfFarming ?? profile?.farmingType;
+
+  const followCountsQuery = useQuery({
+    queryKey: ["community", "followCounts", currentUser?.uid],
+    queryFn: () => getFollowCounts(currentUser?.uid || ""),
+    enabled: Boolean(currentUser?.uid),
+  });
+
+  const followingQuery = useQuery({
+    queryKey: ["community", "following", currentUser?.uid],
+    queryFn: () => listFollowingUsers(currentUser?.uid || ""),
+    enabled: Boolean(currentUser?.uid),
+  });
 
   if (!currentUser && !loading) {
     return (
@@ -378,6 +392,41 @@ export default function FarmerProfile() {
                       <p className="text-lg font-semibold">
                         {formatValue(profile.farmExperienceYears ?? profile.experienceYears)}
                       </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/60">
+                  <CardHeader>
+                    <CardTitle>Community</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Followers</span>
+                      <span className="font-semibold">{followCountsQuery.data?.followers ?? 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Following</span>
+                      <span className="font-semibold">{followCountsQuery.data?.following ?? 0}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Following list</p>
+                      {followingQuery.data?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {followingQuery.data.slice(0, 6).map((item) => (
+                            <Button
+                              key={item.uid}
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate(`/community/members/${item.uid}`)}
+                            >
+                              {item.uid.slice(0, 8)}
+                            </Button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">You are not following anyone yet.</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

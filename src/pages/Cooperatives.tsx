@@ -14,6 +14,7 @@ import {
   getUserCoopMembership,
   submitMembershipRequestWithJoinCode,
 } from "@/services/cooperativeMembershipService";
+import { listFarmerBids } from "@/services/farmerBidsService";
 import { toast } from "sonner";
 
 export default function Cooperatives() {
@@ -25,6 +26,7 @@ export default function Cooperatives() {
   const [coopStatus, setCoopStatus] = useState<{ verified: boolean; orgName?: string | null; status?: string | null } | null>(null);
   const [membership, setMembership] = useState<any | null>(null);
   const [latestRequestReason, setLatestRequestReason] = useState<string | null>(null);
+  const [activeBids, setActiveBids] = useState<Array<{ orgId: string; bidId: string; commodity: string; orgName: string; closesAt?: any }>>([]);
 
   useEffect(() => {
     const loadStatus = async () => {
@@ -83,6 +85,33 @@ export default function Cooperatives() {
     loadStatus().catch(() => setCoopStatus({ verified: false }));
   }, [currentUser?.uid]);
 
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+    listFarmerBids(currentUser.uid)
+      .then((result) => {
+        setActiveBids(
+          result.activeBids.slice(0, 3).map((bid) => ({
+            orgId: bid.orgId,
+            bidId: bid.bidId,
+            commodity: bid.commodity,
+            orgName: bid.orgName,
+            closesAt: bid.closesAt,
+          }))
+        );
+      })
+      .catch(() => setActiveBids([]));
+  }, [currentUser?.uid]);
+
+  const formatCountdown = (value: any) => {
+    const date = value?.toDate?.() ?? (value ? new Date(value) : null);
+    if (!date || Number.isNaN(date.getTime())) return "--";
+    const diff = date.getTime() - Date.now();
+    if (diff <= 0) return "Closing";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return hours >= 24 ? `${Math.floor(hours / 24)}d ${hours % 24}h` : `${hours}h ${mins}m`;
+  };
+
   const handleJoin = async () => {
     if (!currentUser?.uid) {
       navigate("/login");
@@ -140,7 +169,7 @@ export default function Cooperatives() {
               <p className="text-sm font-semibold">{coopStatus.orgName ?? "Cooperative"}</p>
               <p className="text-xs text-emerald-700">Status: Active</p>
               <p className="text-xs text-muted-foreground">Seat: {membership?.seatType ?? "none"}</p>
-              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100">Verified badge</Badge>
+              <Badge variant="verified">Verified badge</Badge>
             </div>
           ) : coopStatus?.status === "submitted" ? (
             <div className="space-y-1">
@@ -160,6 +189,25 @@ export default function Cooperatives() {
               No active cooperative membership. Join with a code to request verification.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60">
+        <CardHeader>
+          <CardTitle className="text-base">Active bids</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {activeBids.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No active bids available right now.</p>
+          ) : (
+            activeBids.map((bid) => (
+              <div key={`${bid.orgId}-${bid.bidId}`} className="rounded border border-border/60 p-3 text-sm">
+                <p className="font-medium">{bid.commodity}</p>
+                <p className="text-xs text-muted-foreground">{bid.orgName} • closes in {formatCountdown(bid.closesAt)}</p>
+              </div>
+            ))
+          )}
+          <Button variant="outline" onClick={() => navigate("/farmer/bids")}>View All</Button>
         </CardContent>
       </Card>
 
