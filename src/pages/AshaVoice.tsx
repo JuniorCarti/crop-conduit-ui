@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useUserAccount } from "@/hooks/useUserAccount";
 import { useAshaChat } from "@/hooks/useAshaChat";
 import { useVoice } from "@/hooks/useVoice";
+import { useFarms } from "@/hooks/useClimate";
+import { useClimateStore } from "@/store/climateStore";
 import { ChatThread } from "@/components/asha/ChatThread";
 import { ChatComposer } from "@/components/asha/ChatComposer";
 import { ContextPanel } from "@/components/asha/ContextPanel";
@@ -17,7 +20,6 @@ import { cn } from "@/lib/utils";
 
 const LANGUAGE_KEY = "asha_language";
 const AUTO_READ_KEY = "asha_auto_read";
-const FARM_CONTEXT_KEY = "asha_farm_context";
 
 const defaultSuggestions = [
   "Show me tomato prices",
@@ -26,27 +28,6 @@ const defaultSuggestions = [
   "Help me checkout",
   "Create a maize listing",
 ];
-
-const loadStoredFarm = () => {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(FARM_CONTEXT_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-};
-
-const storeFarm = (value: Record<string, any>) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(FARM_CONTEXT_KEY, JSON.stringify(value));
-  } catch {
-    // ignore
-  }
-};
 
 const loadToggle = (key: string, fallback = false) => {
   if (typeof window === "undefined") return fallback;
@@ -82,22 +63,53 @@ const extractWeatherSummary = (forecast: WeatherApiForecast | null) => {
   };
 };
 
+type ContextCacheEntry = {
+  weather?: {
+    locationName?: string;
+    minTemp?: number;
+    maxTemp?: number;
+    rainChance?: number;
+  };
+  market?: {
+    commodity?: string;
+    county?: string;
+    market?: string;
+    retail?: number;
+    wholesale?: number;
+    asOf?: string | null;
+  };
+  updatedAt: number;
+};
+
 export default function AshaVoice() {
   const { currentUser } = useAuth();
   const { cartItems } = useCart();
+  const accountQuery = useUserAccount();
+  const { farms, isLoading: farmsLoading } = useFarms();
+  const { selectedFarmId, setSelectedFarmId } = useClimateStore();
   const { sessionId, messages, isLoading, error, sendMessage, resetSession, hasMessages } = useAshaChat();
 
   const [input, setInput] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState<"auto" | "en" | "sw">(loadLanguage());
   const [autoRead, setAutoRead] = useState(loadToggle(AUTO_READ_KEY));
-  const [farmContext, setFarmContext] = useState<Record<string, any>>(loadStoredFarm());
   const [weatherSummary, setWeatherSummary] = useState<any | null>(null);
   const [showContext, setShowContext] = useState(false);
+  const contextCacheRef = useRef<Record<string, ContextCacheEntry>>({});
 
-  const getVoiceAuthToken = useCallback(async () => {
-    if (!currentUser) return undefined;
-    return currentUser.getIdToken();
-  }, [currentUser]);
+  const selectedFarm = useMemo(() => {
+    if (!farms.length) return null;
+    if (selectedFarmId) {
+      const byId = farms.find((farm) => farm.id === selectedFarmId);
+      if (byId) return byId;
+    }
+    return farms[0] ?? null;
+  }, [farms, selectedFarmId]);
+
+  useEffect(() => {
+    if (!selectedFarmId && farms.length) {
+      setSelectedFarmId(farms[0].id);
+    }
+  }, [farms, selectedFarmId, setSelectedFarmId]);
 
   const {
     isRecording,
@@ -109,17 +121,13 @@ export default function AshaVoice() {
     isSupported,
     startRecording,
     stopRecording,
-  } = useVoice({ language: selectedLanguage, getAuthToken: getVoiceAuthToken });
+  } = useVoice({ language: selectedLanguage });
 
   useEffect(() => {
     if (transcript) {
       setInput(transcript);
     }
   }, [transcript]);
-
-  useEffect(() => {
-    storeFarm(farmContext);
-  }, [farmContext]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -134,30 +142,14 @@ export default function AshaVoice() {
   }, [autoRead]);
 
   useEffect(() => {
-    const lat = Number(farmContext.lat);
-    const lon = Number(farmContext.lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    if (!selectedFarm?.id) {
       setWeatherSummary(null);
       return;
     }
-
-    let cancelled = false;
-    fetchForecast({ lat, lon, days: 3 })
-      .then((forecast) => {
-        if (!cancelled) {
-          setWeatherSummary(extractWeatherSummary(forecast));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setWeatherSummary(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [farmContext.lat, farmContext.lon]);
+    const cacheKey = `${sessionId}:${selectedFarm.id}`;
+    const cached = contextCacheRef.current[cacheKey];
+    setWeatherSummary(cached?.weather ?? null);
+  }, [selectedFarm?.id, sessionId]);
 
   const handleSend = async () => {
     const trimmed = input.trim();
@@ -171,21 +163,84 @@ export default function AshaVoice() {
 
     setInput("");
     setTranscript("");
+
+    const farmPayload = selectedFarm
+      ? {
+          farmId: selectedFarm.id,
+          lat: selectedFarm.lat,
+          lon: selectedFarm.lon,
+          county: selectedFarm.county,
+          ward: selectedFarm.ward,
+          crops: selectedFarm.crops ?? [],
+        }
+      : {};
+
+    const cacheKey = selectedFarm?.id ? `${sessionId}:${selectedFarm.id}` : "";
+    const cached = cacheKey ? contextCacheRef.current[cacheKey] : undefined;
+    let weatherContext = cached?.weather;
+    let marketContext = cached?.market;
+
+    if (selectedFarm?.lat != null && selectedFarm?.lon != null && !weatherContext) {
+      try {
+        const forecast = await fetchForecast({
+          lat: Number(selectedFarm.lat),
+          lon: Number(selectedFarm.lon),
+          days: 3,
+        });
+        weatherContext = extractWeatherSummary(forecast) ?? undefined;
+      } catch {
+        weatherContext = undefined;
+      }
+    }
+
+    if (!marketContext) {
+      try {
+        const crop = selectedFarm?.crops?.[0];
+        if (crop) {
+          const { getMarketPrices } = await import("@/services/marketPriceService");
+          const marketPrices = await getMarketPrices({
+            commodity: crop,
+            county: selectedFarm?.county,
+            limitCount: 1,
+          });
+          if (marketPrices.length) {
+            const price = marketPrices[0];
+            marketContext = {
+              commodity: crop,
+              county: selectedFarm?.county,
+              market: price.market,
+              retail: price.retail,
+              wholesale: price.wholesale,
+              asOf: price.date?.toISOString?.() ?? null,
+            };
+          }
+        }
+      } catch {
+        marketContext = undefined;
+      }
+    }
+
+    if (cacheKey) {
+      contextCacheRef.current[cacheKey] = {
+        weather: weatherContext,
+        market: marketContext,
+        updatedAt: Date.now(),
+      };
+    }
+    setWeatherSummary(weatherContext ?? null);
+
     await sendMessage(
       trimmed,
       {
         language: languageForChat,
-        farm: {
-          lat: farmContext.lat,
-          lon: farmContext.lon,
-          county: farmContext.county,
-          ward: farmContext.ward,
-          crops: farmContext.crops,
-        },
+        farm: farmPayload,
         context: {
           userId: currentUser?.uid,
           displayName: currentUser?.displayName || "",
           email: currentUser?.email || "",
+          role: accountQuery.data?.role || "farmer",
+          market: marketContext,
+          climate: weatherContext,
         },
         clientContext: {
           activeTab: "asha",
@@ -235,14 +290,30 @@ export default function AshaVoice() {
               onLanguageChange={setSelectedLanguage}
               autoRead={autoRead}
               onAutoReadChange={setAutoRead}
-              farm={farmContext}
-              onFarmChange={setFarmContext}
+              farm={
+                selectedFarm
+                  ? {
+                      lat: selectedFarm.lat,
+                      lon: selectedFarm.lon,
+                      county: selectedFarm.county,
+                      ward: selectedFarm.ward,
+                      crops: selectedFarm.crops,
+                    }
+                  : {}
+              }
               onNewSession={resetSession}
               weather={weatherSummary}
             />
           </div>
 
           <div className="space-y-4">
+            {!farmsLoading && !selectedFarm && (
+              <Alert>
+                <AlertDescription>
+                  Looks like you haven&apos;t added a farm yet. Please add a farm in Climate - Add Farm, then come back.
+                </AlertDescription>
+              </Alert>
+            )}
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
@@ -281,9 +352,7 @@ export default function AshaVoice() {
             />
             {transcript && (
               <div className="rounded-2xl border border-border bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Transcript preview
-                </p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Transcript preview</p>
                 <p className="mt-1 text-base text-foreground break-words">{transcript}</p>
                 <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
                   Detected language: {detectedLanguage === "sw" ? "Kiswahili" : "English"}

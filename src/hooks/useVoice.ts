@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-const API_BASE_URL = import.meta.env.VITE_ASHA_API_BASE_URL || "";
-const STT_URL = API_BASE_URL ? `${API_BASE_URL.replace(/\/$/, "")}/asha/voice/stt` : "";
+import { speechToText } from "@/services/ashaAzureService";
 
 type UseVoiceOptions = {
   language: "auto" | "en" | "sw";
-  getAuthToken?: () => Promise<string | undefined>;
 };
 
 type VoiceRecognitionResult = {
@@ -27,7 +24,7 @@ const isMediaSupported = () =>
   Boolean(window.MediaRecorder) &&
   Boolean(navigator.mediaDevices?.getUserMedia);
 
-export function useVoice({ language, getAuthToken }: UseVoiceOptions) {
+export function useVoice({ language }: UseVoiceOptions) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -37,7 +34,7 @@ export function useVoice({ language, getAuthToken }: UseVoiceOptions) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const isSupported = useMemo(() => Boolean(STT_URL && isMediaSupported()), []);
+  const isSupported = useMemo(() => isMediaSupported(), []);
 
   const stopMediaStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -51,48 +48,13 @@ export function useVoice({ language, getAuthToken }: UseVoiceOptions) {
     recorderRef.current = null;
   }, []);
 
-  const sendToSpeechEndpoint = useCallback(
-    async (blob: Blob): Promise<VoiceRecognitionResult> => {
-      if (!STT_URL) {
-        throw new Error("Speech endpoint is not configured.");
-      }
-
-      const formData = new FormData();
-      formData.append("file", blob, "asha-audio.webm");
-      formData.append("language", language);
-
-      const headers: Record<string, string> = {};
-      if (getAuthToken) {
-        try {
-          const token = await getAuthToken();
-          if (token) {
-            headers.Authorization = `Bearer ${token}`;
-          }
-        } catch (err) {
-          console.error("Failed to resolve auth token for voice request", err);
-        }
-      }
-
-      const response = await fetch(STT_URL, {
-        method: "POST",
-        headers,
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => "");
-        throw new Error(text || "Voice failed, type your message");
-      }
-
-      const data = (await response.json().catch(() => ({}))) as VoiceRecognitionResult;
-      if (!data.text) {
-        throw new Error("Voice failed, type your message");
-      }
-
-      return data;
-    },
-    [getAuthToken, language]
-  );
+  const sendToSpeechEndpoint = useCallback(async (blob: Blob): Promise<VoiceRecognitionResult> => {
+    const data = (await speechToText(new File([blob], "asha-audio.webm", { type: "audio/webm" }))) as VoiceRecognitionResult;
+    if (!data?.text) {
+      throw new Error("Voice failed, type your message");
+    }
+    return data;
+  }, []);
 
   const startRecording = useCallback(async () => {
     setError(null);

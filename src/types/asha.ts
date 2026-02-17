@@ -69,6 +69,7 @@ export type AshaChatRequest = {
     userId?: string;
     displayName?: string;
     email?: string;
+    role?: string;
   };
   clientContext?: {
     activeFarmId?: string;
