@@ -73,6 +73,26 @@ export type SeatUsage = {
   premiumEnabledMembers: number;
 };
 
+async function writeAuditLogEntry(params: {
+  orgId: string;
+  action: string;
+  actor: BillingActor;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    await addDoc(collection(db, "auditLogs"), {
+      orgId: params.orgId,
+      action: params.action,
+      actorUid: params.actor.uid,
+      actorName: params.actor.name,
+      metadata: params.metadata ?? {},
+      createdAt: serverTimestamp(),
+    });
+  } catch {
+    // Non-blocking: audit logging should never break primary workflows.
+  }
+}
+
 const defaultFeatureFlagsByPlan: Record<PlanId, Record<string, boolean>> = {
   trial: {
     marketOracle: true,
@@ -642,6 +662,12 @@ export async function updatePlan(orgId: string, nextPlan: PlanId, actor: Billing
     actor,
     note: `Plan switched to ${nextPlan}`,
   });
+  await writeAuditLogEntry({
+    orgId,
+    action: "billing.plan_changed",
+    actor,
+    metadata: { nextPlan },
+  });
 }
 
 export async function computeSeatUsage(orgId: string): Promise<SeatUsage> {
@@ -775,6 +801,12 @@ export async function assignSeat(
       },
     });
   });
+  await writeAuditLogEntry({
+    orgId,
+    action: "billing.seat_assigned",
+    actor,
+    metadata: { memberId, seatType },
+  });
 }
 
 export async function unassignSeat(orgId: string, memberId: string, actor: BillingActor) {
@@ -834,6 +866,12 @@ export async function unassignSeat(orgId: string, memberId: string, actor: Billi
         sponsoredUsed,
       },
     });
+  });
+  await writeAuditLogEntry({
+    orgId,
+    action: "billing.seat_unassigned",
+    actor,
+    metadata: { memberId },
   });
 }
 
@@ -1132,6 +1170,12 @@ export async function confirmPayment(params: {
       },
       snapshotAfter: null,
     });
+  });
+  await writeAuditLogEntry({
+    orgId: params.orgId,
+    action: "billing.payment_confirmed",
+    actor: params.actor,
+    metadata: { invoiceId: params.invoiceId, paymentId: params.paymentId },
   });
 }
 

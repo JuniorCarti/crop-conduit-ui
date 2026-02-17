@@ -142,7 +142,9 @@ export default function OrgBilling() {
           : null;
       const orgRole = orgRoleResolved ?? fallbackRole;
       setResolvedOrgRole(orgRole);
-      console.log("[Billing] orgId", orgId, "uid", uid, "membershipRole", orgRoleResolved, "fallbackRole", fallbackRole, "userRole", role);
+      if (import.meta.env.DEV) {
+        console.debug("[Billing] orgId", orgId, "uid", uid, "membershipRole", orgRoleResolved, "fallbackRole", fallbackRole, "userRole", role);
+      }
 
       if (!isPlatformAdmin && !orgRole) {
         setProvisionError("No org membership found");
@@ -229,14 +231,16 @@ export default function OrgBilling() {
       setProvisioning(false);
       const code = typeof error?.code === "string" ? error.code : "";
       const message = typeof error?.message === "string" ? error.message : "Failed to load billing data.";
-      console.error("[Billing] load failed", {
-        uid,
-        orgId,
-        role,
-        orgRole: resolvedOrgRole,
-        errorCode: code,
-        errorMessage: message,
-      });
+      if (import.meta.env.DEV) {
+        console.error("[Billing] load failed", {
+          uid,
+          orgId,
+          role,
+          orgRole: resolvedOrgRole,
+          errorCode: code,
+          errorMessage: message,
+        });
+      }
       const isPermission = code.includes("permission-denied") || /insufficient permissions/i.test(message);
       setProvisionError(isPermission ? "Permissions blocked by Firestore rules" : "Failed to load billing data");
       toast.error(
