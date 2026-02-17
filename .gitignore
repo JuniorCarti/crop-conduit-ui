@@ -34,6 +34,11 @@ backend/.aws-sam/build*/
 backend/.aws-sam-build-fix/
 backend/.aws-sam-build-fix2/
 
+backend/_deployed_template.yaml
+backend/deployed_template.json
+backend/deploy-asha/
+body.json
+
 # SAM packaged/deploy outputs (generated only)
 backend/packaged*.yaml
 backend/output*.json
