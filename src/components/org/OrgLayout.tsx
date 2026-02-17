@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Building2, Users, UserCog, BarChart3, GraduationCap, FileText, Trophy, Award, Handshake, PackageCheck, Wallet, LineChart, FileSpreadsheet } from "lucide-react";
+import { Building2, Users, UserCog, BarChart3, GraduationCap, FileText, Trophy, Award, Handshake, PackageCheck, Wallet, LineChart, FileSpreadsheet, Store, Globe2 } from "lucide-react";
 import { useUserAccount } from "@/hooks/useUserAccount";
 import { useEffect, useState } from "react";
 import { getOrganization } from "@/services/orgService";
@@ -12,6 +12,7 @@ import { hasOrgCapability } from "@/config/orgCapabilities";
 import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
 import { getOrgFeatureFlags } from "@/services/orgFeaturesService";
 import { StatusPill } from "@/components/shared/StatusPill";
+import { ProfileDropdown } from "@/components/shared/ProfileDropdown";
 
 const navItems = [
   { to: "/org", label: "Dashboard", icon: Building2, capability: "members" as const, feature: null },
@@ -28,7 +29,12 @@ const navItems = [
   { to: "/org/revenue-model", label: "Revenue Model", icon: Wallet, capability: "billing" as const, feature: null, settingsFlag: "phase3RevenueShare" },
   { to: "/org/impact", label: "Impact", icon: LineChart, capability: "members" as const, feature: null, settingsFlag: "phase3Impact" },
   { to: "/org/reports", label: "Reports", icon: FileSpreadsheet, capability: "members" as const, feature: null, settingsFlag: "phase3Reports" },
+  { to: "/org/trade", label: "Trade / Exchange", icon: Store, capability: "members" as const, feature: null, settingsFlag: "coopTradeEnabled" },
+  { to: "/org/international", label: "International Markets", icon: Globe2, capability: "members" as const, feature: null, settingsFlag: "coopTradeEnabled", envFlag: "intlSim" as const },
 ];
+
+const envTradeEnabled = String((import.meta as any).env?.VITE_ENABLE_COOP_TRADE ?? "false").toLowerCase() === "true";
+const envIntlEnabled = String((import.meta as any).env?.VITE_INTL_SIM_ENABLED ?? "false").toLowerCase() === "true";
 
 export function OrgLayout() {
   const accountQuery = useUserAccount();
@@ -120,6 +126,7 @@ export function OrgLayout() {
             <Button size="sm" variant="outline" onClick={() => navigate("/org")}>
               Back to Dashboard
             </Button>
+            <ProfileDropdown settingsPath="/org/profile" />
           </div>
         </div>
 
@@ -127,10 +134,20 @@ export function OrgLayout() {
           <nav className="flex gap-2 overflow-x-auto lg:flex-col">
             {(navItems.filter((item) => hasOrgCapability(orgType, item.capability)
               && (item.feature ? featureFlags[item.feature] !== false : true)
-              && (item.settingsFlag ? orgSettingsFlags[item.settingsFlag] === true : true)).length
+              && (item.settingsFlag
+                ? item.settingsFlag === "coopTradeEnabled"
+                  ? envTradeEnabled || orgSettingsFlags[item.settingsFlag] === true
+                  : orgSettingsFlags[item.settingsFlag] === true
+                : true)
+              && (item.envFlag === "intlSim" ? envIntlEnabled : true)).length
               ? navItems.filter((item) => hasOrgCapability(orgType, item.capability)
                 && (item.feature ? featureFlags[item.feature] !== false : true)
-                && (item.settingsFlag ? orgSettingsFlags[item.settingsFlag] === true : true))
+                && (item.settingsFlag
+                  ? item.settingsFlag === "coopTradeEnabled"
+                    ? envTradeEnabled || orgSettingsFlags[item.settingsFlag] === true
+                    : orgSettingsFlags[item.settingsFlag] === true
+                  : true)
+                && (item.envFlag === "intlSim" ? envIntlEnabled : true))
               : [{ to: "/org", label: "Dashboard", icon: Building2, capability: "members" as const, feature: null }]
             ).map((item) => (
               <NavLink

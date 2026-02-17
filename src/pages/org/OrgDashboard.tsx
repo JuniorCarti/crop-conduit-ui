@@ -8,6 +8,8 @@ import { getMarketPricesToday, resolveOrgCropsAndMarket } from "@/services/marke
 import { useNavigate } from "react-router-dom";
 import { getOrgFeatureFlags } from "@/services/orgFeaturesService";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import KenyaMemberMap from "@/components/org/KenyaMemberMap";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 
 
 type PriceSignal = {
@@ -48,6 +50,8 @@ export default function OrgDashboard() {
   const [paidTotal, setPaidTotal] = useState(0);
   const [paidUsed, setPaidUsed] = useState(0);
   const [joinedPerMonth, setJoinedPerMonth] = useState<Array<{ month: string; joined: number }>>([]);
+  const kenyaMemberMapEnabled =
+    String((import.meta as any).env?.VITE_ENABLE_KENYA_MEMBER_MAP ?? "false").toLowerCase() === "true";
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -351,6 +355,25 @@ export default function OrgDashboard() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {kenyaMemberMapEnabled && orgId && (
+        <ErrorBoundary
+          fallback={
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle>Kenya Member Map</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Map is temporarily unavailable. Dashboard data is still available.
+                </p>
+              </CardContent>
+            </Card>
+          }
+        >
+          <KenyaMemberMap orgId={orgId} />
+        </ErrorBoundary>
       )}
 
       <Card className="border-border/60">

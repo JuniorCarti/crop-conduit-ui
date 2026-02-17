@@ -1173,6 +1173,7 @@ export default function OrgMembers() {
     if (!orgId || !currentUser?.uid || !isOrgAdmin) return;
     setApprovingJoinRequestId(joinRequest.id);
     try {
+      const generatedMemberUniqueId = await generateMemberId(orgId, orgName);
       let seatAssigned = false;
       await runTransaction(db, async (tx) => {
         const requestRef = doc(db, "orgJoinRequests", joinRequest.id);
@@ -1184,7 +1185,17 @@ export default function OrgMembers() {
         const memberRef = doc(db, "orgs", orgId, "members", requestData.uid);
         const memberSnap = await tx.get(memberRef);
         const existing = memberSnap.exists() ? (memberSnap.data() as any) : {};
-        const memberUniqueId = existing.memberUniqueId ?? existing.memberId ?? requestData.uid;
+        const memberUniqueId =
+          existing.memberUniqueId ??
+          existing.memberId ??
+          generatedMemberUniqueId;
+        const resolvedName =
+          existing.fullName ??
+          joinRequest.userName ??
+          requestData.userName ??
+          (joinRequest.userEmail || requestData.userEmail
+            ? String(joinRequest.userEmail || requestData.userEmail).split("@")[0]
+            : `Farmer ${requestData.uid.slice(0, 6)}`);
 
         const subscriptionRef = doc(db, "orgs", orgId, "subscription", "current");
         const subscriptionSnap = await tx.get(subscriptionRef);
@@ -1209,7 +1220,7 @@ export default function OrgMembers() {
             role: "member",
             membershipRole: existing.membershipRole ?? "member",
             roleInOrg: existing.roleInOrg ?? "member",
-            fullName: existing.fullName ?? joinRequest.userName ?? "",
+            fullName: resolvedName,
             phone: existing.phone ?? joinRequest.userPhone ?? "",
             email: existing.email ?? joinRequest.userEmail ?? null,
             coopName: existing.coopName ?? orgName,
@@ -1261,17 +1272,6 @@ export default function OrgMembers() {
           { merge: true }
         );
 
-        tx.set(
-          doc(db, "users", requestData.uid),
-          {
-            orgId,
-            role: "farmer",
-            orgRole: "member",
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-
         if (featureFlags.membershipsMirrorV2) {
           tx.set(
             doc(db, "users", requestData.uid, "memberships", orgId),
@@ -1302,6 +1302,19 @@ export default function OrgMembers() {
         },
         { merge: true }
       );
+
+      // Best-effort profile mirror update. Some Firestore rule sets disallow org admins
+      // from updating /users/{uid}; approval flow should still succeed without it.
+      await setDoc(
+        doc(db, "users", joinRequest.uid),
+        {
+          orgId,
+          role: "farmer",
+          orgRole: "member",
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      ).catch(() => undefined);
 
       if (featureFlags.notificationsV2) {
         await createUserNotification({
@@ -1827,7 +1840,18 @@ export default function OrgMembers() {
     if (!orgId || !currentUser?.uid) return;
     try {
       setJoinCodeLoading(true);
-      const expiresAt = joinCodeForm.expiresAt ? new Date(joinCodeForm.expiresAt) : null;
+      let expiresAt: Date | null = null;
+      if (joinCodeForm.expiresAt) {
+        if (joinCodeForm.expiresAt.includes("T")) {
+          expiresAt = new Date(joinCodeForm.expiresAt);
+        } else {
+          const [year, month, day] = joinCodeForm.expiresAt.split("-").map((value) => Number(value));
+          if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+            // Store date-only expiries at local end-of-day to avoid accidental early expiry.
+            expiresAt = new Date(year, month - 1, day, 23, 59, 59, 999);
+          }
+        }
+      }
       const maxUses = Number(joinCodeForm.maxUses || 0) || 50;
       const code = await createJoinCode({
         orgId,
@@ -2579,7 +2603,18 @@ export default function OrgMembers() {
                             <TableCell className="font-semibold tracking-widest">{code}</TableCell>
                             <TableCell>{row.type}</TableCell>
                             <TableCell>{used}/{max || "--"}</TableCell>
-                            <TableCell>{row.expiresAt?.toDate?.()?.toLocaleDateString?.() || "--"}</TableCell>
+                            <TableCell>
+                              {(() => {
+                                const expiresAtDate =
+                                  typeof row.expiresAt?.toDate === "function"
+                                    ? row.expiresAt.toDate()
+                                    : row.expiresAt
+                                    ? new Date(row.expiresAt)
+                                    : null;
+                                if (!expiresAtDate || Number.isNaN(expiresAtDate.getTime())) return "Never";
+                                return expiresAtDate.toLocaleString();
+                              })()}
+                            </TableCell>
                             <TableCell>
                               <Badge variant={active ? "secondary" : "outline"}>
                                 {active ? "active" : "disabled"}

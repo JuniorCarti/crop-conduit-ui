@@ -1,5 +1,19 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { MoreHorizontal } from "lucide-react";
+import {
+  MoreHorizontal,
+  Building2,
+  Store,
+  User,
+  BarChart3,
+  GraduationCap,
+  FileText,
+  Users,
+  Trophy,
+  Award,
+  Gavel,
+  LayoutDashboard,
+  CreditCard,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -13,7 +27,8 @@ import { useTranslation } from "react-i18next";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useOrgType } from "@/hooks/useOrgType";
 import { hasOrgCapability } from "@/config/orgCapabilities";
-import { Building2, Store, User, BarChart3, GraduationCap, FileText, Users, Trophy, Award } from "lucide-react";
+import { BUYER_TRADE_ENABLED } from "@/services/buyerTradeService";
+import { BUYER_BILLING_ENABLED, BUYER_DASHBOARD_ENABLED } from "@/config/buyerFeatures";
 
 const farmerMainNavIds = ["dashboard", "market", "climate", "asha"];
 const farmerMoreNavIds = ["harvest", "community"];
@@ -37,6 +52,22 @@ export function BottomNav() {
     return (
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden animate-slide-in-bottom">
         <div className="flex items-center justify-around h-16 px-2">
+          {BUYER_DASHBOARD_ENABLED && (
+            <NavLink
+              to="/buyer/dashboard"
+              className={({ isActive }) =>
+                cn(
+                  "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200",
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )
+              }
+            >
+              <div className="p-1.5 rounded-lg">
+                <LayoutDashboard className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-medium">Dashboard</span>
+            </NavLink>
+          )}
           <NavLink
             to="/marketplace"
             className={({ isActive }) =>
@@ -51,8 +82,24 @@ export function BottomNav() {
             </div>
             <span className="text-[10px] font-medium">Marketplace</span>
           </NavLink>
+          {BUYER_TRADE_ENABLED && (
+            <NavLink
+              to="/buyer/trade"
+              className={({ isActive }) =>
+                cn(
+                  "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200",
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )
+              }
+            >
+              <div className="p-1.5 rounded-lg">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-medium">Trade</span>
+            </NavLink>
+          )}
           <NavLink
-            to="/profile"
+            to="/buyer/profile"
             className={({ isActive }) =>
               cn(
                 "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200",
@@ -65,6 +112,22 @@ export function BottomNav() {
             </div>
             <span className="text-[10px] font-medium">Profile</span>
           </NavLink>
+          {BUYER_BILLING_ENABLED && (
+            <NavLink
+              to="/buyer/billing"
+              className={({ isActive }) =>
+                cn(
+                  "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200",
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )
+              }
+            >
+              <div className="p-1.5 rounded-lg">
+                <CreditCard className="h-5 w-5" />
+              </div>
+              <span className="text-[10px] font-medium">Billing</span>
+            </NavLink>
+          )}
         </div>
       </nav>
     );
@@ -279,6 +342,20 @@ export function BottomNav() {
                   >
                     <Users className="h-4 w-4" />
                     Cooperatives
+                  </NavLink>
+                </DropdownMenuItem>
+                <DropdownMenuItem key="farmer-bids" asChild>
+                  <NavLink
+                    to="/farmer/bids"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 w-full cursor-pointer",
+                        isActive && "text-primary font-medium"
+                      )
+                    }
+                  >
+                    <Gavel className="h-4 w-4" />
+                    Bids & Results
                   </NavLink>
                 </DropdownMenuItem>
               </>

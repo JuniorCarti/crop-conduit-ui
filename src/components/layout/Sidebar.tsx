@@ -1,5 +1,22 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Lock, LogOut, User } from "lucide-react";
+import {
+  Lock,
+  LogOut,
+  User,
+  Building2,
+  Users,
+  FileText,
+  Store,
+  ShoppingCart,
+  ClipboardList,
+  BarChart3,
+  GraduationCap,
+  Trophy,
+  Award,
+  Gavel,
+  LayoutDashboard,
+  CreditCard,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +27,9 @@ import { useTranslation } from "react-i18next";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useOrgType } from "@/hooks/useOrgType";
 import { hasOrgCapability } from "@/config/orgCapabilities";
-import { Building2, Users, FileText, Store, ShoppingCart, ClipboardList, BarChart3, GraduationCap, Trophy, Award } from "lucide-react";
 import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
+import { BUYER_TRADE_ENABLED } from "@/services/buyerTradeService";
+import { BUYER_BILLING_ENABLED, BUYER_DASHBOARD_ENABLED } from "@/config/buyerFeatures";
 
 export function Sidebar() {
   const { currentUser, logout } = useAuth();
@@ -20,6 +38,7 @@ export function Sidebar() {
   const { open } = usePremiumModalStore();
   const { role } = useUserRole();
   const { orgType } = useOrgType();
+  const profileRoute = role === "buyer" ? "/buyer/profile" : "/profile";
 
   const farmerNav = FEATURES.filter((feature) =>
     ["dashboard", "market", "climate", "asha", "harvest", "community"].includes(feature.id)
@@ -29,9 +48,14 @@ export function Sidebar() {
 
   const roleNav = () => {
     if (role === "buyer") {
-      return [
+      const items = [
+        BUYER_DASHBOARD_ENABLED ? { route: "/buyer/dashboard", label: "Dashboard", icon: LayoutDashboard } : null,
         { route: "/marketplace", label: "Marketplace", icon: Store },
+        BUYER_TRADE_ENABLED ? { route: "/buyer/trade", label: "Trade & Exchange", icon: BarChart3 } : null,
+        { route: "/buyer/profile", label: "Profile", icon: User },
+        BUYER_BILLING_ENABLED ? { route: "/buyer/billing", label: "Billing", icon: CreditCard } : null,
       ];
+      return items.filter(Boolean) as Array<{ route: string; label: string; icon: typeof Store }>;
     }
     if (role === "org_admin" || role === "org_staff") {
       const items = [
@@ -167,6 +191,31 @@ export function Sidebar() {
                   </>
                 )}
               </NavLink>
+              <NavLink
+                to="/farmer/bids"
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Gavel
+                      className={cn(
+                        "h-5 w-5 transition-transform duration-200",
+                        !isActive && "group-hover:scale-110"
+                      )}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">Bids & Results</p>
+                    </div>
+                  </>
+                )}
+              </NavLink>
             </>
           )}
 
@@ -236,46 +285,48 @@ export function Sidebar() {
               ))}
             </>
           )}
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <User
-                  className={cn(
-                    "h-5 w-5 transition-transform duration-200",
-                    !isActive && "group-hover:scale-110"
-                  )}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{t("nav.profile")}</p>
-                  <p
+          {role !== "buyer" ? (
+            <NavLink
+              to={profileRoute}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <User
                     className={cn(
-                      "text-[10px] truncate transition-colors",
-                      isActive ? "text-primary-foreground/70" : "text-muted-foreground"
+                      "h-5 w-5 transition-transform duration-200",
+                      !isActive && "group-hover:scale-110"
                     )}
-                  >
-                    {t("navDescriptions.profile")}
-                  </p>
-                </div>
-              </>
-            )}
-          </NavLink>
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{t("nav.profile")}</p>
+                    <p
+                      className={cn(
+                        "text-[10px] truncate transition-colors",
+                        isActive ? "text-primary-foreground/70" : "text-muted-foreground"
+                      )}
+                    >
+                      {t("navDescriptions.profile")}
+                    </p>
+                  </div>
+                </>
+              )}
+            </NavLink>
+          ) : null}
         </div>
       </nav>
       
       <div className="p-4 border-t border-border">
         <button
           type="button"
-          onClick={() => navigate("/profile")}
+          onClick={() => navigate(profileRoute)}
           className="flex w-full items-center gap-3 rounded-lg px-2 py-2 mb-3 text-left transition-colors hover:bg-secondary/60"
         >
           <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center">
