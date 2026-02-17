@@ -1,13 +1,13 @@
 function isOrgActor(user) {
-  return user?.role === 'org_admin' || user?.role === 'org_staff';
+  return ['org_admin', 'org_staff'].includes(user?.role);
 }
 
 function isGovActor(user) {
-  return user?.role === 'gov_admin' || user?.role === 'gov_analyst';
+  return ['gov_admin', 'gov_analyst', 'government'].includes(user?.role);
 }
 
 function isSuperAdmin(user) {
-  return user?.role === 'superadmin';
+  return user?.role === 'superadmin' || user?.role === 'super_admin';
 }
 
 function assertRole(condition, message = 'Forbidden') {
@@ -23,4 +23,3 @@ module.exports = {
   isSuperAdmin,
   assertRole
 };
-

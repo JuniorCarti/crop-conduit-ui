@@ -1,5 +1,4 @@
 const { verifyFirebaseToken } = require('./firebase');
-const { getUserContext } = require('./firestoreClient');
 
 function getBearerToken(event) {
   const header = event?.headers?.authorization || event?.headers?.Authorization;
@@ -36,11 +35,26 @@ async function authenticateRequest(event) {
     throw error;
   }
 
-  const userContext = await getUserContext(claims.uid);
+  let userContext = null;
+  try {
+    const { getUserContext } = require('./firestoreClient');
+    userContext = await getUserContext(claims.uid);
+  } catch (cause) {
+    console.warn(
+      '[Auth] Firestore user context lookup failed; continuing with Firebase claims only',
+      { uid: claims.uid, message: cause?.message || String(cause) }
+    );
+  }
+
   if (!userContext) {
-    const error = new Error('User profile not found in Firestore');
-    error.statusCode = 403;
-    throw error;
+    userContext = {
+      uid: claims.uid,
+      role: typeof claims.role === 'string' ? claims.role : null,
+      orgId: typeof claims.orgId === 'string' ? claims.orgId : null,
+      orgType: typeof claims.orgType === 'string' ? claims.orgType : null,
+      email: claims.email || null,
+      displayName: claims.name || null
+    };
   }
 
   return {
@@ -57,4 +71,3 @@ async function authenticateRequest(event) {
 module.exports = {
   authenticateRequest
 };
-
