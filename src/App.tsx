@@ -21,6 +21,7 @@ import ListingDetails from "./pages/ListingDetails";
 import Checkout from "./pages/Checkout";
 import MarketPrices from "./pages/MarketPrices";
 import Community from "./pages/Community";
+import CommunityMemberProfile from "./pages/CommunityMemberProfile";
 import Inbox from "./pages/Inbox";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
@@ -69,6 +70,8 @@ import OrgSalesBatches from "./pages/org/OrgSalesBatches";
 import OrgRevenueModel from "./pages/org/OrgRevenueModel";
 import OrgImpact from "./pages/org/OrgImpact";
 import OrgReports from "./pages/org/OrgReports";
+import TradePage from "./pages/org/TradePage";
+import OrgInternationalMarketsPage from "./pages/org/OrgInternationalMarketsPage";
 import { PartnerLayout } from "@/components/partner/PartnerLayout";
 import PartnerOverview from "./pages/partner/PartnerOverview";
 import PartnerSponsorships from "./pages/partner/PartnerSponsorships";
@@ -88,6 +91,19 @@ import GovReports from "./pages/gov/GovReports";
 import GovAlerts from "./pages/gov/GovAlerts";
 import GovSettings from "./pages/gov/GovSettings";
 import GovUnderReview from "./pages/gov/GovUnderReview";
+import Unauthorized from "./pages/Unauthorized";
+import BuyerTradeHome from "./pages/buyer/BuyerTradeHome";
+import BuyerTradeListingDetails from "./pages/buyer/BuyerTradeListingDetails";
+import BuyerTradeBids from "./pages/buyer/BuyerTradeBids";
+import BuyerTradeContracts from "./pages/buyer/BuyerTradeContracts";
+import BuyerTradeWallet from "./pages/buyer/BuyerTradeWallet";
+import BuyerTradeSettings from "./pages/buyer/BuyerTradeSettings";
+import FarmerBids from "./pages/farmer/FarmerBids";
+import FarmerBidDetails from "./pages/farmer/FarmerBidDetails";
+import BuyerProfile from "./pages/BuyerProfile";
+import BuyerDashboardPage from "./pages/buyer/BuyerDashboardPage";
+import BuyerBillingPage from "./pages/buyer/BuyerBillingPage";
+import BuyerVerificationPendingPage from "./pages/buyer/BuyerVerificationPendingPage";
 
 const queryClient = new QueryClient();
 
@@ -131,6 +147,7 @@ const App = () => (
             <Route element={<PublicRoute><ResetPassword /></PublicRoute>} path="/reset-password" />
             <Route path="/join" element={<Join />} />
             <Route path="/join/:code" element={<Join />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
             {/* Protected Main App Routes */}
             <Route element={<ProtectedRoute />}>
@@ -268,6 +285,8 @@ const App = () => (
                 <Route path="revenue-model" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgRevenueModel /></OrgTypeGuard></OrgApprovalGuard>} />
                 <Route path="impact" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgImpact /></OrgTypeGuard></OrgApprovalGuard>} />
                 <Route path="reports" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgReports /></OrgTypeGuard></OrgApprovalGuard>} />
+                <Route path="trade" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><TradePage /></OrgTypeGuard></OrgApprovalGuard>} />
+                <Route path="international" element={<OrgApprovalGuard><OrgTypeGuard allowed={["cooperative"]}><OrgInternationalMarketsPage /></OrgTypeGuard></OrgApprovalGuard>} />
                 <Route path="market-dashboard" element={<OrgApprovalGuard><OrgMarketDashboard /></OrgApprovalGuard>} />
                 <Route path="contracts" element={<OrgApprovalGuard><OrgContracts /></OrgApprovalGuard>} />
                 <Route path="traceability" element={<OrgApprovalGuard><OrgTraceability /></OrgApprovalGuard>} />
@@ -424,10 +443,98 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="/buyer/dashboard"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerDashboardPage />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/verification-pending"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerVerificationPendingPage />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/trade"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerTradeHome />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/trade/listings/:listingId"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerTradeListingDetails />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/trade/bids"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerTradeBids />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/trade/contracts"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerTradeContracts />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/trade/wallet"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerTradeWallet />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/trade/settings"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerTradeSettings />
+                    </RoleGuard>
+                  }
+                />
+                <Route
                   path="/cooperatives"
                   element={
                     <RoleGuard allowed={["farmer", "admin"]} redirectTo="/marketplace">
                       <Cooperatives />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/farmer/bids"
+                  element={
+                    <RoleGuard allowed={["farmer", "admin"]} redirectTo="/unauthorized">
+                      <FarmerBids />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/farmer/bids/:orgId/:bidId"
+                  element={
+                    <RoleGuard allowed={["farmer", "admin"]} redirectTo="/unauthorized">
+                      <FarmerBidDetails />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/cooperatives/trade"
+                  element={
+                    <RoleGuard allowed={["org_admin", "org_staff", "admin", "superadmin"]} redirectTo="/cooperatives">
+                      <Navigate to="/org/trade" replace />
                     </RoleGuard>
                   }
                 />
@@ -470,6 +577,16 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="/community/members/:memberId"
+                  element={
+                    <RoleGuard allowed={["farmer", "buyer", "admin"]} redirectTo="/marketplace">
+                      <PremiumRouteGuard featureId="community">
+                        <CommunityMemberProfile />
+                      </PremiumRouteGuard>
+                    </RoleGuard>
+                  }
+                />
+                <Route
                   path="/community/inbox"
                   element={
                     <RoleGuard allowed={["farmer", "buyer", "admin"]} redirectTo="/marketplace">
@@ -506,6 +623,22 @@ const App = () => (
                   }
                 />
                 <Route path="/profile" element={<ProfileRouter />} />
+                <Route
+                  path="/buyer/profile"
+                  element={
+                    <RoleGuard allowed={["buyer", "admin"]} redirectTo="/profile">
+                      <BuyerProfile />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/billing"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerBillingPage />
+                    </RoleGuard>
+                  }
+                />
                 <Route path="/upgrade" element={<Upgrade />} />
               </Route>
               <Route

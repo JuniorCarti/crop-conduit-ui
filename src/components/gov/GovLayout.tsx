@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ProfileDropdown } from "@/components/shared/ProfileDropdown";
 
 const navItems = [
   { to: "/gov/overview", label: "Overview", icon: Building2 },
@@ -49,6 +50,7 @@ export function GovLayout() {
       <PageHeader
         title={activeTitle}
         subtitle="Government Portal"
+        actions={<ProfileDropdown settingsPath="/gov/settings" />}
       />
       <div className="app-page-shell py-6">
         <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
