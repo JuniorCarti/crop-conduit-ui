@@ -1,0 +1,120 @@
+{
+  "counties": {
+    "nairobi": {
+      "lat": -1.286389,
+      "lon": 36.817223,
+      "wards": {
+        "westlands": { "lat": -1.2676, "lon": 36.8106 },
+        "embakasi": { "lat": -1.3199, "lon": 36.8963 },
+        "kibra": { "lat": -1.3128, "lon": 36.7841 }
+      }
+    },
+    "nakuru": {
+      "lat": -0.3031,
+      "lon": 36.08,
+      "wards": {
+        "nakuru town east": { "lat": -0.2833, "lon": 36.0833 },
+        "nakuru town west": { "lat": -0.3031, "lon": 36.0796 },
+        "naivasha east": { "lat": -0.7167, "lon": 36.4333 }
+      }
+    },
+    "kiambu": {
+      "lat": -1.1714,
+      "lon": 36.8356,
+      "wards": {
+        "thika town": { "lat": -1.0332, "lon": 37.0692 },
+        "ruiru": { "lat": -1.1466, "lon": 36.9601 },
+        "limuru": { "lat": -1.1139, "lon": 36.642 }
+      }
+    },
+    "uasin gishu": {
+      "lat": 0.5143,
+      "lon": 35.2698,
+      "wards": {
+        "kapseret": { "lat": 0.4787, "lon": 35.2595 },
+        "ainabkoi/olare": { "lat": 0.5376, "lon": 35.2954 }
+      }
+    },
+    "kisumu": {
+      "lat": -0.0917,
+      "lon": 34.768,
+      "wards": {
+        "kisumu central": { "lat": -0.1022, "lon": 34.7617 },
+        "kisumu north": { "lat": -0.0524, "lon": 34.7594 }
+      }
+    },
+    "mombasa": {
+      "lat": -4.0435,
+      "lon": 39.6682,
+      "wards": {
+        "nyali": { "lat": -4.0202, "lon": 39.7219 },
+        "likoni": { "lat": -4.0907, "lon": 39.6446 }
+      }
+    },
+    "kakamega": {
+      "lat": 0.2833,
+      "lon": 34.75
+    },
+    "machakos": {
+      "lat": -1.5167,
+      "lon": 37.2667
+    },
+    "meru": {
+      "lat": 0.047,
+      "lon": 37.6556
+    },
+    "nyeri": {
+      "lat": -0.4167,
+      "lon": 36.95
+    },
+    "kirinyaga": {
+      "lat": -0.6591,
+      "lon": 37.3827
+    },
+    "laikipia": {
+      "lat": 0.3606,
+      "lon": 36.7815
+    },
+    "kitui": {
+      "lat": -1.367,
+      "lon": 38.0106
+    },
+    "muranga": {
+      "lat": -0.7167,
+      "lon": 37.15
+    },
+    "bomet": {
+      "lat": -0.7828,
+      "lon": 35.3414
+    },
+    "kericho": {
+      "lat": -0.3679,
+      "lon": 35.2833
+    },
+    "trans nzoia": {
+      "lat": 1.0157,
+      "lon": 35.003
+    },
+    "nandi": {
+      "lat": 0.1865,
+      "lon": 35.1479
+    },
+    "baringo": {
+      "lat": 0.4667,
+      "lon": 35.9667,
+      "wards": {
+        "kabarnet": { "lat": 0.4919, "lon": 35.743 },
+        "marigat": { "lat": 0.4692, "lon": 35.9765 },
+        "mogotio": { "lat": -0.2428, "lon": 35.8557 }
+      }
+    },
+    "siaya": {
+      "lat": 0.061,
+      "lon": 34.2881
+    },
+    "homa bay": {
+      "lat": -0.5273,
+      "lon": 34.4571
+    }
+  }
+}
