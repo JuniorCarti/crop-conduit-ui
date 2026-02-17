@@ -1,0 +1,12 @@
+.aws-sam/
+node_modules/
+postman/
+scripts/
+README.md
+INSIGHTS_API_README.md
+deployed_template.json
+_deployed_template.yaml
+sam-build.log
+*.log
+*.py
+*.tar.gz

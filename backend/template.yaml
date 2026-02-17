@@ -30,6 +30,27 @@ Parameters:
   VoiceRateLimitWindowMs:
     Type: Number
     Default: 60000
+  AzureOpenAiEndpoint:
+    Type: String
+    Default: ""
+  AzureOpenAiApiKey:
+    Type: String
+    Default: ""
+  AzureOpenAiChatDeployment:
+    Type: String
+    Default: ""
+  AzureOpenAiSttDeployment:
+    Type: String
+    Default: ""
+  AzureOpenAiTtsDeployment:
+    Type: String
+    Default: ""
+  AzureOpenAiApiVersionChat:
+    Type: String
+    Default: "2024-02-15-preview"
+  AzureOpenAiApiVersionAudio:
+    Type: String
+    Default: "2025-03-01-preview"
   DmConversationsTableName:
     Type: String
     Default: agrismart-dm-conversations
@@ -51,6 +72,18 @@ Parameters:
   ApiAuditLogTableName:
     Type: String
     Default: agrismart-insights-api-audit-log
+  TradeBidsTableName:
+    Type: String
+    Default: agrismart-trade-bids
+  TradeOffersTableName:
+    Type: String
+    Default: agrismart-trade-offers
+  TradeAuditTableName:
+    Type: String
+    Default: agrismart-trade-audit
+  IntlSimulationTableName:
+    Type: String
+    Default: agrismart-intl-scenarios
   FirestoreServiceAccountSecretArn:
     Type: String
     Default: arn:aws:secretsmanager:us-east-1:123456789012:secret:replace-me
@@ -79,8 +112,19 @@ Globals:
         COOP_SNAPSHOTS_TABLE: !Ref CoopSnapshotsTableName
         GOV_AGGREGATES_TABLE: !Ref GovAggregatesTableName
         API_AUDIT_LOG_TABLE: !Ref ApiAuditLogTableName
+        TRADE_BIDS_TABLE: !Ref TradeBidsTableName
+        TRADE_OFFERS_TABLE: !Ref TradeOffersTableName
+        TRADE_AUDIT_TABLE: !Ref TradeAuditTableName
+        INTL_SIM_TABLE: !Ref IntlSimulationTableName
         FIRESTORE_SERVICE_ACCOUNT_SECRET_ARN: !Ref FirestoreServiceAccountSecretArn
         COOP_SNAPSHOT_RATE_LIMIT_PER_MINUTE: !Ref CoopSnapshotRateLimitPerMinute
+        AZURE_OPENAI_ENDPOINT: !Ref AzureOpenAiEndpoint
+        AZURE_OPENAI_API_KEY: !Ref AzureOpenAiApiKey
+        AZURE_OPENAI_CHAT_DEPLOYMENT: !Ref AzureOpenAiChatDeployment
+        AZURE_OPENAI_STT_DEPLOYMENT: !Ref AzureOpenAiSttDeployment
+        AZURE_OPENAI_TTS_DEPLOYMENT: !Ref AzureOpenAiTtsDeployment
+        AZURE_OPENAI_API_VERSION_CHAT: !Ref AzureOpenAiApiVersionChat
+        AZURE_OPENAI_API_VERSION_AUDIO: !Ref AzureOpenAiApiVersionAudio
 
 Resources:
   HttpApi:
@@ -319,6 +363,108 @@ Resources:
         - AttributeName: date
           KeyType: HASH
         - AttributeName: requestId
+          KeyType: RANGE
+
+  TradeBidsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TradeBidsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+        - AttributeName: gsi2pk
+          AttributeType: S
+        - AttributeName: gsi2sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1-OpenByCommodity
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: GSI2-BidLookup
+          KeySchema:
+            - AttributeName: gsi2pk
+              KeyType: HASH
+            - AttributeName: gsi2sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  TradeOffersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TradeOffersTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1-BuyerHistory
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  TradeAuditTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TradeAuditTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: date
+          AttributeType: S
+        - AttributeName: requestId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: date
+          KeyType: HASH
+        - AttributeName: requestId
+          KeyType: RANGE
+
+  IntlSimulationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref IntlSimulationTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
           KeyType: RANGE
 
   MediaBucket:
@@ -585,6 +731,172 @@ Resources:
           VOICE_RATE_LIMIT_MAX: !Ref VoiceRateLimitMax
           VOICE_RATE_LIMIT_WINDOW_MS: !Ref VoiceRateLimitWindowMs
 
+  AshaAzureFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/ashaAzureRouter.handler
+      Timeout: 30
+      Events:
+        AshaAzureRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /asha/{proxy+}
+            Method: ANY
+        AdvisoryRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /advisory/{proxy+}
+            Method: ANY
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
+  TradeRouterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/tradeRouter.handler
+      Timeout: 30
+      Events:
+        TradeRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /trade/{proxy+}
+            Method: ANY
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeBidsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeBidsTableName}/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeOffersTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeOffersTableName}/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeAuditTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
+  IntlSimulationRouterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/intlSimulationRouter.handler
+      Timeout: 20
+      Events:
+        IntlSimulationRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /intl/{proxy+}
+            Method: ANY
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${IntlSimulationTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
+  BuyerRouterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/buyerRouter.handler
+      Timeout: 25
+      Events:
+        BuyerRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /buyers/{proxy+}
+            Method: ANY
+        AdminBuyerRoutes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /admin/buyers/{proxy+}
+            Method: ANY
+        AdminBuyerCollectionRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /admin/buyers
+            Method: ANY
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ApiAuditLogTableName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref FirestoreServiceAccountSecretArn
+
+  TradeSchedulerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/tradeScheduler.handler
+      Timeout: 30
+      Events:
+        TradeScheduler:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Enabled: true
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeBidsTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeBidsTableName}/index/*
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeOffersTableName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TradeAuditTableName}
+
   PostCoopSnapshotFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -737,3 +1049,15 @@ Outputs:
   ApiAuditLogTableName:
     Description: API audit log table name
     Value: !Ref ApiAuditLogTableName
+  TradeBidsTableName:
+    Description: Trade bids table name
+    Value: !Ref TradeBidsTableName
+  TradeOffersTableName:
+    Description: Trade offers table name
+    Value: !Ref TradeOffersTableName
+  TradeAuditTableName:
+    Description: Trade audit table name
+    Value: !Ref TradeAuditTableName
+  IntlSimulationTableName:
+    Description: International simulation scenario table name
+    Value: !Ref IntlSimulationTableName
