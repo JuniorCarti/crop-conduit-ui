@@ -9,6 +9,19 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    sourcemap: false,
+    minify: "esbuild",
+    ...(mode === "production"
+      ? {
+          target: "es2020",
+          rollupOptions: {
+            treeshake: true,
+          },
+        }
+      : {}),
+  },
+  esbuild: mode === "production" ? { drop: ["console", "debugger"] } : undefined,
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {

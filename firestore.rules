@@ -55,10 +55,10 @@ service cloud.firestore {
         : null;
     }
 
-    function userPartnerId() {
+    function isApprovedBuyer(uid) {
       return isAuthenticated()
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.partnerId
-        : null;
+        && request.auth.uid == uid
+        && get(/databases/$(database)/documents/users/$(uid)).data.approvalStatus == "APPROVED";
     }
 
     function isGovernmentOrgType(orgType) {
@@ -116,9 +116,6 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/orgs/$(orgId)).data.verificationStatus == 'approved';
     }
 
-    function isApprovedOrgManager(orgId) {
-      return isOrgManager(orgId) && isOrgApproved(orgId);
-    }
     function isOrgManager(orgId) {
       return isOrgAdmin(orgId)
         || isOrgStaff(orgId)
@@ -170,6 +167,65 @@ service cloud.firestore {
         && request.resource.data.role in ['org_staff', 'gov_admin', 'gov_analyst', 'gov_viewer']
         && request.resource.data.orgId is string
         && isOrgAdmin(request.resource.data.orgId);
+    }
+
+    function isSelfUserCreateAllowed(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == userId
+        && (
+          (
+            request.resource.data.role in ['unassigned', 'farmer', 'buyer']
+            && (!('orgId' in request.resource.data) || request.resource.data.orgId == null)
+          )
+          || (
+            request.resource.data.role == 'org_admin'
+            && request.resource.data.orgId is string
+            && exists(/databases/$(database)/documents/orgs/$(request.resource.data.orgId))
+            && get(/databases/$(database)/documents/orgs/$(request.resource.data.orgId)).data.createdByUid == request.auth.uid
+          )
+        );
+    }
+
+    function isSelfUserUpdateAllowed(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName',
+          'email',
+          'phone',
+          'photoURL',
+          'language',
+          'premium',
+          'features',
+          'updatedAt',
+          'lastLoginAt',
+          'profileComplete',
+          'preferences',
+          'role',
+          'orgId',
+          'orgType'
+        ])
+        && (
+          // most profile updates keep role/org context unchanged
+          (
+            request.resource.data.role == resource.data.role
+            && request.resource.data.orgId == resource.data.orgId
+            && request.resource.data.orgType == resource.data.orgType
+          )
+          // limited self-onboarding for non-org accounts
+          || (
+            request.resource.data.role in ['unassigned', 'farmer', 'buyer']
+            && resource.data.role in ['unassigned', 'farmer', 'buyer']
+            && request.resource.data.orgId == null
+          )
+          // creator can become org_admin only for own created organization
+          || (
+            request.resource.data.role == 'org_admin'
+            && request.resource.data.orgId is string
+            && exists(/databases/$(database)/documents/orgs/$(request.resource.data.orgId))
+            && get(/databases/$(database)/documents/orgs/$(request.resource.data.orgId)).data.createdByUid == request.auth.uid
+          )
+        );
     }
     
     /**
@@ -228,14 +284,6 @@ service cloud.firestore {
     }
 
     /**
-     * Check if the current user owns the referenced farm
-     */
-    function ownsFarm(farmId) {
-      return isAuthenticated()
-        && get(/databases/$(database)/documents/farms/$(farmId)).data.uid == request.auth.uid;
-    }
-
-    /**
      * Validate farm data on create
      */
     function isValidFarmCreate(data) {
@@ -264,8 +312,16 @@ service cloud.firestore {
     // ========================================================================
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isSuperAdmin();
-      allow write: if isOwner(userId) || isSuperAdmin() || isOrgAdminWritingStaffProfile(userId);
+      allow read: if isOwner(userId) || isAdmin() || isSuperAdmin();
+      allow create: if isSelfUserCreateAllowed(userId)
+        || isOrgAdminWritingStaffProfile(userId)
+        || isAdmin()
+        || isSuperAdmin();
+      allow update: if isSelfUserUpdateAllowed(userId)
+        || isOrgAdminWritingStaffProfile(userId)
+        || isAdmin()
+        || isSuperAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     match /users/{userId}/memberships/{orgId} {
@@ -302,6 +358,10 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /users/{userId}/profiles/{profileId} {
+      allow read, write: if isOwner(userId) || isSuperAdmin();
+    }
+
     match /buyerProfiles/{userId} {
       allow read: if isOwner(userId) || isSuperAdmin();
       allow write: if isOwner(userId);
@@ -310,6 +370,17 @@ service cloud.firestore {
     match /userDirectory/{userId} {
       allow read: if isAuthenticated() && userRole() in ['org_admin', 'org_staff', 'admin', 'superadmin'];
       allow write: if isOwner(userId);
+    }
+
+    match /communityFollows/{followId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.followerUid == request.auth.uid
+        && request.resource.data.followeeUid is string
+        && request.resource.data.followeeUid != request.auth.uid;
+      allow update: if false;
+      allow delete: if isAuthenticated()
+        && resource.data.followerUid == request.auth.uid;
     }
 
     match /billingPlanTemplates/{planId} {
@@ -379,34 +450,17 @@ service cloud.firestore {
         || (isSuperAdmin() && isOrgVerificationOnlyUpdate());
 
       match /members/{memberId} {
-        allow read: if (isOrgApproved(orgId) && (isOrgMember(orgId) || isAdmin() || isSuperAdmin()))
+        allow read: if (isOrgApproved(orgId) && (isOrgStaff(orgId) || isOrgAdmin(orgId) || isAdmin() || isSuperAdmin()))
           || (isAuthenticated()
             && (request.auth.uid == memberId || resource.data.linkedUserUid == request.auth.uid || resource.data.userUid == request.auth.uid));
         allow create: if (isOrgApproved(orgId) && (isOrgAdmin(orgId) || isAdmin() || isSuperAdmin()))
-          || (isOrgApproved(orgId)
-            && isOrgStaff(orgId)
-            && (!('status' in request.resource.data) || request.resource.data.status in ['draft', 'submitted'])
-            && (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus in ['draft', 'submitted'])
-            && !request.resource.data.keys().hasAny(['verifiedBy', 'verifiedAt', 'rejectionReason', 'seatStatus', 'premiumSeatType', 'seatType', 'seatAssignedBy', 'seatAssignedAt']))
           || (isAuthenticated()
             && request.auth.uid == memberId
             && get(/databases/$(database)/documents/orgs/$(orgId)).data.createdByUid == request.auth.uid
             && request.resource.data.role == 'org_admin');
-        allow update: if ((isOrgApproved(orgId) && (isOrgAdmin(orgId) || isAdmin() || isSuperAdmin()))
-            && (!isSeatMutation() || isOrgAdmin(orgId) || canStaffManageBilling(orgId) || isAdmin() || isSuperAdmin()))
-          || (isOrgAdmin(orgId)
-            && request.resource.data.diff(resource.data)
-              .affectedKeys()
-              .hasOnly(['seatType', 'seatStatus', 'premiumSeatType', 'seatAssignedAt', 'seatAssignedBy', 'seatAssignedByName', 'updatedAt']))
-          || (isOrgApproved(orgId)
-            && isOrgStaff(orgId)
-            && !isSeatMutation()
-            && (!('status' in request.resource.data) || request.resource.data.status in ['draft', 'submitted'])
-            && (!('verificationStatus' in request.resource.data) || request.resource.data.verificationStatus in ['draft', 'submitted'])
-            && !request.resource.data.diff(resource.data)
-              .affectedKeys()
-              .hasAny(['verifiedBy', 'verifiedAt', 'verifiedByUid', 'verifiedByName', 'rejectionReason', 'seatStatus', 'premiumSeatType', 'seatType', 'seatAssignedBy', 'seatAssignedAt']));
-        allow delete: if isOrgApproved(orgId) && isOrgManager(orgId);
+        allow update: if (isOrgApproved(orgId) && (isOrgAdmin(orgId) || isAdmin() || isSuperAdmin()))
+          && (!isSeatMutation() || isOrgAdmin(orgId) || canStaffManageBilling(orgId) || isAdmin() || isSuperAdmin());
+        allow delete: if isOrgApproved(orgId) && (isOrgAdmin(orgId) || isAdmin() || isSuperAdmin());
 
         match /audit/{logId} {
           allow read: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
@@ -502,6 +556,16 @@ service cloud.firestore {
 
         match /deliveries/{deliveryId} {
           allow read, write: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+        }
+      }
+
+      match /bids/{bidId} {
+        allow read: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+        allow create, update, delete: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
+
+        match /offers/{offerId} {
+          allow read: if (isOrgApproved(orgId) && isOrgMember(orgId)) || isAdmin() || isSuperAdmin();
+          allow create, update, delete: if (isOrgApproved(orgId) && isOrgManager(orgId)) || isAdmin() || isSuperAdmin();
         }
       }
 
@@ -668,6 +732,24 @@ match /priceSnapshots/{snapshotId} {
         || isSuperAdmin();
     }
 
+    match /nationalStats/{docId} {
+      allow read: if isGovernmentUser() || isAdmin() || isSuperAdmin();
+      allow create, update, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    match /auditLogs/{logId} {
+      allow create: if isAuthenticated()
+        && (
+          isAdmin()
+          || isSuperAdmin()
+          || (request.resource.data.orgId is string && isOrgManager(request.resource.data.orgId))
+        );
+      allow read: if isAdmin()
+        || isSuperAdmin()
+        || (resource.data.orgId is string && isOrgAdmin(resource.data.orgId));
+      allow update, delete: if false;
+    }
+
     // ========================================================================
     // FARMER PROFILES
     // ========================================================================
@@ -688,10 +770,8 @@ match /priceSnapshots/{snapshotId} {
       allow create: if isAuthenticated()
         && request.resource.data.uid == request.auth.uid
         && isValidFarmCreate(request.resource.data);
-      allow get: if isAuthenticated()
+      allow get, list: if isAuthenticated()
         && resource.data.uid == request.auth.uid;
-      allow list: if isAuthenticated()
-        && request.query.where("uid", "==", request.auth.uid);
       allow update: if isAuthenticated()
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid;
@@ -993,6 +1073,7 @@ match /priceSnapshots/{snapshotId} {
       // Only authenticated buyers can create orders for themselves with valid data
       allow create: if isAuthenticated()
         && request.resource.data.buyerId == request.auth.uid
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approvalStatus == "APPROVED"
         && hasValidTimestamps(request.resource.data)
         && hasValidOrderTotals(request.resource.data)
         && hasValidOrderQuantity(request.resource.data)
@@ -1013,6 +1094,43 @@ match /priceSnapshots/{snapshotId} {
 
       // Orders cannot be deleted
       allow delete: if false;
+    }
+
+    // ========================================================================
+    // BUYER TRADE COMMIT COLLECTIONS
+    // ========================================================================
+
+    match /buyerBids/{bidId} {
+      allow read: if isAuthenticated() && resource.data.buyerUid == request.auth.uid;
+      allow create: if isAuthenticated()
+        && request.resource.data.buyerUid == request.auth.uid
+        && isApprovedBuyer(request.auth.uid);
+      allow update: if isAuthenticated()
+        && resource.data.buyerUid == request.auth.uid
+        && request.resource.data.buyerUid == resource.data.buyerUid
+        && isApprovedBuyer(request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /buyerBuyRequests/{requestId} {
+      allow read: if isAuthenticated() && resource.data.buyerUid == request.auth.uid;
+      allow create: if isAuthenticated()
+        && request.resource.data.buyerUid == request.auth.uid
+        && isApprovedBuyer(request.auth.uid);
+      allow update: if isAuthenticated()
+        && resource.data.buyerUid == request.auth.uid
+        && request.resource.data.buyerUid == resource.data.buyerUid
+        && isApprovedBuyer(request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /tradeContracts/{contractId} {
+      allow read: if isAuthenticated() && resource.data.buyerUid == request.auth.uid;
+      allow update: if isAuthenticated()
+        && resource.data.buyerUid == request.auth.uid
+        && request.resource.data.buyerUid == resource.data.buyerUid
+        && isApprovedBuyer(request.auth.uid);
+      allow create, delete: if false;
     }
   }
 }

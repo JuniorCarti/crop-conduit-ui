@@ -10,6 +10,7 @@ import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -53,6 +54,17 @@ if (!isFirebaseConfigured) {
 // Initialize Firebase
 // Note: This may show API errors in console if config is invalid, but won't crash the app
 const app = initializeApp(firebaseConfig);
+
+// Optional App Check hardening for production environments.
+if (typeof window !== "undefined" && import.meta.env.PROD) {
+  const siteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY;
+  if (siteKey) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(siteKey),
+      isTokenAutoRefreshEnabled: true,
+    });
+  }
+}
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
