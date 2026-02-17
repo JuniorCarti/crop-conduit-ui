@@ -1,11 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { sendAshaChat } from "@/services/ashaService";
 import type { AshaChatRequest, AshaMessage, AshaResponse, AshaCard } from "@/types/asha";
-import { useAuth } from "@/contexts/AuthContext";
-import { dispatchAshaActions } from "@/services/ashaActionDispatcher";
-import { useNavigate } from "react-router-dom";
-import { useCart } from "@/contexts/CartContext";
-import { toast } from "sonner";
 
 const SESSION_KEY = "asha_session_id";
 
@@ -73,9 +68,6 @@ const buildCards = (response: AshaResponse): AshaCard[] => {
 };
 
 export function useAshaChat() {
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
-  const cart = useCart();
   const [sessionId, setSessionId] = useState(getSessionId);
   const [messages, setMessages] = useState<AshaMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -106,24 +98,25 @@ export function useAshaChat() {
       ]);
 
       try {
-        const token = currentUser ? await currentUser.getIdToken() : undefined;
         const response = await sendAshaChat(
           {
             ...payload,
             sessionId,
             message,
-          },
-          token
+          }
         );
 
-        const replyText = response.reply || "Asha could not respond right now.";
+        const replyText =
+          typeof response.reply === "string" ? response.reply.trim() : "";
+        const isReplySuccess = response.ok === true && replyText.length > 0;
+        const fallbackText = "I didn't catch that - please try again.";
         const replyLanguage = payload.language ?? "en";
         const replyMessage: AshaMessage = {
           id: `${Date.now()}-assistant`,
           role: "assistant",
-          text: replyText,
+          text: isReplySuccess ? replyText : fallbackText,
           createdAt: Date.now(),
-          status: response.ok ? "sent" : "error",
+          status: isReplySuccess ? "sent" : "error",
           intent: response.intent,
           actions: response.actions,
           uiHint: response.uiHint,
@@ -135,30 +128,12 @@ export function useAshaChat() {
 
         setMessages((prev) => [...prev, replyMessage]);
 
-        if (response.actions || response.uiHint) {
-          await dispatchAshaActions(response, {
-            navigate,
-            cart,
-            userId: currentUser?.uid,
-            notify: (msg, type) => {
-              if (type === "error") {
-                toast.error(msg);
-                return;
-              }
-              if (type === "success") {
-                toast.success(msg);
-                return;
-              }
-              toast.info(msg);
-            },
-          });
-        }
-
-        if (!response.ok && response.error) {
-          setError(response.error);
+        if (!isReplySuccess) {
+          setError(response.error || fallbackText);
         }
       } catch (err: any) {
-        const messageText = err?.message || "Failed to reach Asha.";
+        const messageText =
+          err?.message || (import.meta.env.DEV ? "Failed to reach Asha." : "I didn't catch that - please try again.");
         setError(messageText);
         setMessages((prev) => [
           ...prev,
@@ -175,7 +150,7 @@ export function useAshaChat() {
         setIsLoading(false);
       }
     },
-    [cart, currentUser, navigate, sessionId]
+    [sessionId]
   );
 
   const resetSession = useCallback(() => {

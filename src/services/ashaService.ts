@@ -1,111 +1,41 @@
 import type { AshaChatRequest, AshaResponse } from "@/types/asha";
+import { sendChatMessage } from "@/services/ashaAzureService";
 
-const resolveAshaBaseUrl = (): string => {
-  const raw = import.meta.env.VITE_ASHA_API_BASE_URL as string | undefined;
-  if (!raw) {
-    throw new Error("VITE_ASHA_API_BASE_URL is not configured.");
-  }
-  return raw.replace(/\/$/, "");
-};
-
-const parseResponse = async (response: Response): Promise<any> => {
-  const contentType = response.headers.get("Content-Type") || "";
-  const text = await response.text();
-  if (contentType.includes("application/json")) {
-    try {
-      return JSON.parse(text);
-    } catch {
-      return { ok: false, error: text || "Invalid JSON response" };
-    }
-  }
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { ok: false, error: text || "Invalid response" };
-  }
-};
-
-const normalizeReply = (data: any): string => {
-  if (typeof data?.reply === "string") return data.reply;
-  if (typeof data?.advisory === "string") return data.advisory;
-  if (data?.advisory?.title || data?.advisory?.bullets) {
-    const title = data.advisory?.title ? String(data.advisory.title) : "";
-    const bullets = Array.isArray(data.advisory?.bullets) ? data.advisory.bullets : [];
-    const lines = bullets
-      .map((bullet: any) => {
-        const heading = bullet?.heading ? `${bullet.heading}: ` : "";
-        const points = Array.isArray(bullet?.points) ? bullet.points.join("; ") : "";
-        return `${heading}${points}`.trim();
-      })
-      .filter(Boolean);
-    return [title, ...lines].filter(Boolean).join("\n");
-  }
-  if (typeof data === "string") return data;
-  return "Asha could not generate a response.";
-};
+const normalizeReply = (data: any): string =>
+  typeof data?.reply === "string" ? data.reply.trim() : "";
 
 export async function sendAshaChat(
   payload: AshaChatRequest,
-  token?: string
+  _token?: string
 ): Promise<AshaResponse> {
-  if (!token) {
-    return {
-      ok: false,
-      reply: "Authentication required.",
-      error: "Missing Firebase ID token.",
-    };
-  }
+  try {
+    const sourceContext = (payload.context as any) || {};
+    const compactContext: Record<string, unknown> = {};
+    if (payload.farm && Object.keys(payload.farm).length > 0) compactContext.farm = payload.farm;
+    if (sourceContext.weather) compactContext.weather = sourceContext.weather;
+    if (sourceContext.market) compactContext.market = sourceContext.market;
 
-  const baseUrl = resolveAshaBaseUrl();
-  const endpoints = ["/asha/chat", "/advisory/generate"];
-
-  let lastError = "Request failed.";
-
-  for (const endpoint of endpoints) {
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    }).catch((error) => {
-      lastError = error?.message || "Network error";
-      return null;
+    const data = await sendChatMessage(payload.message, {
+      role: (payload.context as any)?.role || "farmer",
+      language: payload.language,
+      context: Object.keys(compactContext).length ? compactContext : undefined,
     });
 
-    if (!response) continue;
-
-    const data = await parseResponse(response);
-
-    if (!response.ok) {
-      lastError = data?.error || data?.message || `Request failed (${response.status})`;
-      if (response.status === 404 && endpoint === "/asha/chat") {
-        continue;
-      }
-      return {
-        ok: false,
-        reply: normalizeReply(data),
-        error: lastError,
-        ...data,
-      } as AshaResponse;
-    }
-
-    const reply = normalizeReply(data);
     return {
-      ok: data?.ok ?? true,
-      reply,
+      ok: data?.ok === true,
+      reply: normalizeReply(data),
       intent: data?.intent,
-      actions: data?.actions,
-      uiHint: data?.uiHint ?? null,
+      actions: [],
+      uiHint: null,
       toolResult: data?.toolResult,
-      ...data,
-    } as AshaResponse;
+    };
+  } catch (error: any) {
+    return {
+      ok: false,
+      reply: "Asha could not respond right now.",
+      error: error?.message || "Asha chat failed.",
+      actions: [],
+      uiHint: null,
+    };
   }
-
-  return {
-    ok: false,
-    reply: "Asha could not respond right now.",
-    error: lastError,
-  };
 }
