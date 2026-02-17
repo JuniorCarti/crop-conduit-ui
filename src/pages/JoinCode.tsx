@@ -4,7 +4,13 @@ import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { applyJoinCode, getJoinCode, isJoinCodeValid, type JoinCodeType } from "@/services/joinCodeService";
+import {
+  applyJoinCode,
+  resolveJoinCode,
+  validateJoinCode,
+  type JoinCodeType,
+  type JoinCodeValidationReason,
+} from "@/services/joinCodeService";
 import { getUserProfileDoc } from "@/services/userProfileService";
 
 export default function JoinCode() {
@@ -18,24 +24,72 @@ export default function JoinCode() {
   const [orgName, setOrgName] = useState<string>("organization");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
+  const [invalidReason, setInvalidReason] = useState<JoinCodeValidationReason | "NOT_FOUND" | null>(null);
 
   useEffect(() => {
     if (!code) {
       setStatus("invalid");
+      setInvalidReason("NOT_FOUND");
       return;
     }
-    getJoinCode(code)
-      .then((doc) => {
-        if (!doc || !isJoinCodeValid(doc)) {
+    resolveJoinCode(code)
+      .then((resolved) => {
+        if (!resolved) {
           setStatus("invalid");
+          setInvalidReason("NOT_FOUND");
           return;
         }
+        const validation = validateJoinCode(resolved.data);
+        if (!validation.ok) {
+          setStatus("invalid");
+          setInvalidReason(validation.reason ?? "NOT_FOUND");
+          if (import.meta.env.DEV) {
+            console.debug("[JoinCode] validation failed", {
+              codeInput: code,
+              resolvedPath: `orgs/${resolved.orgId}/joinCodes/${resolved.joinCodeId}`,
+              rawExpiresAt: resolved.data.expiresAt ?? null,
+              parsedExpiresAt: validation.expiresAtDate?.toISOString?.() ?? null,
+              used: validation.used,
+              max: Number.isFinite(validation.max) ? validation.max : "infinity",
+              reason: validation.reason,
+            });
+          }
+          return;
+        }
+        const doc = resolved.data;
         setMemberType(doc.type);
         setOrgName(doc.orgName ?? "organization");
+        setInvalidReason(null);
+        if (import.meta.env.DEV) {
+          console.debug("[JoinCode] validation success", {
+            codeInput: code,
+            resolvedPath: `orgs/${resolved.orgId}/joinCodes/${resolved.joinCodeId}`,
+            rawExpiresAt: doc.expiresAt ?? null,
+            parsedExpiresAt: validation.expiresAtDate?.toISOString?.() ?? null,
+            used: validation.used,
+            max: Number.isFinite(validation.max) ? validation.max : "infinity",
+          });
+        }
         setStatus("ready");
       })
-      .catch(() => setStatus("invalid"));
+      .catch((error) => {
+        if (import.meta.env.DEV) {
+          console.debug("[JoinCode] resolver failed", {
+            codeInput: code,
+            message: error?.message,
+          });
+        }
+        setStatus("invalid");
+        setInvalidReason("NOT_FOUND");
+      });
   }, [code]);
+
+  const invalidMessage = (() => {
+    if (invalidReason === "INACTIVE") return "Join code is disabled.";
+    if (invalidReason === "EXPIRED") return "Join code has expired.";
+    if (invalidReason === "MAXED_OUT") return "Join code has reached its usage limit.";
+    return "Join code is invalid or expired.";
+  })();
 
   const handleJoin = async () => {
     if (!code || !currentUser) return;
@@ -79,7 +133,7 @@ export default function JoinCode() {
             {status === "invalid" && (
               <div className="flex items-center gap-2 text-sm text-destructive">
                 <AlertTriangle className="h-4 w-4" />
-                Join code is invalid or expired.
+                {invalidMessage}
               </div>
             )}
             {status === "ready" && (

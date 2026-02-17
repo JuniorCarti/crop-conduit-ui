@@ -288,7 +288,12 @@ export default function Checkout() {
     try {
       setIsPlacingOrder(true);
       if (saveAsDefault) {
-        await saveBuyerProfile(currentUser.uid, buyerProfile);
+        try {
+          await saveBuyerProfile(currentUser.uid, buyerProfile);
+        } catch (profileError) {
+          console.warn("Failed to save buyer default profile. Continuing with order placement.", profileError);
+          toast.warning("Could not save default profile, but continuing with order placement.");
+        }
       }
 
       await createOrdersFromCart(
