@@ -1,5 +1,6 @@
 import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
+import { waitForAuth } from "@/services/authService";
 import type { Conversation, Message, ContactStatus, ContactRequest, PagedResult, ConversationUser } from "@/types/dm";
 
 const API_BASE_URL = import.meta.env.VITE_COMMUNITY_API_BASE_URL;
@@ -11,10 +12,7 @@ function ensureApiBase() {
 }
 
 async function getFirebaseIdToken(forceRefresh = false): Promise<string> {
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error("Not authenticated");
-  }
+  const user = auth.currentUser ?? await waitForAuth(8000);
   return user.getIdToken(forceRefresh);
 }
 

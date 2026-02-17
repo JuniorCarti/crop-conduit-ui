@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MessageCircle, Phone, ShieldAlert, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { VerifiedBadge } from "@/components/shared/VerifiedBadge";
 import type { Conversation, Message, ContactStatus } from "@/types/dm";
 import { MessageBubble } from "@/components/community/MessageBubble";
 import { ContactRequestBanner } from "@/components/community/ContactRequestBanner";
 import { CallActionBar } from "@/components/community/CallActionBar";
+import { getUserVerificationMap } from "@/services/userVerificationService";
 
 interface ChatWindowProps {
   conversation: Conversation | null;
   currentUserId: string;
+  otherUid?: string | null;
   messages: Message[];
   loading: boolean;
   contactStatus: ContactStatus;
@@ -29,6 +33,7 @@ interface ChatWindowProps {
 export function ChatWindow({
   conversation,
   currentUserId,
+  otherUid,
   messages,
   loading,
   contactStatus,
@@ -50,6 +55,24 @@ export function ChatWindow({
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
   }, [messages]);
+
+  const participantUids = useMemo(() => {
+    const fromMessages = sortedMessages.map((message) => message.senderId).filter(Boolean);
+    return Array.from(new Set([currentUserId, otherUid || "", ...fromMessages].filter(Boolean)));
+  }, [currentUserId, otherUid, sortedMessages]);
+
+  const verificationQuery = useQuery({
+    queryKey: ["community", "chat-verification", [...participantUids].sort().join("|")],
+    queryFn: () => getUserVerificationMap(participantUids),
+    enabled: participantUids.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const otherProfile = otherUid ? verificationQuery.data?.[otherUid] : null;
+  const otherDisplayName =
+    otherProfile?.displayName ||
+    conversation?.otherUser?.displayName ||
+    (otherUid ? `Farmer ${otherUid.slice(0, 6)}` : "Select a conversation");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,9 +97,10 @@ export function ChatWindow({
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-foreground">Community Messages</p>
-            <p className="text-xs text-muted-foreground">
-              {conversation ? `Conversation ${conversation.conversationId.slice(0, 10)}...` : "Select a conversation"}
-            </p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{conversation ? otherDisplayName : "Select a conversation"}</span>
+              {otherProfile?.badgeType ? <VerifiedBadge type={otherProfile.badgeType} compact /> : null}
+            </div>
           </div>
           {contactStatus.canCall ? (
             callPhone ? (
@@ -126,6 +150,12 @@ export function ChatWindow({
                 key={message.messageId}
                 message={message}
                 isOwn={message.senderId === currentUserId}
+                senderName={
+                  message.senderId === currentUserId
+                    ? verificationQuery.data?.[currentUserId]?.displayName || "You"
+                    : verificationQuery.data?.[message.senderId]?.displayName || `Farmer ${message.senderId.slice(0, 6)}`
+                }
+                senderBadgeType={verificationQuery.data?.[message.senderId]?.badgeType || null}
               />
             ))
           ) : (

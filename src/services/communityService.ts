@@ -1,6 +1,6 @@
 import { auth } from "@/lib/firebase";
 import { toast } from "sonner";
-import { isAuthHealthy } from "@/services/authService";
+import { waitForAuth } from "@/services/authService";
 import type { CommunityPost, CommunityComment, MediaItem, PagedResult } from "@/types/community";
 
 const API_BASE_URL = import.meta.env.VITE_COMMUNITY_API_BASE_URL;
@@ -8,13 +8,11 @@ const MEDIA_BUCKET = "agrismart-community-media";
 const MEDIA_REGION = "us-east-2";
 
 export async function getFirebaseIdToken(forceRefresh = false): Promise<string> {
-  const user = auth.currentUser;
-  if (!isAuthHealthy()) {
-    throw new Error("Auth not ready");
+  const current = auth.currentUser;
+  if (current) {
+    return current.getIdToken(forceRefresh);
   }
-  if (!user) {
-    throw new Error("Not authenticated");
-  }
+  const user = await waitForAuth(8000);
   return user.getIdToken(forceRefresh);
 }
 

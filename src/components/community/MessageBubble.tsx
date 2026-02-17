@@ -1,10 +1,14 @@
 import { format } from "date-fns";
+import { VerifiedBadge } from "@/components/shared/VerifiedBadge";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types/dm";
+import type { VerifiedBadgeType } from "@/services/userVerificationService";
 
 interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
+  senderName?: string;
+  senderBadgeType?: VerifiedBadgeType | null;
 }
 
 function formatTimestamp(value: string) {
@@ -13,7 +17,7 @@ function formatTimestamp(value: string) {
   return format(date, "MMM d, h:mm a");
 }
 
-export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+export function MessageBubble({ message, isOwn, senderName, senderBadgeType }: MessageBubbleProps) {
   return (
     <div className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
       <div
@@ -24,6 +28,18 @@ export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
             : "bg-card text-foreground rounded-bl-md border border-border/60",
         )}
       >
+        <div className={cn("mb-1 flex items-center gap-2", isOwn ? "justify-end" : "justify-start")}>
+          <span className={cn("text-[11px] font-semibold", isOwn ? "text-emerald-50/90" : "text-muted-foreground")}>
+            {senderName || (isOwn ? "You" : "Sender")}
+          </span>
+          {senderBadgeType ? (
+            <VerifiedBadge
+              type={senderBadgeType}
+              compact
+              className={cn(isOwn ? "border-emerald-200/80 bg-emerald-100 text-emerald-900" : "")}
+            />
+          ) : null}
+        </div>
         <p className="leading-relaxed whitespace-pre-wrap">{message.text}</p>
         <p className={cn("mt-2 text-[11px]", isOwn ? "text-emerald-50/80" : "text-muted-foreground")}>
           {formatTimestamp(message.createdAt)}

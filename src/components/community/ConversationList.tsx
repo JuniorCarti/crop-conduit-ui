@@ -1,10 +1,14 @@
 import { formatDistanceToNowStrict } from "date-fns";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
+import { VerifiedBadge } from "@/components/shared/VerifiedBadge";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/dm";
 import { getOtherUidFromConversation } from "@/hooks/useDirectMessages";
+import { getUserVerificationMap } from "@/services/userVerificationService";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -25,6 +29,19 @@ function formatTime(value: string) {
 }
 
 export function ConversationList({ conversations, currentUserId, activeId, onSelect }: ConversationListProps) {
+  const participantUids = useMemo(() => {
+    return conversations
+      .map((conversation) => conversation.otherUser?.uid || getOtherUidFromConversation(conversation, currentUserId))
+      .filter((uid): uid is string => Boolean(uid));
+  }, [conversations, currentUserId]);
+
+  const verificationQuery = useQuery({
+    queryKey: ["community", "conversation-verification", [...participantUids].sort().join("|")],
+    queryFn: () => getUserVerificationMap(participantUids),
+    enabled: participantUids.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
   if (!conversations.length) {
     return (
       <Card className="border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
@@ -37,7 +54,8 @@ export function ConversationList({ conversations, currentUserId, activeId, onSel
     <div className="space-y-3">
       {conversations.map((conversation) => {
         const otherUid = conversation.otherUser?.uid || getOtherUidFromConversation(conversation, currentUserId) || "Farmer";
-        const otherName = conversation.otherUser?.displayName || `Farmer ${otherUid.slice(0, 6)}`;
+        const verification = verificationQuery.data?.[otherUid];
+        const otherName = verification?.displayName || conversation.otherUser?.displayName || `Farmer ${otherUid.slice(0, 6)}`;
         const isActive = activeId === conversation.conversationId;
         const recent = Date.now() - new Date(conversation.updatedAt).getTime() < 2 * 60 * 60 * 1000;
         return (
@@ -60,7 +78,10 @@ export function ConversationList({ conversations, currentUserId, activeId, onSel
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-foreground truncate">{otherName}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="font-semibold text-foreground truncate">{otherName}</p>
+                    {verification?.badgeType ? <VerifiedBadge type={verification.badgeType} compact /> : null}
+                  </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {formatTime(conversation.updatedAt)}
                   </span>

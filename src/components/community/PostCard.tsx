@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Heart, MessageCircle, Bookmark, Share2, MapPin, Leaf, Mail } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { VerifiedBadge } from "@/components/shared/VerifiedBadge";
+import { getUserVerificationMap } from "@/services/userVerificationService";
 import { cn } from "@/lib/utils";
 import type { CommunityPost } from "@/types/community";
 
@@ -38,6 +41,14 @@ function initials(name?: string | null) {
 export function PostCard({ post, onLike, onComment, onShare, onBookmark, onMessage }: PostCardProps) {
   const [expanded, setExpanded] = useState(false);
   const createdAt = useMemo(() => formatDate(post.createdAt), [post.createdAt]);
+  const verificationQuery = useQuery({
+    queryKey: ["community", "post-author-verification", post.userId],
+    queryFn: () => getUserVerificationMap([post.userId]),
+    enabled: Boolean(post.userId),
+    staleTime: 1000 * 60 * 5,
+  });
+  const authorVerification = verificationQuery.data?.[post.userId];
+  const authorName = authorVerification?.displayName || post.authorName || "Farmer";
   const tags = post.tags?.slice(0, 4) || [];
   const validMedia = post.media.filter(
     (media) => media.url && !media.url.includes("undefined") && !media.url.endsWith("/undefined"),
@@ -54,7 +65,8 @@ export function PostCard({ post, onLike, onComment, onShare, onBookmark, onMessa
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-foreground truncate">{post.authorName || "Farmer"}</p>
+              <p className="font-semibold text-foreground truncate">{authorName}</p>
+              {authorVerification?.badgeType ? <VerifiedBadge type={authorVerification.badgeType} compact /> : null}
               {post.location ? (
                 <Badge variant="secondary" className="flex items-center gap-1 text-xs">
                   <MapPin className="h-3 w-3" />

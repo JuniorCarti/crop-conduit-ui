@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { VerifiedBadge } from "@/components/shared/VerifiedBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { CommunityPost } from "@/types/community";
 import { addComment, listComments } from "@/services/communityService";
+import { getUserVerificationMap } from "@/services/userVerificationService";
 
 interface CommentsDrawerProps {
   post: CommunityPost | null;
@@ -40,6 +42,20 @@ export function CommentsDrawer({ post, open, onOpenChange }: CommentsDrawerProps
     getNextPageParam: (lastPage) => lastPage.nextCursor || undefined,
     enabled: Boolean(postId) && open,
   });
+
+  const visibleComments = commentsQuery.data?.pages?.flatMap((page) => page.items) || [];
+  const verificationQuery = useQuery({
+    queryKey: [
+      "community",
+      "comment-verification",
+      [...visibleComments.map((item) => item.userId).filter(Boolean)].sort().join("|"),
+    ],
+    queryFn: () => getUserVerificationMap(visibleComments.map((item) => item.userId).filter(Boolean)),
+    enabled: open && visibleComments.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const verificationMap = verificationQuery.data || {};
 
   const addMutation = useMutation({
     mutationFn: (value: string) => addComment(postId, { text: value }),
@@ -111,7 +127,14 @@ export function CommentsDrawer({ post, open, onOpenChange }: CommentsDrawerProps
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 rounded-xl bg-muted/60 p-3">
-                  <p className="text-xs font-semibold text-foreground">{comment.authorName || "Farmer"}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-foreground">
+                      {verificationMap[comment.userId]?.displayName || comment.authorName || "Farmer"}
+                    </p>
+                    {verificationMap[comment.userId]?.badgeType ? (
+                      <VerifiedBadge type={verificationMap[comment.userId].badgeType} compact />
+                    ) : null}
+                  </div>
                   <p className="text-sm text-muted-foreground mt-1">{comment.text}</p>
                 </div>
               </div>
