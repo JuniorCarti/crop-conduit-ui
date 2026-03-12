@@ -34,6 +34,7 @@ import SuperAdminPortal from "./pages/SuperAdminPortal";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
+import Homepage from "./pages/Homepage";
 import ClimatePage from "./pages/ClimatePage";
 import Upgrade from "./pages/Upgrade";
 import AshaVoice from "./pages/AshaVoice";
@@ -148,6 +149,7 @@ const App = () => (
             <Route path="/join" element={<Join />} />
             <Route path="/join/:code" element={<Join />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/" element={<Homepage />} />
 
             {/* Protected Main App Routes */}
             <Route element={<ProtectedRoute />}>
@@ -369,7 +371,7 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/"
+                  path="/dashboard"
                   element={
                     <RoleGuard allowed={["farmer", "admin"]} redirectTo="/registration">
                       <Index />
