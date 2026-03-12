@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -72,6 +73,13 @@
     --chart-3: 200 80% 50%;
     --chart-4: 152 60% 40%;
     --chart-5: 0 72% 51%;
+
+    /* AgriSmart design tokens */
+    --agri-primary: 120 60% 24%;
+    --agri-accent: 84 70% 46%;
+    --agri-ink: 150 30% 12%;
+    --agri-surface: 0 0% 100%;
+    --agri-gradient: linear-gradient(135deg, #f7f7f2 0%, #f4f7f0 45%, #eef4f7 100%);
   }
 
   .dark {
@@ -120,6 +128,10 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
@@ -176,6 +188,36 @@
   .animate-slide-in-bottom {
     animation: slide-in-bottom 0.4s ease-out forwards;
   }
+
+  .animate-partners-marquee {
+    animation: partners-marquee 30s linear infinite;
+  }
+}
+
+@layer components {
+  .agri-section-label {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-primary/80;
+  }
+
+  .agri-section-title {
+    @apply font-heading text-3xl font-semibold text-foreground md:text-4xl;
+  }
+
+  .agri-card {
+    @apply rounded-3xl border border-white/60 bg-white/80 p-6 shadow-card backdrop-blur-sm;
+  }
+
+  .agri-btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:translate-y-[-1px] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+
+  .agri-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-primary/20 bg-white/70 px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+  }
+
+  .agri-cta {
+    @apply flex flex-col gap-6 rounded-3xl bg-gradient-to-br from-primary via-emerald-700 to-emerald-900 px-8 py-10 shadow-glow md:flex-row md:items-center md:justify-between;
+  }
 }
 
 @keyframes fade-up {
@@ -208,6 +250,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes partners-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }
 
