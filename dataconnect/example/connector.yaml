@@ -1,0 +1,28 @@
+connectorId: example
+generate:
+  javascriptSdk:
+    - outputDir: ..\..\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..
+      react: true
+      angular: false
+    - outputDir: ..\..\worker-buyer-api\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\worker-buyer-api
+      react: false
+      angular: false
+    - outputDir: ..\..\agrismart-advisory\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\agrismart-advisory
+      react: false
+      angular: false
+  adminNodeSdk:
+    - outputDir: ..\..\backend\src\dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ..\..\backend
+    - outputDir: ..\..\cloud\functions\marketplace\src\dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ..\..\cloud\functions\marketplace
+    - outputDir: ..\..\cloud\functions\climate\src\dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ..\..\cloud\functions\climate
