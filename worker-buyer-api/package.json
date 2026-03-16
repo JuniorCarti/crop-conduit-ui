@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated",
     "jose": "^5.9.6"
   },
   "devDependencies": {

@@ -13,6 +13,7 @@
 		"wrangler": "^4.60.0"
 	},
 	"dependencies": {
+		"@dataconnect/generated": "file:src/dataconnect-generated",
 		"openai": "^6.16.0"
 	}
 }
