@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export function CTA() {
   return (
-    <section id="pricing" className="py-20">
+    <section id="pricing" className="py-12">
       <div className="app-page-shell">
         <motion.div
           initial={{ opacity: 0, y: 16 }}

@@ -9,6 +9,8 @@ import { Benefits } from "@/components/landing/homepage/Benefits";
 import { Testimonials } from "@/components/landing/homepage/Testimonials";
 import { Partners } from "@/components/landing/homepage/Partners";
 import { Pricing } from "@/components/landing/homepage/Pricing";
+import { Careers } from "@/components/landing/homepage/Careers";
+import { WorkWithUs } from "@/components/landing/homepage/WorkWithUs";
 import { Team } from "@/components/landing/homepage/Team";
 import { CTA } from "@/components/landing/homepage/CTA";
 import { LocationContact } from "@/components/landing/homepage/LocationContact";
@@ -30,6 +32,8 @@ export default function Homepage() {
         <Testimonials />
         <Partners />
         <Pricing />
+        <WorkWithUs />
+        <Careers />
         <Team />
         <CTA />
         <LocationContact />

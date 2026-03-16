@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 
 export function LocationContact() {
   return (
-    <section id="contact" className="py-20">
+    <section id="contact" className="py-12">
       <div className="app-page-shell space-y-10">
         <div className="max-w-2xl">
           <p className="agri-section-label">Our Location</p>

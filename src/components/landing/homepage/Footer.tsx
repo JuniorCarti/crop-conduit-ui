@@ -64,7 +64,13 @@ export function Footer() {
             >
               <Linkedin className="h-4 w-4" />
             </a>
-            <a href="#" className="rounded-full border border-primary/15 p-2 transition hover:text-foreground" aria-label="Instagram">
+            <a
+              href="https://www.instagram.com/p/DV8On0GDbKq/?utm_source=ig_web_copy_link"
+              className="rounded-full border border-primary/15 p-2 transition hover:text-foreground"
+              aria-label="Instagram"
+              target="_blank"
+              rel="noreferrer"
+            >
               <Instagram className="h-4 w-4" />
             </a>
             <a href="#" className="rounded-full border border-primary/15 p-2 transition hover:text-foreground" aria-label="GitHub">

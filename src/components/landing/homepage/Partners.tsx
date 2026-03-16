@@ -36,7 +36,7 @@ const carousel = [...partners, ...partners];
 
 export function Partners() {
   return (
-    <section id="partners" className="py-20">
+    <section id="partners" className="py-12">
       <div className="app-page-shell space-y-10">
         <div className="text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">

@@ -5,8 +5,7 @@ const team = [
     name: "Ridge Junior Abuto",
     role: "Founder & Team Lead",
     bio: "Leads AgriSmart with vision and strategy, connecting technology with smallholder farmers.",
-    image:
-      "https://plus.unsplash.com/premium_photo-1664536392779-049ba8fde933?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cHJvZmlsZSUyMGltYWdlc3xlbnwwfHwwfHx8MA%3D%3D",
+    image: "/images/ridge-junior-abuto.jpg",
   },
   {
     name: "Vanessa Audrey",
@@ -40,7 +39,7 @@ const team = [
 
 export function Team() {
   return (
-    <section id="team" className="py-20">
+    <section id="team" className="py-12">
       <div className="app-page-shell space-y-10">
         <div className="max-w-2xl">
           <p className="agri-section-label">Team</p>

@@ -1,66 +1,70 @@
 ﻿import { motion } from "framer-motion";
 
-const testimonials = [
+const goals = [
   {
-    quote:
-      "AgriSmart helped us cut irrigation waste by 22% and align planting with better pricing windows.",
-    name: "Lydia M.",
-    role: "Operations Lead, Makueni Farms",
+    title: "Smarter Planting Decisions",
+    description:
+      "Help farmers choose the right planting time using localized climate forecasts and seasonal signals.",
+    image:
+      "https://plus.unsplash.com/premium_photo-1663040294799-04609cd9e92b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTN8fGZhcm1lcnxlbnwwfHwwfHx8MA%3D%3D",
   },
   {
-    quote:
-      "We finally have climate, crop, and market signals in one dashboard. Decisions are faster and calmer.",
-    name: "Samuel K.",
-    role: "Director, Rift Valley Co-op",
+    title: "Better Market Timing",
+    description:
+      "Provide real-time market price data so farmers can decide when and where to sell their produce.",
+    image:
+      "https://plus.unsplash.com/premium_photo-1661409151761-31d12ede6870?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTh8fGZhcm1lcnxlbnwwfHwwfHx8MA%3D%3D",
   },
   {
-    quote:
-      "The trading workflow is secure and predictable. Our buyers trust the visibility we share.",
-    name: "Nora A.",
-    role: "Supply Chain Manager, EastHarvest",
+    title: "Reduced Post-Harvest Losses",
+    description:
+      "Enable farmers to align production with real demand and connect directly with buyers.",
+    image:
+      "https://images.unsplash.com/photo-1707721690626-10e5f0366bcb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8ZmFybWVyJTIwd29tZW58ZW58MHx8MHx8fDA%3D",
   },
 ];
 
 export function Testimonials() {
   return (
-    <section id="about" className="py-20">
+    <section id="about" className="py-12">
       <div className="app-page-shell space-y-10">
         <div className="max-w-2xl">
-          <p className="agri-section-label">Testimonials</p>
-          <h2 className="agri-section-title">Trusted by progressive farming teams</h2>
+          <p className="agri-section-label">Pilot Impact Goals</p>
+          <h2 className="agri-section-title">Pilot Impact Goals</h2>
           <p className="mt-4 text-muted-foreground">
-            Hear from farmers and agribusiness leaders using AgriSmart every day.
+            AgriSmart is preparing for its first pilot deployment with farmer cooperatives. These are the outcomes we aim
+            to achieve through real-time climate insights and market intelligence.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { value: "22%", label: "Irrigation waste reduced" },
-            { value: "18%", label: "Yield lift on pilot farms" },
-            { value: "3x", label: "Faster pricing decisions" },
-          ].map((stat) => (
-            <div key={stat.label} className="agri-card text-center">
-              <p className="text-3xl font-semibold text-foreground">{stat.value}</p>
-              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
         <div className="grid gap-6 lg:grid-cols-3">
-          {testimonials.map((item, index) => (
+          {goals.map((goal, index) => (
             <motion.div
-              key={item.name}
+              key={goal.title}
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
-              viewport={{ once: true, amount: 0.4 }}
-              className="agri-card"
-            >
-              <p className="text-sm text-muted-foreground">"{item.quote}"</p>
-              <div className="mt-6 border-t border-emerald-100/60 pt-4">
-                <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{item.role}</p>
+            viewport={{ once: true, amount: 0.4 }}
+            className="agri-card"
+          >
+              <div className="overflow-hidden rounded-2xl">
+                <img
+                  src={goal.image}
+                  alt={goal.title}
+                  loading="lazy"
+                  className="h-44 w-full object-cover"
+                />
               </div>
-            </motion.div>
-          ))}
+              <h3 className="mt-4 text-lg font-semibold text-foreground">{goal.title}</h3>
+              <p className="mt-3 text-sm text-muted-foreground">{goal.description}</p>
+          </motion.div>
+        ))}
+      </div>
+        <div className="agri-card">
+          <h3 className="text-sm font-semibold text-foreground">Pilot Deployment in Progress</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Pilot Deployment in Progress. Real farmer stories and impact results will be shared here once the pilot
+            phase is completed.
+          </p>
         </div>
       </div>
     </section>

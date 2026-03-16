@@ -22,10 +22,13 @@ export function Hero() {
         loop
         playsInline
         preload="none"
-        poster="/home_page.jpg"
+        poster="/images/africa.jpg"
+        id="bg-video"
         aria-hidden="true"
       >
-        <source src="/home_page.mp4" type="video/mp4" />
+        <source src="/videos/background.mp4" type="video/mp4" />
+        <source src="/videos/background.webm" type="video/webm" />
+        Your browser does not support the video tag.
       </video>
       <div className="absolute inset-0 bg-black/50" />
 

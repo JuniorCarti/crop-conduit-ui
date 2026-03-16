@@ -17,7 +17,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="solutions" className="py-20">
+    <section id="solutions" className="py-12">
       <div className="app-page-shell">
         <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
           <div>

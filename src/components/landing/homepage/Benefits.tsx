@@ -12,7 +12,7 @@ const benefits = [
 
 export function Benefits() {
   return (
-    <section id="benefits" className="py-20">
+    <section id="benefits" className="py-12">
       <div className="app-page-shell space-y-10">
         <div className="max-w-2xl">
           <p className="agri-section-label">Platform Benefits</p>

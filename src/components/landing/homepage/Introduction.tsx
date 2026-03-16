@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export function Introduction() {
   return (
-    <section id="introduction" className="py-16">
+    <section id="introduction" className="py-12">
       <div className="app-page-shell">
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <motion.div
