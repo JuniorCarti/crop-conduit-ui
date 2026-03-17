@@ -7,7 +7,7 @@ const partners = [
   },
   {
     name: "AWS",
-    src: "https://1000logos.net/wp-content/uploads/2025/03/Amazon-Web-Services-Logo.png",
+    src: "/images/aws.png",
   },
   {
     name: "Microsoft Azure",
@@ -29,6 +29,10 @@ const partners = [
   {
     name: "Eldohub",
     src: "https://eldohub.co.ke/wp-content/uploads/2025/06/header_logo.png",
+  },
+  {
+    name: "KCB",
+    src: "/images/kcb.png",
   },
 ];
 
