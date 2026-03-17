@@ -8,7 +8,7 @@ const cards = [
     cta: "Become a Partner",
     href: "#contact",
     image:
-      "https://plus.unsplash.com/premium_photo-1663040294799-04609cd9e92b?w=500&auto=format&fit=crop&q=60",
+      "https://plus.unsplash.com/premium_photo-1661329844154-a18092819637?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjl8fHBhcnRuZXJzaGlwfGVufDB8fDB8fHww",
   },
   {
     title: "Internship Opportunities",
@@ -17,16 +17,16 @@ const cards = [
     cta: "Apply for Internship",
     href: "#internships",
     image:
-      "https://plus.unsplash.com/premium_photo-1661409151761-31d12ede6870?w=500&auto=format&fit=crop&q=60",
+      "https://images.pexels.com/photos/3184396/pexels-photo-3184396.jpeg",
   },
   {
     title: "Volunteer With AgriSmart",
     description:
       "Join our mission-driven community supporting the AgriSmart pilot. Volunteers contribute their expertise in operations, partnerships, data analysis, and field coordination.",
     cta: "Apply to Volunteer",
-    href: "#volunteer",
+    href: "#volunteer-form",
     image:
-      "https://images.unsplash.com/photo-1707721690626-10e5f0366bcb?w=500&auto=format&fit=crop&q=60",
+      "https://images.pexels.com/photos/6591147/pexels-photo-6591147.jpeg",
   },
 ];
 
