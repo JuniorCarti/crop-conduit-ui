@@ -9,6 +9,7 @@ import { Benefits } from "@/components/landing/homepage/Benefits";
 import { Testimonials } from "@/components/landing/homepage/Testimonials";
 import { Partners } from "@/components/landing/homepage/Partners";
 import { Pricing } from "@/components/landing/homepage/Pricing";
+import { Donate } from "@/components/landing/homepage/Donate";
 import { Careers } from "@/components/landing/homepage/Careers";
 import { WorkWithUs } from "@/components/landing/homepage/WorkWithUs";
 import { Team } from "@/components/landing/homepage/Team";
@@ -33,6 +34,7 @@ export default function Homepage() {
         <Partners />
         <Pricing />
         <WorkWithUs />
+        <Donate />
         <Careers />
         <Team />
         <CTA />
