@@ -105,6 +105,14 @@ import BuyerProfile from "./pages/BuyerProfile";
 import BuyerDashboardPage from "./pages/buyer/BuyerDashboardPage";
 import BuyerBillingPage from "./pages/buyer/BuyerBillingPage";
 import BuyerVerificationPendingPage from "./pages/buyer/BuyerVerificationPendingPage";
+import Partnerships from "./pages/Partnerships";
+import Policies from "./pages/Policies";
+import DataPrivacyPolicy from "./pages/policies/DataPrivacyPolicy";
+import SecurityPolicy from "./pages/policies/SecurityPolicy";
+import ResponsibleAIPolicy from "./pages/policies/ResponsibleAIPolicy";
+import TransparencyPolicy from "./pages/policies/TransparencyPolicy";
+import DataOwnershipPolicy from "./pages/policies/DataOwnershipPolicy";
+import PartnershipEthicsPolicy from "./pages/policies/PartnershipEthicsPolicy";
 
 const queryClient = new QueryClient();
 
@@ -150,6 +158,14 @@ const App = () => (
             <Route path="/join/:code" element={<Join />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/" element={<Homepage />} />
+            <Route path="/partnerships" element={<Partnerships />} />
+            <Route path="/policies" element={<Policies />} />
+            <Route path="/policies/data-privacy" element={<DataPrivacyPolicy />} />
+            <Route path="/policies/security" element={<SecurityPolicy />} />
+            <Route path="/policies/responsible-ai" element={<ResponsibleAIPolicy />} />
+            <Route path="/policies/transparency" element={<TransparencyPolicy />} />
+            <Route path="/policies/data-ownership" element={<DataOwnershipPolicy />} />
+            <Route path="/policies/partnership-ethics" element={<PartnershipEthicsPolicy />} />
 
             {/* Protected Main App Routes */}
             <Route element={<ProtectedRoute />}>
