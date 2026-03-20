@@ -102,7 +102,7 @@ export function Footer() {
         </div>
       </div>
       <div className="app-page-shell mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-white/60 pt-6 text-xs text-muted-foreground">
-        <span>AgriSmart - Farm Intelligence. All rights reserved.</span>
+        <span>© 2026 AgriSmart - Farm Intelligence. All rights reserved.</span>
         <span>Built for resilient agriculture.</span>
       </div>
     </footer>
