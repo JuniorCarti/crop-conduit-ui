@@ -40,6 +40,7 @@ export function Introduction() {
                 alt="African smallholder farmer holding crops"
                 className="h-full w-full object-cover"
                 loading="lazy"
+                decoding="async"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
             </div>
