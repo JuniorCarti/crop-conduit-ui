@@ -63,6 +63,7 @@ export function Team() {
                   src={member.image}
                   alt={member.name}
                   loading="lazy"
+                  decoding="async"
                   className="h-16 w-16 rounded-full object-cover"
                 />
                 <div>
