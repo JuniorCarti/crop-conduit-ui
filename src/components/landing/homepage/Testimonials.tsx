@@ -51,6 +51,7 @@ export function Testimonials() {
                   src={goal.image}
                   alt={goal.title}
                   loading="lazy"
+                  decoding="async"
                   className="h-44 w-full object-cover"
                 />
               </div>
