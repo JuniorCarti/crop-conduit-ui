@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AgriSmart Partnership Pitch</title>
+    <style>
+      :root {
+        --green: #1f7a4f;
+        --light-green: #e6f4ec;
+        --text: #0f1a14;
+        --muted: #4b5b52;
+        --line: #e4ece7;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: var(--text);
+        background: #ffffff;
+      }
+      .page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 48px 40px 56px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--light-green);
+        color: var(--green);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+      }
+      .title-block h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .title-block p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .tag {
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: var(--light-green);
+        color: var(--green);
+        font-weight: 600;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .section {
+        padding: 22px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .section:last-child { border-bottom: none; }
+      .section h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      .section p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+      .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        background: #fff;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      .card p, .card li { color: var(--muted); font-size: 13px; line-height: 1.5; }
+      ul { margin: 0; padding-left: 18px; }
+      .cta {
+        background: var(--light-green);
+        border-radius: 14px;
+        padding: 16px;
+      }
+      .cta h3 { margin: 0 0 6px; font-size: 16px; }
+      .cta p { margin: 0; font-size: 14px; color: var(--muted); }
+      .contact {
+        margin-top: 8px;
+        font-weight: 600;
+        color: var(--green);
+      }
+      @media print {
+        body { background: #fff; }
+        .page { padding: 32px; }
+      }
+      @media (max-width: 700px) {
+        .page { padding: 32px 20px; }
+        .header { flex-direction: column; align-items: flex-start; }
+        .grid.two, .grid.four { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div class="brand">
+          <div class="logo">AS</div>
+          <div class="title-block">
+            <h1>AgriSmart</h1>
+            <p>Transforming Agriculture Through Data-Driven Decisions</p>
+          </div>
+        </div>
+        <div class="tag">Partnership Brief</div>
+      </header>
+
+      <section class="section">
+        <h2>The Challenge</h2>
+        <p>
+          Smallholder farmers face challenges in unpredictable weather patterns, lack of real-time market information,
+          poor timing of planting and harvesting, and limited access to data-driven advisory tools. These challenges lead
+          to low productivity, post-harvest losses, and reduced income.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Our Solution – AgriSmart</h2>
+        <p>
+          AgriSmart is a digital platform that provides localized climate and weather insights, real-time market price
+          intelligence, data-driven farming recommendations, and decision support tools for farmers. The platform enables
+          farmers to make smarter, timely, and more profitable decisions.
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>Pilot Program</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>Onboarding Farmer Groups</h3>
+            <p>Work with cooperatives to onboard farmers and map priority regions.</p>
+          </div>
+          <div class="card">
+            <h3>Testing Advisory Features</h3>
+            <p>Validate climate, market, and advisory workflows with real users.</p>
+          </div>
+          <div class="card">
+            <h3>Feedback & Refinement</h3>
+            <p>Collect insights from partners to improve usability and impact.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Why Partner With AgriSmart</h2>
+        <ul>
+          <li>Access to farmer networks and pilot communities</li>
+          <li>Opportunity to co-develop innovative agritech solutions</li>
+          <li>Data-driven insights for agricultural programs</li>
+          <li>Scalable model for regional expansion</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>Partnership Opportunities</h2>
+        <div class="grid two">
+          <div class="card">
+            <h3>Pilot Program Collaboration</h3>
+            <p>Co-design pilots aligned with local farming realities.</p>
+          </div>
+          <div class="card">
+            <h3>Research & Data Partnerships</h3>
+            <p>Collaborate on data collection, modeling, and evaluation.</p>
+          </div>
+          <div class="card">
+            <h3>Technology Integration</h3>
+            <p>Integrate AgriSmart insights into existing platforms.</p>
+          </div>
+          <div class="card">
+            <h3>Community Outreach & Training</h3>
+            <p>Support farmer engagement and adoption programs.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Expected Impact</h2>
+        <p>
+          Through partnerships, AgriSmart aims to improve farmer decision-making, reduce post-harvest losses, increase
+          access to market information, and strengthen agricultural resilience.
+        </p>
+      </section>
+
+      <section class="section">
+        <div class="cta">
+          <h3>Let’s Work Together</h3>
+          <p>
+            We are actively seeking partners to collaborate on our pilot phase and scale impact across farming
+            communities.
+          </p>
+          <p class="contact">Contact: agrismartk@gmail.com</p>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
