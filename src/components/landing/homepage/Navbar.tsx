@@ -1,12 +1,13 @@
 ﻿import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
 const navItems = [
   { label: "Home", href: "#top" },
   { label: "Features", href: "#features" },
   { label: "Partners", href: "#partners" },
+  { label: "Partnerships", to: "/partnerships" },
   { label: "Pricing", href: "#pricing" },
   { label: "Team", href: "#team" },
   { label: "Careers", href: "#careers" },
@@ -16,6 +17,12 @@ const navItems = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+  const resolveHref = (href?: string) => {
+    if (!href) return "#";
+    return isHome ? href : `/${href}`;
+  };
 
   return (
     <motion.header
@@ -33,19 +40,25 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center justify-center gap-4 text-sm font-medium text-muted-foreground lg:flex">
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={
-                item.isButton
-                  ? "rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
-                  : "transition hover:text-foreground"
-              }
-            >
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) =>
+            item.to ? (
+              <Link key={item.label} to={item.to} className="transition hover:text-foreground">
+                {item.label}
+              </Link>
+            ) : (
+              <a
+                key={item.label}
+                href={resolveHref(item.href)}
+                className={
+                  item.isButton
+                    ? "rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
+                    : "transition hover:text-foreground"
+                }
+              >
+                {item.label}
+              </a>
+            )
+          )}
         </nav>
 
         <div className="flex items-center justify-end gap-3">
@@ -85,20 +98,31 @@ export function Navbar() {
                   Sign In
                 </Link>
               </div>
-              {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className={
-                    item.isButton
-                      ? "agri-btn-primary w-full justify-center"
-                      : "transition hover:text-foreground"
-                  }
-                  onClick={() => setOpen(false)}
-                >
-                  {item.label}
-                </a>
-              ))}
+              {navItems.map((item) =>
+                item.to ? (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className="transition hover:text-foreground"
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.label}
+                    href={resolveHref(item.href)}
+                    className={
+                      item.isButton
+                        ? "agri-btn-primary w-full justify-center"
+                        : "transition hover:text-foreground"
+                    }
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                )
+              )}
             </div>
           </motion.div>
         ) : null}
