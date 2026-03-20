@@ -76,6 +76,8 @@ export function Donate() {
               src={activeSlide.image}
               alt={activeSlide.title}
               className="h-full w-full object-cover transition duration-700"
+              loading="lazy"
+              decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-black/10" />
             <div className="absolute inset-0 flex flex-col justify-end gap-2 p-6 text-white">
