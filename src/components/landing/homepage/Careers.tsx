@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+ï»¿import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 
@@ -146,7 +146,7 @@ export function Careers() {
               title: "Internships",
               description:
                 "AgriSmart plans to introduce internship opportunities for students and young professionals interested in agritech innovation, digital platforms, and social impact.",
-              cta: "Internships – Coming Soon",
+              cta: "Internships â€“ Coming Soon",
               href: "#internships",
               disabled: true,
             },
@@ -191,7 +191,7 @@ export function Careers() {
                 className="agri-card flex h-full flex-col gap-4"
               >
                 <div className="overflow-hidden rounded-2xl bg-muted">
-                  <img src={role.image} alt={role.title} className="h-36 w-full object-cover" loading="lazy" />
+                  <img src={role.image} alt={role.title} className="h-36 w-full object-cover" loading="lazy" decoding="async" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{role.title}</p>
@@ -235,7 +235,7 @@ export function Careers() {
               className="mt-4 w-full justify-center rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary/70 shadow-sm"
               disabled
             >
-              Internships – Coming Soon
+              Internships â€“ Coming Soon
             </button>
           </div>
         </div>
@@ -371,3 +371,4 @@ export function Careers() {
     </section>
   );
 }
+
