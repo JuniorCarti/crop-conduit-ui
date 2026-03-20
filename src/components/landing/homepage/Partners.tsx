@@ -67,6 +67,7 @@ export function Partners() {
                   alt={`${partner.name} logo`}
                   className="max-h-10 w-auto transition duration-300"
                   loading="lazy"
+                  decoding="async"
                 />
               </div>
             ))}
@@ -88,6 +89,7 @@ export function Partners() {
                 alt={`${partner.name} logo`}
                 className="max-h-12 w-auto transition duration-300"
                 loading="lazy"
+                decoding="async"
               />
             </motion.div>
           ))}
