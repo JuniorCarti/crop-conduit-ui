@@ -123,7 +123,13 @@ export function VolunteerOpportunities() {
               className="agri-card flex h-full flex-col gap-3"
             >
               <div className="overflow-hidden rounded-2xl bg-muted">
-                <img src={role.image} alt={role.title} className="h-36 w-full object-cover" loading="lazy" />
+                <img
+                  src={role.image}
+                  alt={role.title}
+                  className="h-36 w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">{role.title}</p>
