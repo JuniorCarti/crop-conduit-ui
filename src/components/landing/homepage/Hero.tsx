@@ -21,7 +21,7 @@ export function Hero() {
         muted
         loop
         playsInline
-        preload="none"
+        preload="metadata"
         poster="/images/africa.jpg"
         id="bg-video"
         aria-hidden="true"
