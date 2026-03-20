@@ -6,7 +6,7 @@ const cards = [
     description:
       "We collaborate with farmer cooperatives, NGOs, research institutions, and agribusiness organizations to pilot and scale data-driven farming solutions.",
     cta: "Become a Partner",
-    href: "#contact",
+    href: "/partnerships",
     image:
       "https://plus.unsplash.com/premium_photo-1661329844154-a18092819637?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjl8fHBhcnRuZXJzaGlwfGVufDB8fDB8fHww",
   },
@@ -55,7 +55,13 @@ export function WorkWithUs() {
               className="agri-card flex h-full flex-col gap-3 transition hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="overflow-hidden rounded-2xl bg-muted">
-                <img src={card.image} alt={card.title} className="h-40 w-full object-cover" loading="lazy" />
+                <img
+                  src={card.image}
+                  alt={card.title}
+                  className="h-40 w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
               <div>
                 <p className="text-base font-semibold text-foreground">{card.title}</p>
