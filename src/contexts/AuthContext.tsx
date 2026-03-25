@@ -10,7 +10,10 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -54,6 +57,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { t, i18n } = useTranslation();
+  const siteUrl =
+    (import.meta.env?.VITE_PUBLIC_SITE_URL as string | undefined) ||
+    (typeof window !== "undefined" ? window.location.origin : "https://agrismartkenya.com");
+  const actionCodeSettings = { url: siteUrl, handleCodeInApp: false };
+
+  const logAuthError = (error: any) => {
+    if (error?.code || error?.message) {
+      console.error("Firebase auth error:", error.code, error.message);
+    }
+  };
 
   // Get Firebase error message
   const getErrorMessage = (error: any): string => {
@@ -72,6 +85,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return t("auth.errors.weakPassword");
       case "auth/network-request-failed":
         return t("auth.errors.network");
+      case "auth/unauthorized-domain":
+        return t("auth.errors.unauthorizedDomain") || "Unauthorized domain. Contact support.";
+      case "auth/popup-blocked":
+        return t("auth.errors.popupBlocked") || "Popup blocked. Please allow popups and try again.";
+      case "auth/invalid-credential":
+        return t("auth.errors.invalidCredential") || "Invalid credentials. Please try again.";
       case "auth/too-many-requests":
         return t("auth.errors.tooManyRequests");
       case "auth/invalid-phone-number":
@@ -94,10 +113,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (displayName && userCredential.user) {
         await updateProfile(userCredential.user, { displayName });
       }
+      if (userCredential.user) {
+        await sendEmailVerification(userCredential.user, actionCodeSettings);
+      }
       
       toast.success(t("auth.signupSuccess"));
       return { user: userCredential.user };
     } catch (error: any) {
+      logAuthError(error);
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
       throw error;
@@ -110,6 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success(t("auth.loginSuccess"));
     } catch (error: any) {
+      logAuthError(error);
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
       throw error;
@@ -122,6 +146,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await signOut(auth);
       toast.success(t("auth.logoutSuccess"));
     } catch (error: any) {
+      logAuthError(error);
       toast.error(t("auth.errors.generic"));
       throw error;
     }
@@ -130,9 +155,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Reset password
   const resetPassword = async (email: string) => {
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
       toast.success(t("auth.passwordResetSent"));
     } catch (error: any) {
+      logAuthError(error);
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
       throw error;
@@ -150,6 +176,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       toast.success(t("auth.loginSuccess"));
       return { user: result.user };
     } catch (error: any) {
+      logAuthError(error);
+      if (error?.code === "auth/popup-closed-by-user") {
+        toast.info("Sign-in was cancelled before completion.");
+        throw error;
+      }
+      if (error?.code === "auth/popup-blocked") {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({
+          prompt: "select_account",
+        });
+        await signInWithRedirect(auth, provider);
+        return { user: auth.currentUser as User };
+      }
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
       throw error;
@@ -171,6 +210,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       toast.success(t("auth.phoneOtpSent"));
       return confirmationResult;
     } catch (error: any) {
+      logAuthError(error);
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
       throw error;
@@ -184,6 +224,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       toast.success(t("auth.phoneVerified"));
       return { user: result.user };
     } catch (error: any) {
+      logAuthError(error);
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
       throw error;
@@ -199,6 +240,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    const resolveRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          toast.success(t("auth.loginSuccess"));
+        }
+      } catch (error: any) {
+        logAuthError(error);
+      }
+    };
+
+    resolveRedirect();
+  }, [t]);
 
   useEffect(() => {
     if (!currentUser?.uid) return;
