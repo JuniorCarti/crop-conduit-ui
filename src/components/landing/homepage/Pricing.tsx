@@ -27,12 +27,12 @@ const plans: Plan[] = [
     priceYearly: "Free Forever",
     billing: "forever",
     features: [
-      "📊 Real-time market price alerts for major crops",
-      "🌦 Localized climate and weather forecasts",
-      "🌦 Planting window recommendations based on forecast data",
-      "🤝 SMS alerts for farmers with low internet access",
-      "🤝 Access to buyer marketplace to discover potential buyers",
-      "📈 Mobile-friendly dashboard",
+      "Real-time market price alerts for major crops",
+      "Localized climate and weather forecasts",
+      "Planting window recommendations based on forecast data",
+      "SMS alerts for farmers with low internet access",
+      "Access to buyer marketplace to discover potential buyers",
+      "Mobile-friendly dashboard",
     ],
     cta: "Get Started Free",
     href: "/signup",
@@ -48,13 +48,13 @@ const plans: Plan[] = [
     trial: "60-day free trial",
     highlight: true,
     features: [
-      "📈 Manage and monitor up to 500 farmers",
-      "📊 Cooperative-level market price dashboards",
-      "🌦 Regional climate forecasting insights",
-      "🌦 Planting decision support for cooperative members",
-      "📊 Market demand signals and price trends",
-      "🤝 Tools to connect cooperative farmers with buyers",
-      "📈 Cooperative analytics and production insights",
+      "Manage and monitor up to 500 farmers",
+      "Cooperative-level market price dashboards",
+      "Regional climate forecasting insights",
+      "Planting decision support for cooperative members",
+      "Market demand signals and price trends",
+      "Tools to connect cooperative farmers with buyers",
+      "Cooperative analytics and production insights",
     ],
     cta: "Start 60-Day Free Trial",
     href: "/signup",
@@ -69,13 +69,13 @@ const plans: Plan[] = [
     savings: "Save KSh 150,000 with yearly billing",
     badge: "Institutional Plan",
     features: [
-      "📈 Large-scale farmer program management",
-      "📊 County or national agricultural dashboards",
-      "📊 Market price intelligence across regions",
-      "🌦 Climate forecasting insights for agricultural planning",
-      "📈 Impact monitoring and reporting tools",
-      "📊 API integrations for external systems",
-      "🤝 Dedicated technical support",
+      "Large-scale farmer program management",
+      "County or national agricultural dashboards",
+      "Market price intelligence across regions",
+      "Climate forecasting insights for agricultural planning",
+      "Impact monitoring and reporting tools",
+      "API integrations for external systems",
+      "Dedicated technical support",
     ],
     cta: "Contact Sales",
     href: "#contact",
@@ -91,10 +91,11 @@ export function Pricing() {
   };
 
   return (
-    <section id="pricing" className="py-12">
+    <section id="pricing" className="py-16 md:py-20">
       <div className="app-page-shell space-y-10">
         <div className="text-center">
-          <h2 className="font-heading text-3xl font-semibold text-foreground md:text-4xl">
+          <p className="agri-kicker">Pricing</p>
+          <h2 className="agri-display mt-4">
             Simple Pricing for Smarter Farming Decisions
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-sm text-muted-foreground md:text-base">
@@ -108,7 +109,7 @@ export function Pricing() {
           <button
             type="button"
             onClick={toggleBilling}
-            className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-primary transition hover:border-primary/40"
+            className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-4 py-1 text-primary shadow-sm transition hover:border-primary/40"
             aria-label="Toggle billing frequency"
           >
             {billing === "monthly" ? <ToggleLeft className="h-5 w-5" /> : <ToggleRight className="h-5 w-5" />}
@@ -201,7 +202,7 @@ export function Pricing() {
         </div>
 
         <div className="agri-card text-center">
-          <h3 className="text-xl font-semibold text-foreground">Built for Africa’s Smallholder Farmers</h3>
+          <h3 className="text-xl font-semibold text-foreground">Built for Africa's Smallholder Farmers</h3>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
             <span className="rounded-full border border-primary/10 bg-primary/5 px-3 py-1">
               Supports climate-smart agriculture
@@ -218,3 +219,6 @@ export function Pricing() {
     </section>
   );
 }
+
+
+
