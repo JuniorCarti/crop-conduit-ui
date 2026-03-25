@@ -20,7 +20,7 @@ Parameters:
     Default: YOUR_FIREBASE_PROJECT_ID
   AllowedOrigins:
     Type: String
-    Default: "http://localhost:8080,http://127.0.0.1:8080,https://crop-conduit-ui.web.app"
+    Default: "http://localhost:8080,http://127.0.0.1:8080,https://agrismartkenya.com"
   AzureSpeechSecretArn:
     Type: String
     Default: arn:aws:secretsmanager:us-east-2:762233767298:secret:agrismart/asha/azure-speech-pxpAuA
@@ -132,7 +132,7 @@ Resources:
     Properties:
       CorsConfiguration:
         AllowOrigins:
-          - https://crop-conduit-ui.web.app
+          - https://agrismartkenya.com
           - http://localhost:8080
           - http://127.0.0.1:8080
         AllowHeaders:
@@ -480,7 +480,7 @@ Resources:
         CorsRules:
           - AllowedOrigins:
               - http://localhost:8080
-              - https://crop-conduit-ui.web.app
+              - https://agrismartkenya.com
             AllowedHeaders:
               - '*'
             AllowedMethods:
