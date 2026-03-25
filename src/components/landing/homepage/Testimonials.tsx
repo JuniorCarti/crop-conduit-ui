@@ -26,48 +26,51 @@ const goals = [
 
 export function Testimonials() {
   return (
-    <section id="about" className="py-12">
+    <section id="about" className="py-16 md:py-20">
       <div className="app-page-shell space-y-10">
-        <div className="max-w-2xl">
-          <p className="agri-section-label">Pilot Impact Goals</p>
-          <h2 className="agri-section-title">Pilot Impact Goals</h2>
-          <p className="mt-4 text-muted-foreground">
+        <div className="agri-panel space-y-8">
+          <div className="max-w-2xl">
+            <p className="agri-kicker">Pilot Impact Goals</p>
+            <h2 className="agri-display mt-4">Pilot Impact Goals</h2>
+            <p className="mt-3 text-sm text-muted-foreground md:text-base">
             AgriSmart is preparing for its first pilot deployment with farmer cooperatives. These are the outcomes we aim
             to achieve through real-time climate insights and market intelligence.
-          </p>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-3">
+            </p>
+          </div>
+          <div className="grid gap-6 lg:grid-cols-3">
           {goals.map((goal, index) => (
             <motion.div
               key={goal.title}
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
-            viewport={{ once: true, amount: 0.4 }}
-            className="agri-card"
-          >
+              viewport={{ once: true, amount: 0.4 }}
+              className="agri-card group hover:-translate-y-1 hover:shadow-lg"
+            >
               <div className="overflow-hidden rounded-2xl">
                 <img
                   src={goal.image}
                   alt={goal.title}
                   loading="lazy"
                   decoding="async"
-                  className="h-44 w-full object-cover"
+                  className="h-44 w-full object-cover transition duration-700 group-hover:scale-105"
                 />
               </div>
               <h3 className="mt-4 text-lg font-semibold text-foreground">{goal.title}</h3>
               <p className="mt-3 text-sm text-muted-foreground">{goal.description}</p>
-          </motion.div>
-        ))}
-      </div>
-        <div className="agri-card">
-          <h3 className="text-sm font-semibold text-foreground">Pilot Deployment in Progress</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Pilot Deployment in Progress. Real farmer stories and impact results will be shared here once the pilot
-            phase is completed.
-          </p>
+            </motion.div>
+          ))}
+          </div>
+          <div className="rounded-3xl border border-primary/10 bg-white/80 p-5 text-center">
+            <h3 className="text-sm font-semibold text-foreground">Pilot Deployment in Progress</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Pilot Deployment in Progress. Real farmer stories and impact results will be shared here once the pilot
+              phase is completed.
+            </p>
+          </div>
         </div>
       </div>
     </section>
   );
 }
+
