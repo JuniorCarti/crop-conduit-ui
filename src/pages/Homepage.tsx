@@ -26,10 +26,11 @@ import { Footer } from "@/components/landing/homepage/Footer";
 
 export default function Homepage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f7f7f2] via-[#f4f7f0] to-[#eef4f7] text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-[#f8faf9] via-[#f1f7f2] to-[#eef6f0] text-foreground">
       <Navbar />
       <main>
         <Hero />
+        <RecognitionStrip />
         <EidGreeting />
         <Introduction />
         <PurposeRationale />
@@ -42,7 +43,6 @@ export default function Homepage() {
         <Testimonials />
         <FarmerJourney />
         <Partners />
-        <RecognitionStrip />
         <Pricing />
         <TrustSecurity />
         <WorkWithUs />
@@ -57,5 +57,6 @@ export default function Homepage() {
     </div>
   );
 }
+
 
 
