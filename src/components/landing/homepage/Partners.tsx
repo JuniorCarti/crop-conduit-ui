@@ -40,7 +40,7 @@ const carousel = [...partners, ...partners];
 
 export function Partners() {
   return (
-    <section id="partners" className="py-12">
+    <section id="partners" className="py-16 md:py-20">
       <div className="app-page-shell space-y-10">
         <div className="text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
@@ -55,46 +55,49 @@ export function Partners() {
           </p>
         </div>
 
-        <div className="group relative overflow-hidden">
-          <div className="flex w-max items-center gap-6 animate-partners-marquee group-hover:[animation-play-state:paused]">
-            {carousel.map((partner, index) => (
-              <div
-                key={`${partner.name}-${index}`}
-                className="flex h-20 w-40 items-center justify-center rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm transition duration-300 hover:scale-105 hover:shadow-md"
+        <div className="agri-panel space-y-6">
+          <div className="group relative overflow-hidden">
+            <div className="flex w-max items-center gap-6 animate-partners-marquee group-hover:[animation-play-state:paused]">
+              {carousel.map((partner, index) => (
+                <div
+                  key={`${partner.name}-${index}`}
+                  className="flex h-20 w-40 items-center justify-center rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm transition duration-300 hover:scale-105 hover:shadow-md"
+                >
+                  <img
+                    src={partner.src}
+                    alt={`${partner.name} logo`}
+                    className="max-h-10 w-auto transition duration-300"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+            {partners.map((partner) => (
+              <motion.div
+                key={partner.name}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                viewport={{ once: true, amount: 0.4 }}
+                className="flex h-24 items-center justify-center rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm transition duration-300 hover:scale-105 hover:shadow-md"
               >
                 <img
                   src={partner.src}
                   alt={`${partner.name} logo`}
-                  className="max-h-10 w-auto transition duration-300"
+                  className="max-h-12 w-auto transition duration-300"
                   loading="lazy"
                   decoding="async"
                 />
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-          {partners.map((partner) => (
-            <motion.div
-              key={partner.name}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              viewport={{ once: true, amount: 0.4 }}
-              className="flex h-24 items-center justify-center rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm transition duration-300 hover:scale-105 hover:shadow-md"
-            >
-              <img
-                src={partner.src}
-                alt={`${partner.name} logo`}
-                className="max-h-12 w-auto transition duration-300"
-                loading="lazy"
-                decoding="async"
-              />
-            </motion.div>
-          ))}
         </div>
       </div>
     </section>
   );
 }
+
