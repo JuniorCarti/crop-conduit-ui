@@ -56,14 +56,14 @@ const compliance = [
 
 export function TrustSecurity() {
   return (
-    <section className="py-12">
+    <section className="py-16 md:py-20">
       <div className="app-page-shell space-y-8">
         <div className="max-w-3xl">
-          <p className="agri-section-label">Trust & Data Ethics</p>
-          <h2 className="agri-section-title">
-            Security, Privacy, and Responsible AI — Built for Farmer Trust
+          <p className="agri-kicker">Trust & Data Ethics</p>
+          <h2 className="agri-display mt-4">
+            Security, Privacy, and Responsible AI {"\u2014"} Built for Farmer Trust
           </h2>
-          <p className="mt-3 text-sm text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground md:text-base">
             AgriSmart is designed with farmer trust at its core. From data collection to AI recommendations, every step
             is built to ensure privacy, security, transparency, and accountability.
           </p>
@@ -80,7 +80,7 @@ export function TrustSecurity() {
               key={item.title}
               className="rounded-3xl border border-border/50 bg-white/80 p-5 shadow-lg backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-12 sm:w-12">
                 <item.icon className="h-5 w-5" />
               </div>
               <div className="mt-4 space-y-3">
@@ -144,3 +144,5 @@ export function TrustSecurity() {
     </section>
   );
 }
+
+
