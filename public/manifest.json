@@ -1,8 +1,10 @@
 {
   "name": "AgriSmart",
   "short_name": "AgriSmart",
-  "description": "Farm intelligence platform for market forecasting, crop intelligence, and resource optimization.",
-  "start_url": "/",
+  "description": "AI-powered farm intelligence platform helping smallholder farmers with climate insights, market access, and smarter decisions.",
+  "start_url": "https://agrismartkenya.com/",
+  "scope": "https://agrismartkenya.com/",
+  "id": "https://agrismartkenya.com/",
   "display": "standalone",
   "background_color": "#dce9ff",
   "theme_color": "#dce9ff",
