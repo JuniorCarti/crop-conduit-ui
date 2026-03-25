@@ -3,16 +3,17 @@ import { Link } from "react-router-dom";
 
 export function Introduction() {
   return (
-    <section id="introduction" className="py-12">
+    <section id="introduction" className="py-16 md:py-20">
       <div className="app-page-shell">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             viewport={{ once: true, amount: 0.4 }}
-            className="agri-card"
+            className="agri-card relative overflow-hidden bg-white/80"
           >
+            <div className="pointer-events-none absolute -right-10 -top-14 h-32 w-32 rounded-full bg-emerald-200/30 blur-3xl" />
             <p className="agri-section-label">Introduction</p>
             <h2 className="agri-section-title">Designed for the backbone of African food systems</h2>
             <p className="mt-4 text-muted-foreground">
@@ -32,13 +33,13 @@ export function Introduction() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}
             viewport={{ once: true, amount: 0.4 }}
-            className="relative h-full overflow-hidden rounded-3xl shadow-card"
+            className="group relative h-full overflow-hidden rounded-3xl shadow-card"
           >
             <div className="relative">
               <img
                 src="/images/africa.jpg"
                 alt="African smallholder farmer holding crops"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
               />
@@ -50,3 +51,4 @@ export function Introduction() {
     </section>
   );
 }
+
