@@ -24,16 +24,16 @@ const metrics = [
 
 export function FarmerJourney() {
   return (
-    <section className="py-12">
+    <section className="py-16 md:py-20">
       <div className="app-page-shell space-y-8">
-        <div className="grid gap-6 md:grid-cols-2 md:items-center">
+        <div className="agri-panel grid gap-6 md:grid-cols-2 md:items-center">
           <div className="space-y-4">
-            <p className="agri-section-label">Farmer Impact Story</p>
+            <p className="agri-kicker">Farmer Impact Story</p>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Mary Mathuli · Kisumu, Kenya</p>
-              <h2 className="agri-section-title mt-2">A day in the life with AgriSmart</h2>
+              <h2 className="agri-display mt-3">A day in the life with AgriSmart</h2>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground md:text-base">
               Climate uncertainty pushed Mary to switch from crop farming to poultry, which required less rainfall.
               After adopting AgriSmart, she returned to farming because she could clearly see when to plant, when to
               harvest, and where to sell using real-time climate and market intelligence.
@@ -74,8 +74,8 @@ export function FarmerJourney() {
         <div className="grid gap-4 sm:grid-cols-3">
           {metrics.map((metric) => (
             <div key={metric.label} className="agri-card text-center">
-              <p className="text-2xl font-semibold text-foreground">{metric.value}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-muted-foreground">{metric.label}</p>
+              <p className="text-3xl font-semibold text-foreground">{metric.value}</p>
+              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">{metric.label}</p>
             </div>
           ))}
         </div>
@@ -124,3 +124,4 @@ export function FarmerJourney() {
     </section>
   );
 }
+
