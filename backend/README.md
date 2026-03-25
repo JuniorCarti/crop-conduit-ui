@@ -92,7 +92,7 @@ Production-ready, minimal-cost serverless backend for a community feed using AWS
 - Private bucket with Block Public Access enabled
 - CORS: allow browser PUT/GET from:
   - `http://localhost:5173`
-  - `https://crop-conduit-ui.web.app`
+  - `https://agrismartkenya.com`
 
 **Key pattern**
 ```
@@ -176,7 +176,7 @@ sam deploy --guided --region us-east-2 \
     ReactionsTableName=agrismart-community-reactions \
     MediaBucketName=agrismart-community-media \
     FirebaseProjectId=YOUR_FIREBASE_PROJECT_ID \
-    AllowedOrigins="http://localhost:5173,https://crop-conduit-ui.web.app"
+    AllowedOrigins="http://localhost:5173,https://agrismartkenya.com"
 ```
 
 Optional PowerShell helper:
@@ -317,7 +317,7 @@ aws s3api put-public-access-block --region us-east-2 --bucket agrismart-communit
 
 aws s3api put-bucket-cors --region us-east-2 --bucket agrismart-community-media --cors-configuration '{
   "CORSRules":[{
-    "AllowedOrigins":["http://localhost:5173","https://crop-conduit-ui.web.app"],
+    "AllowedOrigins":["http://localhost:5173","https://agrismartkenya.com"],
     "AllowedMethods":["PUT","GET","HEAD"],
     "AllowedHeaders":["*"],
     "MaxAgeSeconds":3000
@@ -409,7 +409,7 @@ aws lambda create-function --region us-east-2 \
   --handler handlers/createPost.handler \
   --role $ROLE_ARN \
   --zip-file fileb://function.zip \
-  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://crop-conduit-ui.web.app}"
+  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://agrismartkenya.com}"
 
 aws lambda create-function --region us-east-2 \
   --function-name agrismart-list-posts \
@@ -417,7 +417,7 @@ aws lambda create-function --region us-east-2 \
   --handler handlers/listPosts.handler \
   --role $ROLE_ARN \
   --zip-file fileb://function.zip \
-  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://crop-conduit-ui.web.app}"
+  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://agrismartkenya.com}"
 
 aws lambda create-function --region us-east-2 \
   --function-name agrismart-get-post \
@@ -425,7 +425,7 @@ aws lambda create-function --region us-east-2 \
   --handler handlers/getPost.handler \
   --role $ROLE_ARN \
   --zip-file fileb://function.zip \
-  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://crop-conduit-ui.web.app}"
+  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://agrismartkenya.com}"
 
 aws lambda create-function --region us-east-2 \
   --function-name agrismart-create-comment \
@@ -433,7 +433,7 @@ aws lambda create-function --region us-east-2 \
   --handler handlers/createComment.handler \
   --role $ROLE_ARN \
   --zip-file fileb://function.zip \
-  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://crop-conduit-ui.web.app}"
+  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://agrismartkenya.com}"
 
 aws lambda create-function --region us-east-2 \
   --function-name agrismart-list-comments \
@@ -441,7 +441,7 @@ aws lambda create-function --region us-east-2 \
   --handler handlers/listComments.handler \
   --role $ROLE_ARN \
   --zip-file fileb://function.zip \
-  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://crop-conduit-ui.web.app}"
+  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://agrismartkenya.com}"
 
 aws lambda create-function --region us-east-2 \
   --function-name agrismart-toggle-reaction \
@@ -449,7 +449,7 @@ aws lambda create-function --region us-east-2 \
   --handler handlers/toggleReaction.handler \
   --role $ROLE_ARN \
   --zip-file fileb://function.zip \
-  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://crop-conduit-ui.web.app}"
+  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://agrismartkenya.com}"
 
 aws lambda create-function --region us-east-2 \
   --function-name agrismart-presign-upload \
@@ -457,7 +457,7 @@ aws lambda create-function --region us-east-2 \
   --handler handlers/presignUpload.handler \
   --role $ROLE_ARN \
   --zip-file fileb://function.zip \
-  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://crop-conduit-ui.web.app}"
+  --environment "Variables={POSTS_TABLE=agrismart-community-posts,COMMENTS_TABLE=agrismart-community-comments,REACTIONS_TABLE=agrismart-community-reactions,MEDIA_BUCKET=agrismart-community-media,FIREBASE_PROJECT_ID=YOUR_FIREBASE_PROJECT_ID,ALLOWED_ORIGINS=http://localhost:5173,https://agrismartkenya.com}"
 ```
 
 ### Create HTTP API + Routes
@@ -465,7 +465,7 @@ aws lambda create-function --region us-east-2 \
 API_ID=$(aws apigatewayv2 create-api --region us-east-2 \
   --name agrismart-community-api \
   --protocol-type HTTP \
-  --cors-configuration 'AllowOrigins=http://localhost:5173|https://crop-conduit-ui.web.app,AllowHeaders=Authorization|Content-Type,AllowMethods=GET|POST|OPTIONS' \
+  --cors-configuration 'AllowOrigins=http://localhost:5173|https://agrismartkenya.com,AllowHeaders=Authorization|Content-Type,AllowMethods=GET|POST|OPTIONS' \
   --query ApiId --output text)
 
 # Integrations
