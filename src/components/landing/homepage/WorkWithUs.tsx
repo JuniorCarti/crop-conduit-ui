@@ -32,19 +32,20 @@ const cards = [
 
 export function WorkWithUs() {
   return (
-    <section id="work-with-us" className="py-12">
+    <section id="work-with-us" className="py-16 md:py-20">
       <div className="app-page-shell space-y-8">
-        <div className="max-w-3xl">
-          <p className="agri-section-label">Work With Us to Transform African Agriculture</p>
-          <h2 className="agri-section-title">Work With Us to Transform African Agriculture</h2>
-          <p className="mt-3 text-muted-foreground">
+        <div className="agri-panel-muted space-y-8">
+          <div className="max-w-3xl">
+            <p className="agri-kicker">Work With Us</p>
+            <h2 className="agri-display mt-4">Work With Us to Transform African Agriculture</h2>
+            <p className="mt-3 text-sm text-muted-foreground md:text-base">
             AgriSmart is building tools that empower farmers with climate intelligence, market insights, and data-driven
             decision making. We collaborate with partners, volunteers, and young innovators who want to create meaningful
             impact in agriculture.
-          </p>
-        </div>
+            </p>
+          </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card, index) => (
             <motion.div
               key={card.title}
@@ -52,13 +53,13 @@ export function WorkWithUs() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.03 }}
               viewport={{ once: true, amount: 0.3 }}
-              className="agri-card flex h-full flex-col gap-3 transition hover:-translate-y-1 hover:shadow-lg"
+              className="agri-card group flex h-full flex-col gap-3 transition hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="overflow-hidden rounded-2xl bg-muted">
                 <img
                   src={card.image}
                   alt={card.title}
-                  className="h-40 w-full object-cover"
+                  className="h-44 w-full object-cover transition duration-700 group-hover:scale-105"
                   loading="lazy"
                   decoding="async"
                 />
@@ -72,8 +73,10 @@ export function WorkWithUs() {
               </a>
             </motion.div>
           ))}
+          </div>
         </div>
       </div>
     </section>
   );
 }
+
