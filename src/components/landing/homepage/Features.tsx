@@ -26,19 +26,21 @@ const features = [
 
 export function Features() {
   return (
-    <section id="features" className="py-12">
-      <div className="app-page-shell space-y-10">
-        <div className="max-w-2xl">
-          <p className="agri-section-label">Platform Features</p>
-          <h2 className="agri-section-title">
-            Every signal your farm needs, unified in one dashboard
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            AgriSmart blends climate intelligence, crop performance, and market data into a single, cinematic workflow.
-          </p>
-        </div>
+    <section id="features" className="relative py-16 md:py-20">
+      <div className="pointer-events-none absolute inset-x-0 top-6 h-40 bg-gradient-to-b from-emerald-50/60 to-transparent" />
+      <div className="app-page-shell">
+        <div className="agri-panel grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div className="max-w-xl">
+            <p className="agri-kicker">Platform Features</p>
+            <h2 className="agri-display mt-4">
+              Every signal your farm needs, unified in one dashboard
+            </h2>
+            <p className="mt-4 text-sm text-muted-foreground md:text-base">
+              AgriSmart blends climate intelligence, crop performance, and market data into a single, cinematic workflow.
+            </p>
+          </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
@@ -48,10 +50,10 @@ export function Features() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
                 viewport={{ once: true, amount: 0.4 }}
-                className="agri-card"
+                className="agri-card group bg-white/80 hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-200/50 sm:h-11 sm:w-11">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
@@ -62,8 +64,10 @@ export function Features() {
               </motion.div>
             );
           })}
+          </div>
         </div>
       </div>
     </section>
   );
 }
+
