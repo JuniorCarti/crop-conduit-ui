@@ -17,19 +17,23 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="solutions" className="py-12">
+    <section id="solutions" className="relative py-16 md:py-20">
       <div className="app-page-shell">
-        <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="agri-panel grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
           <div>
-            <p className="agri-section-label">How It Works</p>
-            <h2 className="agri-section-title">
+            <p className="agri-kicker">How It Works</p>
+            <h2 className="agri-display mt-4">
               From insight to harvest-ready decisions
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground md:text-base">
               AgriSmart connects every signal from field sensors to market demand so your team can act faster.
             </p>
           </div>
-          <div className="space-y-6">
+          <div className="relative space-y-6">
+            <span
+              className="pointer-events-none absolute left-6 top-4 hidden h-[calc(100%-2rem)] w-px bg-emerald-100 md:block"
+              aria-hidden="true"
+            />
             {steps.map((step, index) => (
               <motion.div
                 key={step.title}
@@ -37,10 +41,10 @@ export function HowItWorks() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
                 viewport={{ once: true, amount: 0.4 }}
-                className="agri-card"
+                className="agri-card hover:-translate-y-1 hover:shadow-lg"
               >
                 <div className="flex items-start gap-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-base font-semibold text-emerald-700">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 text-base font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-200/60 sm:h-12 sm:w-12">
                     0{index + 1}
                   </div>
                   <div>
@@ -56,3 +60,4 @@ export function HowItWorks() {
     </section>
   );
 }
+
