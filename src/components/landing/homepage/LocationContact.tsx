@@ -18,12 +18,12 @@ L.Icon.Default.mergeOptions({
 
 export function LocationContact() {
   return (
-    <section id="contact" className="py-12">
+    <section id="contact" className="py-16 md:py-20">
       <div className="app-page-shell space-y-10">
         <div className="max-w-2xl">
-          <p className="agri-section-label">Our Location</p>
-          <h2 className="agri-section-title">Visit AgriSmart in Kisumu</h2>
-          <p className="mt-4 text-muted-foreground">
+          <p className="agri-kicker">Our Location</p>
+          <h2 className="agri-display mt-4">Visit AgriSmart in Kisumu</h2>
+          <p className="mt-3 text-sm text-muted-foreground md:text-base">
             Visit or contact AgriSmart at our headquarters in Kisumu as we build the future of smart agriculture across
             Kenya.
           </p>
@@ -68,8 +68,8 @@ export function LocationContact() {
                 <Clock className="mt-0.5 h-5 w-5 text-primary" />
                 <div>
                   <p className="font-semibold text-foreground">Office Hours</p>
-                  <p>Monday – Friday</p>
-                  <p>8:00 AM – 5:00 PM</p>
+                  <p>Monday - Friday</p>
+                  <p>8:00 AM - 5:00 PM</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -111,7 +111,7 @@ export function LocationContact() {
                         Email: <a href="mailto:agrismartk@gmail.com">agrismartk@gmail.com</a>
                       </p>
                       <p>Phone: +254 113 245 740</p>
-                      <p>Office Hours: Mon – Fri, 8:00 AM – 5:00 PM</p>
+                      <p>Office Hours: Mon - Fri, 8:00 AM - 5:00 PM</p>
                     </div>
                   </Popup>
                 </Marker>
@@ -133,3 +133,6 @@ export function LocationContact() {
     </section>
   );
 }
+
+
+
