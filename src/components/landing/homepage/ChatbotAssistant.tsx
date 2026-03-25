@@ -19,7 +19,7 @@ const quickQuestions = [
 ];
 
 const greeting =
-  "Hello! 👋\nI'm the AgriSmart Assistant.\nI can help answer questions about our platform, pricing, partnerships, and how farmers use AgriSmart.";
+  "Hello! ðŸ‘‹\nI'm the AgriSmart Assistant.\nI can help answer questions about our platform, pricing, partnerships, and how farmers use AgriSmart.";
 
 type Answer = { text: string; unknown?: boolean };
 
@@ -258,3 +258,4 @@ export function ChatbotAssistant() {
     </>
   );
 }
+
