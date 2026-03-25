@@ -122,12 +122,12 @@ export function Careers() {
   };
 
   return (
-    <section id="careers" className="py-12">
+    <section id="careers" className="py-16 md:py-20">
       <div className="app-page-shell space-y-10">
         <div className="max-w-3xl">
-          <p className="agri-section-label">Careers at AgriSmart</p>
-          <h2 className="agri-section-title">Careers at AgriSmart</h2>
-          <p className="mt-3 text-muted-foreground">
+          <p className="agri-kicker">Careers</p>
+          <h2 className="agri-display mt-4">Careers at AgriSmart</h2>
+          <p className="mt-3 text-sm text-muted-foreground md:text-base">
             Join us in transforming agriculture with data-driven technology. Work with a passionate team improving the
             livelihoods of farmers.
           </p>
@@ -146,7 +146,7 @@ export function Careers() {
               title: "Internships",
               description:
                 "AgriSmart plans to introduce internship opportunities for students and young professionals interested in agritech innovation, digital platforms, and social impact.",
-              cta: "Internships – Coming Soon",
+              cta: "Internships - Coming Soon",
               href: "#internships",
               disabled: true,
             },
@@ -188,11 +188,11 @@ export function Careers() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 viewport={{ once: true, amount: 0.3 }}
-                className="agri-card flex h-full flex-col gap-4"
-              >
-                <div className="overflow-hidden rounded-2xl bg-muted">
-                  <img src={role.image} alt={role.title} className="h-36 w-full object-cover" loading="lazy" decoding="async" />
-                </div>
+              className="agri-card group flex h-full flex-col gap-4"
+            >
+              <div className="overflow-hidden rounded-2xl bg-muted">
+                <img src={role.image} alt={role.title} className="h-40 w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" decoding="async" />
+              </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{role.title}</p>
                   <p className="mt-2 text-sm text-muted-foreground">{role.description}</p>
@@ -235,7 +235,7 @@ export function Careers() {
               className="mt-4 w-full justify-center rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary/70 shadow-sm"
               disabled
             >
-              Internships – Coming Soon
+              Internships - Coming Soon
             </button>
           </div>
         </div>
@@ -371,4 +371,6 @@ export function Careers() {
     </section>
   );
 }
+
+
 
