@@ -15,4 +15,4 @@ sam deploy --guided --region us-east-2 \
     ReactionsTableName=agrismart-community-reactions \
     MediaBucketName=agrismart-community-media \
     FirebaseProjectId=$FirebaseProjectId \
-    AllowedOrigins="http://localhost:5173,https://crop-conduit-ui.web.app"
+    AllowedOrigins="http://localhost:5173,https://agrismartkenya.com"
