@@ -10,14 +10,14 @@ const team = [
   {
     name: "Vanessa Audrey",
     role: "Impact & Story Lead",
-    bio: "Crafts compelling stories of AgriSmart’s impact and ensures community engagement.",
+    bio: "Crafts compelling stories of AgriSmart's impact and ensures community engagement.",
     image:
       "https://plus.unsplash.com/premium_photo-1683140621573-233422bfc7f1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8cHJvZmlsZSUyMGltYWdlc3xlbnwwfHwwfHx8MA%3D%3D",
   },
   {
     name: "Caleb Mwendwa",
     role: "Socials & Marketing",
-    bio: "Drives social media and marketing campaigns to showcase AgriSmart’s mission and results.",
+    bio: "Drives social media and marketing campaigns to showcase AgriSmart's mission and results.",
     image:
       "https://plus.unsplash.com/premium_photo-1689539137236-b68e436248de?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fHByb2ZpbGUlMjBpbWFnZXN8ZW58MHx8MHx8fDA%3D",
   },
@@ -39,12 +39,12 @@ const team = [
 
 export function Team() {
   return (
-    <section id="team" className="py-12">
+    <section id="team" className="py-16 md:py-20">
       <div className="app-page-shell space-y-10">
         <div className="max-w-2xl">
-          <p className="agri-section-label">Team</p>
-          <h2 className="agri-section-title">The people behind AgriSmart</h2>
-          <p className="mt-4 text-muted-foreground">
+          <p className="agri-kicker">Team</p>
+          <h2 className="agri-display mt-4">The people behind AgriSmart</h2>
+          <p className="mt-3 text-sm text-muted-foreground md:text-base">
             A multidisciplinary team committed to building resilient farming systems.
           </p>
         </div>
@@ -79,3 +79,5 @@ export function Team() {
     </section>
   );
 }
+
+
