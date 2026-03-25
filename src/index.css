@@ -7,38 +7,38 @@
 
 @layer base {
   :root {
-    --background: 216 100% 93%;
-    --foreground: 142 43% 8%;
+    --background: 150 20% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 142 43% 8%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 216 100% 95%;
-    --popover-foreground: 142 43% 8%;
+    --popover: 150 20% 98%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 120 100% 16%;
+    --primary: 146 78% 24%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 216 58% 96%;
-    --secondary-foreground: 142 43% 8%;
+    --secondary: 150 22% 95%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 216 40% 96%;
-    --muted-foreground: 210 14% 42%;
+    --muted: 150 22% 95%;
+    --muted-foreground: 214 16% 45%;
 
-    --accent: 78 87% 41%;
-    --accent-foreground: 142 43% 8%;
+    --accent: 141 70% 45%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84% 55%;
     --destructive-foreground: 45 30% 98%;
 
-    --border: 211 35% 87%;
-    --input: 211 35% 87%;
-    --ring: 120 100% 16%;
+    --border: 210 24% 90%;
+    --input: 210 24% 90%;
+    --ring: 146 78% 24%;
 
     --radius: 1.25rem;
 
     /* Custom tokens */
-    --success: 120 64% 32%;
+    --success: 146 78% 24%;
     --success-foreground: 45 30% 98%;
     --warning: 38 85% 55%;
     --warning-foreground: 150 25% 15%;
@@ -46,21 +46,21 @@
     --info-foreground: 45 30% 98%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #005302 0%, #1b6a22 100%);
-    --gradient-accent: linear-gradient(135deg, #8bc60b 0%, #97c409 100%);
-    --gradient-card: linear-gradient(180deg, hsl(216 100% 95%) 0%, hsl(216 100% 93%) 100%);
-    --gradient-hero: linear-gradient(135deg, #005302 0%, #184701 100%);
+    --gradient-primary: linear-gradient(135deg, #0b6b3a 0%, #22c55e 100%);
+    --gradient-accent: linear-gradient(135deg, #22c55e 0%, #4ade80 100%);
+    --gradient-card: linear-gradient(180deg, #ffffff 0%, #f2f6f3 100%);
+    --gradient-hero: linear-gradient(135deg, #0b6b3a 0%, #14532d 100%);
 
     /* Shadows */
-    --shadow-sm: 0 2px 8px hsl(142 43% 8% / 0.04);
-    --shadow-md: 0 8px 24px hsl(142 43% 8% / 0.06);
-    --shadow-lg: 0 24px 48px hsl(142 43% 8% / 0.12);
-    --shadow-glow: 0 0 20px hsl(120 100% 16% / 0.18);
+    --shadow-sm: 0 4px 14px hsl(222 47% 11% / 0.06);
+    --shadow-md: 0 18px 40px hsl(222 47% 11% / 0.10);
+    --shadow-lg: 0 30px 70px hsl(222 47% 11% / 0.18);
+    --shadow-glow: 0 0 30px hsl(146 78% 24% / 0.22);
 
     /* Sidebar */
-    --sidebar-background: 216 100% 97%;
-    --sidebar-foreground: 142 43% 8%;
-    --sidebar-primary: 120 100% 16%;
+    --sidebar-background: 150 20% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 146 78% 24%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 216 60% 91%;
     --sidebar-accent-foreground: 142 43% 8%;
@@ -68,18 +68,18 @@
     --sidebar-ring: 120 100% 16%;
 
     /* Chart colors */
-    --chart-1: 120 100% 16%;
-    --chart-2: 78 87% 41%;
+    --chart-1: 146 78% 24%;
+    --chart-2: 141 70% 45%;
     --chart-3: 200 80% 50%;
     --chart-4: 152 60% 40%;
     --chart-5: 0 72% 51%;
 
     /* AgriSmart design tokens */
-    --agri-primary: 120 60% 24%;
-    --agri-accent: 84 70% 46%;
-    --agri-ink: 150 30% 12%;
+    --agri-primary: 146 78% 24%;
+    --agri-accent: 141 70% 45%;
+    --agri-ink: 222 47% 11%;
     --agri-surface: 0 0% 100%;
-    --agri-gradient: linear-gradient(135deg, #f7f7f2 0%, #f4f7f0 45%, #eef4f7 100%);
+    --agri-gradient: linear-gradient(135deg, #f8faf9 0%, #f1f7f2 45%, #eef6f0 100%);
   }
 
   .dark {
@@ -136,7 +136,8 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', 'DM Sans', sans-serif;
+    overflow-x: hidden;
   }
 
   #root {
@@ -146,7 +147,7 @@
 
 @layer utilities {
   .app-page-shell {
-    @apply mx-auto w-full max-w-[1200px] px-4 md:px-6;
+    @apply mx-auto w-full max-w-[1240px] px-5 md:px-8;
   }
 
   .app-section-gap {
@@ -196,23 +197,55 @@
 
 @layer components {
   .agri-section-label {
-    @apply text-xs font-semibold uppercase tracking-[0.2em] text-primary/80;
+    @apply text-xs font-semibold uppercase tracking-[0.24em] text-primary/70;
   }
 
   .agri-section-title {
-    @apply font-heading text-3xl font-semibold text-foreground md:text-4xl;
+    @apply font-heading text-3xl font-semibold tracking-tight text-foreground md:text-5xl;
   }
 
   .agri-card {
-    @apply rounded-3xl border border-white/60 bg-white/80 p-6 shadow-card backdrop-blur-sm;
+    @apply rounded-3xl border border-white/70 bg-white/70 p-6 shadow-card backdrop-blur-md transition duration-300;
+  }
+
+  .agri-panel {
+    @apply rounded-[36px] border border-white/70 bg-white/70 p-8 shadow-card backdrop-blur-md;
+  }
+
+  .agri-panel-muted {
+    @apply rounded-[36px] border border-white/70 bg-[#f3f7f2] p-8 shadow-card;
+  }
+
+  .agri-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.26em] text-primary/70;
+  }
+
+  .agri-display {
+    @apply font-heading text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl;
+  }
+
+  .agri-animated-highlight {
+    background: linear-gradient(90deg, #0b6b3a, #22c55e, #14b8a6, #c8f169);
+    background-size: 300% 300%;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: agri-shift 6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .agri-animated-highlight {
+      animation: none;
+      background-position: 50% 50%;
+    }
   }
 
   .agri-btn-primary {
-    @apply inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:translate-y-[-1px] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+    @apply inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#0b6b3a] via-[#12824a] to-[#22c55e] px-6 py-3 text-sm font-semibold text-white shadow-md transition duration-300 hover:-translate-y-0.5 hover:scale-[1.03] hover:brightness-110 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
   }
 
   .agri-btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full border border-primary/20 bg-white/70 px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
+    @apply inline-flex items-center justify-center rounded-full border border-primary/30 bg-white/80 px-6 py-3 text-sm font-semibold text-foreground transition hover:border-primary/50 hover:bg-white hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40;
   }
 
   .agri-cta {
@@ -259,6 +292,18 @@
   }
   100% {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes agri-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
