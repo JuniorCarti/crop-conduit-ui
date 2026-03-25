@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { HeartHandshake, Cpu, Users, Landmark, ChevronLeft, ChevronRight } from "lucide-react";
 
 const donationSlides = [
@@ -51,15 +51,15 @@ export function Donate() {
   const goNext = () => setActiveIndex((prev) => (prev + 1) % total);
 
   return (
-    <section id="donate" className="py-12">
+    <section id="donate" className="py-16 md:py-20">
       <div className="app-page-shell space-y-8">
         <div className="max-w-3xl">
-          <p className="agri-section-label">Support AgriSmart</p>
-          <h2 className="agri-section-title">Support AgriSmart</h2>
-          <p className="mt-3 text-muted-foreground">
+          <p className="agri-kicker">Support AgriSmart</p>
+          <h2 className="agri-display mt-4">Support AgriSmart</h2>
+          <p className="mt-3 text-sm text-muted-foreground md:text-base">
             Your contribution helps us empower farmers with climate intelligence, market access, and data-driven tools.
           </p>
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-4 text-sm text-muted-foreground md:text-base">
             AgriSmart is building solutions to improve agricultural decision-making for smallholder farmers. Your support
             helps us pilot our platform, work with farmer cooperatives, and expand access to data-driven tools across
             communities.
@@ -67,7 +67,7 @@ export function Donate() {
         </div>
 
         <div
-          className="agri-card relative overflow-hidden"
+          className="agri-panel relative overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/60"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
@@ -180,3 +180,4 @@ export function Donate() {
     </section>
   );
 }
+
