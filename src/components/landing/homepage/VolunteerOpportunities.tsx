@@ -102,7 +102,7 @@ export function VolunteerOpportunities() {
   };
 
   return (
-    <section id="volunteer" className="py-12">
+    <section id="volunteer" className="py-16 md:py-20">
       <div className="app-page-shell space-y-8">
         <div className="max-w-2xl">
           <p className="agri-section-label">Apply to Volunteer</p>
@@ -256,3 +256,4 @@ export function VolunteerOpportunities() {
     </section>
   );
 }
+
