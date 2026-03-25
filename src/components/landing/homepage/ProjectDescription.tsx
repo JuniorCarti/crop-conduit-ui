@@ -9,7 +9,7 @@ const objectives = [
 
 export function ProjectDescription() {
   return (
-    <section id="project" className="py-12">
+    <section id="project" className="py-16 md:py-20">
       <div className="app-page-shell space-y-10">
         <div className="max-w-2xl">
           <p className="agri-section-label">Project Description</p>
@@ -20,7 +20,7 @@ export function ProjectDescription() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           viewport={{ once: true, amount: 0.4 }}
-          className="agri-card"
+          className="agri-card bg-gradient-to-br from-white/90 to-emerald-50/60"
         >
           <p className="text-muted-foreground">
             Transforms complex data into simple SMS and app-based advisories to strengthen smallholder resilience and
@@ -35,7 +35,7 @@ export function ProjectDescription() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
               viewport={{ once: true, amount: 0.4 }}
-              className="agri-card transition hover:-translate-y-1"
+              className="agri-card transition hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -48,3 +48,4 @@ export function ProjectDescription() {
     </section>
   );
 }
+
