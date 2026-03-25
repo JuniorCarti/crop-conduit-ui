@@ -38,7 +38,7 @@ const columns = [
 
 export function Footer() {
   return (
-    <footer id="contact" className="border-t border-white/40 bg-white/60 py-12 text-foreground">
+    <footer id="contact" className="border-t border-white/60 bg-white/70 py-16 md:py-20 text-foreground">
       <div className="app-page-shell grid gap-10 lg:grid-cols-[1.2fr_2.2fr]">
         <div>
           <Link to="/" className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
@@ -108,3 +108,5 @@ export function Footer() {
     </footer>
   );
 }
+
+
