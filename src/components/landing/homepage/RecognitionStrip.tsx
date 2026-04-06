@@ -9,7 +9,7 @@ export function RecognitionStrip() {
   return (
     <section className="py-10">
       <div className="app-page-shell">
-        <div className="agri-card flex flex-wrap items-center justify-between gap-4 bg-white/70">
+        <div className="agri-card flex flex-wrap items-center justify-between gap-4 bg-white/60 hover:bg-white/70">
           <p className="text-sm font-semibold text-foreground">
             Trusted by <span className="agri-animated-highlight">farmers</span>, cooperatives, NGOs, and agribusiness teams
           </p>

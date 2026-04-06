@@ -67,7 +67,7 @@ export function Donate() {
         </div>
 
         <div
-          className="agri-panel relative overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/60"
+          className="agri-panel relative overflow-hidden bg-gradient-to-br from-white/60 to-emerald-50/40 hover:from-white/70 hover:to-emerald-50/50"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >

@@ -61,7 +61,7 @@ export function Partners() {
               {carousel.map((partner, index) => (
                 <div
                   key={`${partner.name}-${index}`}
-                  className="flex h-20 w-40 items-center justify-center rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm transition duration-300 hover:scale-105 hover:shadow-md"
+                  className="flex h-20 w-40 items-center justify-center rounded-2xl border border-white/30 bg-white/60 p-4 shadow-lg shadow-black/5 backdrop-blur-lg transition duration-300 hover:scale-105 hover:bg-white/70 hover:shadow-lg"
                 >
                   <img
                     src={partner.src}
@@ -83,7 +83,7 @@ export function Partners() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 viewport={{ once: true, amount: 0.4 }}
-                className="flex h-24 items-center justify-center rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm transition duration-300 hover:scale-105 hover:shadow-md"
+                className="flex h-24 items-center justify-center rounded-2xl border border-white/30 bg-white/60 p-4 shadow-lg shadow-black/5 backdrop-blur-lg transition duration-300 hover:scale-105 hover:bg-white/70 hover:shadow-lg"
               >
                 <img
                   src={partner.src}

@@ -53,7 +53,7 @@ export function WorkWithUs() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.03 }}
               viewport={{ once: true, amount: 0.3 }}
-              className="agri-card group flex h-full flex-col gap-3 transition hover:-translate-y-1 hover:shadow-lg"
+              className="agri-card group flex h-full flex-col gap-3 bg-white/60 transition hover:-translate-y-1 hover:bg-white/70 hover:shadow-lg"
             >
               <div className="overflow-hidden rounded-2xl bg-muted">
                 <img

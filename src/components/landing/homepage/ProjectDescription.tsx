@@ -20,7 +20,7 @@ export function ProjectDescription() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
           viewport={{ once: true, amount: 0.4 }}
-          className="agri-card bg-gradient-to-br from-white/90 to-emerald-50/60"
+          className="agri-card bg-gradient-to-br from-white/60 to-emerald-50/40 hover:from-white/70 hover:to-emerald-50/50"
         >
           <p className="text-muted-foreground">
             Transforms complex data into simple SMS and app-based advisories to strengthen smallholder resilience and
@@ -35,7 +35,7 @@ export function ProjectDescription() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
               viewport={{ once: true, amount: 0.4 }}
-              className="agri-card transition hover:-translate-y-1 hover:shadow-lg"
+              className="agri-card bg-white/60 transition hover:-translate-y-1 hover:bg-white/70 hover:shadow-lg"
             >
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" />

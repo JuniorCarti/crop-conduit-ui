@@ -54,7 +54,7 @@ export function FarmerJourney() {
             </ul>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-white/80 shadow-lg">
+          <div className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/60 shadow-lg shadow-black/10 backdrop-blur-xl">
             <div className="aspect-video w-full">
               <iframe
                 className="h-full w-full rounded-3xl"

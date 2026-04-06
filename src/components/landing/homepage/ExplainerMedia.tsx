@@ -24,7 +24,7 @@
             </li>
           </ul>
         </div>
-        <div className="agri-card group overflow-hidden bg-white/80">
+        <div className="agri-card group overflow-hidden bg-white/60 hover:bg-white/70">
           <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-black/10">
             <iframe
               className="h-full w-full transition duration-700 group-hover:scale-[1.02]"

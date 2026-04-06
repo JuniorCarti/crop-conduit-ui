@@ -151,7 +151,7 @@ export function Careers() {
               disabled: true,
             },
           ].map((card) => (
-            <div key={card.title} className="agri-card flex h-full flex-col gap-4">
+            <div key={card.title} className="agri-card flex h-full flex-col gap-4 bg-white/60 hover:bg-white/70">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">{card.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
@@ -188,7 +188,7 @@ export function Careers() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 viewport={{ once: true, amount: 0.3 }}
-              className="agri-card group flex h-full flex-col gap-4"
+              className="agri-card group flex h-full flex-col gap-4 bg-white/60 hover:bg-white/70"
             >
               <div className="overflow-hidden rounded-2xl bg-muted">
                 <img src={role.image} alt={role.title} className="h-40 w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" decoding="async" />
@@ -221,7 +221,7 @@ export function Careers() {
         </div>
 
         <div id="internships" className="space-y-4">
-          <div className="agri-card">
+          <div className="agri-card bg-white/60 hover:bg-white/70">
             <h3 className="text-lg font-semibold text-foreground">Internships</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               AgriSmart plans to introduce internship opportunities in the future for students and young professionals

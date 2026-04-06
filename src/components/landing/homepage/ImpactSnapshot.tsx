@@ -11,7 +11,7 @@ export function ImpactSnapshot() {
   return (
     <section className="py-16 md:py-20">
       <div className="app-page-shell">
-        <div className="rounded-[36px] border border-white/70 bg-white/70 px-6 py-10 shadow-card backdrop-blur md:px-10">
+        <div className="rounded-[36px] border border-white/40 bg-white/60 px-6 py-10 shadow-lg shadow-black/10 backdrop-blur-xl md:px-10">
           <div className="text-center">
             <p className="agri-section-label">Impact Snapshot</p>
             <h2 className="agri-section-title">Pilot Targets at a Glance</h2>
@@ -23,7 +23,7 @@ export function ImpactSnapshot() {
             {stats.map((item) => (
               <div
                 key={item.label}
-                className="rounded-3xl border border-primary/10 bg-gradient-to-br from-white/90 to-emerald-50/70 px-6 py-6 text-center shadow-sm"
+                className="rounded-3xl border border-primary/20 bg-gradient-to-br from-white/60 to-emerald-50/40 px-6 py-6 text-center shadow-lg shadow-black/5 backdrop-blur-lg transition hover:from-white/70 hover:to-emerald-50/50"
               >
                 <p className="text-4xl font-semibold text-foreground">{item.value}</p>
                 <p className="mt-2 text-xs uppercase tracking-[0.22em] text-muted-foreground">{item.label}</p>

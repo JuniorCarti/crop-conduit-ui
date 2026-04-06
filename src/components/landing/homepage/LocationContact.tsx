@@ -35,7 +35,7 @@ export function LocationContact() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             viewport={{ once: true, amount: 0.4 }}
-            className="agri-card"
+            className="agri-card bg-white/60 hover:bg-white/70"
           >
             <div className="space-y-4 text-sm text-muted-foreground">
               <div className="flex items-start gap-3">
@@ -94,7 +94,7 @@ export function LocationContact() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}
             viewport={{ once: true, amount: 0.4 }}
-            className="rounded-3xl border border-border/50 bg-card shadow-card overflow-hidden"
+            className="rounded-3xl border border-white/40 bg-white/60 shadow-lg shadow-black/10 backdrop-blur-xl overflow-hidden"
           >
             <div className="h-[320px] w-full sm:h-[380px] lg:h-[420px]">
               <MapContainer center={HQ} zoom={13} scrollWheelZoom className="h-full w-full">

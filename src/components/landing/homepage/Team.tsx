@@ -56,7 +56,7 @@ export function Team() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
               viewport={{ once: true, amount: 0.4 }}
-              className="agri-card transition hover:-translate-y-1 hover:shadow-lg"
+              className="agri-card bg-white/60 transition hover:-translate-y-1 hover:bg-white/70 hover:shadow-lg"
             >
               <div className="flex items-center gap-4">
                 <img

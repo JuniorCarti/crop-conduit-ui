@@ -45,7 +45,7 @@ export function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
               viewport={{ once: true, amount: 0.4 }}
-              className="agri-card group hover:-translate-y-1 hover:shadow-lg"
+              className="agri-card group bg-white/60 hover:-translate-y-1 hover:bg-white/70 hover:shadow-lg"
             >
               <div className="overflow-hidden rounded-2xl">
                 <img
@@ -61,7 +61,7 @@ export function Testimonials() {
             </motion.div>
           ))}
           </div>
-          <div className="rounded-3xl border border-primary/10 bg-white/80 p-5 text-center">
+          <div className="rounded-3xl border border-primary/20 bg-white/60 p-5 text-center backdrop-blur-xl">
             <h3 className="text-sm font-semibold text-foreground">Pilot Deployment in Progress</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Pilot Deployment in Progress. Real farmer stories and impact results will be shared here once the pilot

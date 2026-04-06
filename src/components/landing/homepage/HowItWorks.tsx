@@ -41,7 +41,7 @@ export function HowItWorks() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
                 viewport={{ once: true, amount: 0.4 }}
-                className="agri-card hover:-translate-y-1 hover:shadow-lg"
+                className="agri-card bg-white/60 hover:-translate-y-1 hover:bg-white/70 hover:shadow-lg"
               >
                 <div className="flex items-start gap-5">
                   <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 text-base font-semibold text-emerald-700 shadow-sm ring-1 ring-emerald-200/60 sm:h-12 sm:w-12">

@@ -69,7 +69,7 @@ export function TrustSecurity() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-border/50 bg-white/80 p-4 text-center shadow-lg backdrop-blur">
+        <div className="rounded-3xl border border-primary/30 bg-white/60 p-4 text-center shadow-lg backdrop-blur-xl">
           <p className="text-sm font-semibold text-foreground">Trust Guarantee Banner</p>
           <p className="mt-1 text-sm text-muted-foreground">Your data is never sold. Ever.</p>
         </div>
@@ -78,7 +78,7 @@ export function TrustSecurity() {
           {principles.map((item) => (
             <div
               key={item.title}
-              className="rounded-3xl border border-border/50 bg-white/80 p-5 shadow-lg backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+              className="rounded-3xl border border-white/40 bg-white/60 p-5 shadow-lg shadow-black/10 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:bg-white/70 hover:shadow-xl hover:shadow-black/15"
             >
               <div className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:h-12 sm:w-12">
                 <item.icon className="h-5 w-5" />

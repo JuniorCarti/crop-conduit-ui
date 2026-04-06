@@ -50,7 +50,7 @@ export function Features() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.05 }}
                 viewport={{ once: true, amount: 0.4 }}
-                className="agri-card group bg-white/80 hover:-translate-y-1 hover:shadow-lg"
+                className="agri-card group bg-white/60 hover:-translate-y-1 hover:bg-white/70 hover:shadow-lg"
               >
                 <div className="flex items-start gap-4">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-200/50 sm:h-11 sm:w-11">

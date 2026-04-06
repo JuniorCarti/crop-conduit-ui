@@ -26,8 +26,14 @@ import { Footer } from "@/components/landing/homepage/Footer";
 
 export default function Homepage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8faf9] via-[#f1f7f2] to-[#eef6f0] text-foreground">
-      <Navbar />
+    <div className="relative min-h-screen bg-gradient-to-br from-[#f8faf9] via-[#f1f7f2] to-[#eef6f0] text-foreground">
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-emerald-300/10 blur-3xl" />
+        <div className="absolute bottom-1/3 -left-32 h-80 w-80 rounded-full bg-cyan-300/10 blur-3xl" />
+        <div className="absolute top-1/2 -right-40 h-96 w-96 rounded-full bg-lime-300/10 blur-3xl" />
+      </div>
+      <div className="relative z-10">
+        <Navbar />
       <main>
         <Hero />
         <RecognitionStrip />
@@ -54,6 +60,7 @@ export default function Homepage() {
       </main>
       <ChatbotAssistant />
       <Footer />
+      </div>
     </div>
   );
 }

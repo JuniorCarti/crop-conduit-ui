@@ -2,7 +2,7 @@
   return (
     <section className="py-8">
       <div className="app-page-shell">
-        <div className="agri-card flex flex-col items-center gap-5 text-center md:flex-row md:text-left">
+        <div className="agri-card flex flex-col items-center gap-5 text-center bg-white/60 hover:bg-white/70 md:flex-row md:text-left">
           <img
             src="/images/Eid%20Mubarak.png"
             alt="Eid Mubarak greeting"

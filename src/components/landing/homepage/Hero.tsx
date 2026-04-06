@@ -35,7 +35,7 @@ export function Hero() {
       <div className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-lime-300/15 blur-[140px]" />
 
       <div className="relative app-page-shell flex min-h-screen items-center justify-center py-28 text-center md:py-32">
-        <motion.div {...fadeUp} className="mx-auto max-w-4xl">
+        <motion.div {...fadeUp} className="mx-auto max-w-4xl rounded-3xl border border-white/30 bg-white/20 px-6 py-10 backdrop-blur-xl md:px-8 md:py-12">
           <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white/80">
             Farm Intelligence Platform
           </p>

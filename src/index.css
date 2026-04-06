@@ -158,6 +158,22 @@
     @apply bg-card/80 backdrop-blur-md;
   }
 
+  .glass-light {
+    @apply bg-white/40 backdrop-blur-lg border border-white/30;
+  }
+
+  .glass-medium {
+    @apply bg-white/60 backdrop-blur-xl border border-white/40;
+  }
+
+  .glass-strong {
+    @apply bg-white/80 backdrop-blur-2xl border border-white/50;
+  }
+
+  .glass-card {
+    @apply rounded-2xl bg-white/50 backdrop-blur-xl border border-white/30 shadow-lg shadow-black/5 transition-all duration-300;
+  }
+
   .gradient-primary {
     background: var(--gradient-primary);
   }
@@ -205,15 +221,15 @@
   }
 
   .agri-card {
-    @apply rounded-3xl border border-white/70 bg-white/70 p-6 shadow-card backdrop-blur-md transition duration-300;
+    @apply rounded-3xl border border-white/40 bg-white/60 p-6 shadow-lg shadow-black/10 backdrop-blur-xl transition duration-300 hover:border-white/50 hover:bg-white/70 hover:shadow-xl hover:shadow-black/15;
   }
 
   .agri-panel {
-    @apply rounded-[36px] border border-white/70 bg-white/70 p-8 shadow-card backdrop-blur-md;
+    @apply rounded-[36px] border border-white/40 bg-white/60 p-8 shadow-lg shadow-black/10 backdrop-blur-xl transition duration-300 hover:bg-white/70;
   }
 
   .agri-panel-muted {
-    @apply rounded-[36px] border border-white/70 bg-[#f3f7f2] p-8 shadow-card;
+    @apply rounded-[36px] border border-emerald-100/40 bg-gradient-to-br from-white/50 to-emerald-50/40 p-8 shadow-lg shadow-black/10 backdrop-blur-xl transition duration-300;
   }
 
   .agri-kicker {
@@ -249,7 +265,7 @@
   }
 
   .agri-cta {
-    @apply flex flex-col gap-6 rounded-3xl bg-gradient-to-br from-primary via-emerald-700 to-emerald-900 px-8 py-10 shadow-glow md:flex-row md:items-center md:justify-between;
+    @apply flex flex-col gap-6 rounded-3xl border border-white/40 bg-gradient-to-br from-primary/70 via-emerald-700/70 to-emerald-900/70 px-8 py-10 shadow-lg shadow-black/20 backdrop-blur-xl md:flex-row md:items-center md:justify-between;
   }
 }
 
