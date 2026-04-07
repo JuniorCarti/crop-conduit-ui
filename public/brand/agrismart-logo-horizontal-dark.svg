@@ -1,0 +1,16 @@
+<svg width="420" height="120" viewBox="0 0 420 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(16 24)">
+    <rect x="0" y="34" width="10" height="22" rx="2" fill="#4CAF50"/>
+    <rect x="14" y="26" width="10" height="30" rx="2" fill="#A5D6A7"/>
+    <rect x="28" y="18" width="10" height="38" rx="2" fill="#FFFFFF"/>
+    <path d="M33 18V8" stroke="#A5D6A7" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M33 9C28 7 26 10 26 13C29 13 32 12 33 9Z" fill="#A5D6A7"/>
+    <path d="M33 9C38 7 40 10 40 13C37 13 34 12 33 9Z" fill="#A5D6A7"/>
+  </g>
+  <text x="80" y="58" font-family="Poppins, Inter, Montserrat, sans-serif" font-size="34" font-weight="600" letter-spacing="-0.02em">
+    <tspan fill="#FFFFFF">Agri</tspan><tspan fill="#A5D6A7">Smart</tspan>
+  </text>
+  <text x="80" y="84" font-family="Poppins, Inter, Montserrat, sans-serif" font-size="12" font-weight="500" letter-spacing="0.08em" fill="#E6F4EC" opacity="0.9">
+    Farm Intelligence Platform
+  </text>
+</svg>

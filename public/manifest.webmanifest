@@ -2,21 +2,17 @@
   "name": "AgriSmart",
   "short_name": "AgriSmart",
   "description": "AI-powered farm intelligence platform helping smallholder farmers with climate insights, market access, and smarter decisions.",
-  "theme_color": "#dce9ff",
-  "background_color": "#dce9ff",
+  "theme_color": "#0F3D2E",
+  "background_color": "#A5D6A7",
   "start_url": "https://agrismartkenya.com/",
   "scope": "https://agrismartkenya.com/",
   "id": "https://agrismartkenya.com/",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/favicon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
+      "src": "/brand/icons/agrismart-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

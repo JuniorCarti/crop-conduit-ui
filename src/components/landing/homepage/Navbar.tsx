@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
 
 const navItems = [
   { label: "Home", href: "#top" },
@@ -53,14 +54,12 @@ export function Navbar() {
             isOverlay ? "text-white" : "text-foreground"
           }`}
         >
-          <span
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${
-              isOverlay ? "bg-white/15 text-white" : "bg-primary/10 text-primary"
-            }`}
-          >
-            AS
-          </span>
-          AgriSmart
+          <AgriSmartLogo
+            variant="inline"
+            size="sm"
+            showTagline={false}
+            tone={isOverlay ? "dark" : "light"}
+          />
         </Link>
 
         <nav

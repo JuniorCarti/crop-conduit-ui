@@ -1,0 +1,20 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F6FBF7"/>
+  <g transform="translate(140 190)">
+    <rect x="0" y="120" width="60" height="120" rx="12" fill="#A5D6A7"/>
+    <rect x="84" y="72" width="60" height="168" rx="12" fill="#4CAF50"/>
+    <rect x="168" y="24" width="60" height="216" rx="12" fill="#0F3D2E"/>
+    <path d="M198 24V-12" stroke="#4CAF50" stroke-width="10" stroke-linecap="round"/>
+    <path d="M198 -6C170 -22 158 -6 158 16C178 16 190 10 198 -6Z" fill="#A5D6A7"/>
+    <path d="M198 -6C226 -22 238 -6 238 16C218 16 206 10 198 -6Z" fill="#A5D6A7"/>
+  </g>
+  <text x="420" y="300" font-family="Poppins, Inter, Montserrat, sans-serif" font-size="64" font-weight="600" letter-spacing="-0.02em">
+    <tspan fill="#0F3D2E">Agri</tspan><tspan fill="#4CAF50">Smart</tspan>
+  </text>
+  <text x="420" y="360" font-family="Poppins, Inter, Montserrat, sans-serif" font-size="22" font-weight="500" letter-spacing="0.2em" fill="#0F3D2E" opacity="0.65">
+    FARM INTELLIGENCE PLATFORM
+  </text>
+  <text x="420" y="420" font-family="Inter, Montserrat, sans-serif" font-size="20" fill="#2F4F43" opacity="0.8">
+    Agriculture data, market intelligence, and growth signals in one platform.
+  </text>
+</svg>

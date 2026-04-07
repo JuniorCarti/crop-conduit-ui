@@ -1,5 +1,6 @@
 ﻿import { Link } from "react-router-dom";
 import { Github, Instagram, Linkedin, Twitter } from "lucide-react";
+import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
 
 const columns = [
   {
@@ -42,10 +43,7 @@ export function Footer() {
       <div className="app-page-shell grid gap-10 lg:grid-cols-[1.2fr_2.2fr]">
         <div>
           <Link to="/" className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-              AS
-            </span>
-            AgriSmart
+            <AgriSmartLogo variant="inline" size="sm" showTagline={false} />
           </Link>
           <p className="mt-4 max-w-sm text-sm text-muted-foreground">
             AgriSmart unifies climate signals, crop performance, and market intelligence into one actionable farm command
