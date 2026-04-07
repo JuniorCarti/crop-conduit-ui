@@ -16,6 +16,7 @@ import com.example.crop_conduit_mobile.ui.theme.Crop_conduit_mobileTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setTheme(R.style.Theme_Crop_conduit_mobile)
         enableEdgeToEdge()
         setContent {
             Crop_conduit_mobileTheme {
