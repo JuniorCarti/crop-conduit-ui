@@ -1,3 +1,19 @@
 <resources>
-    <string name="app_name">crop_conduit_mobile</string>
+    <string name="app_name">AgriSmart</string>
+    <string name="splash_subtitle">Farm Intelligence Platform</string>
+    <string name="onboarding_progress_format">%1$d/3</string>
+    <string name="skip">Skip</string>
+    <string name="next">Next</string>
+    <string name="get_started">Get Started</string>
+    <string name="main_screen_title">Welcome to AgriSmart</string>
+    <string name="main_screen_subtitle">Real-time market prices, climate forecasts, and smart farming decisions for smallholder farmers.</string>
+    <string name="feature_market">Live market pricing</string>
+    <string name="feature_climate">Climate &amp; weather insights</string>
+    <string name="feature_growth">Actionable farm recommendations</string>
+    <string name="screen_one_title">Smart Farming Starts Here</string>
+    <string name="screen_one_description">Get real-time climate insights to know the best time to plant and harvest.</string>
+    <string name="screen_two_title">Know Market Prices</string>
+    <string name="screen_two_description">Access live crop prices and sell at the right time to maximize profits.</string>
+    <string name="screen_three_title">Grow With Confidence</string>
+    <string name="screen_three_description">Make data-driven decisions and reduce losses with intelligent insights.</string>
 </resources>

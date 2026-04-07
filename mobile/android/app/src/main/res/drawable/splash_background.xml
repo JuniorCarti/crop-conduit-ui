@@ -1,8 +1,18 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/primary" />
     <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@drawable/ic_launcher_foreground" />
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="@color/dark_green"
+                android:endColor="@color/light_green"
+                android:angle="270" />
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="oval">
+            <size android:width="220dp" android:height="220dp" />
+            <solid android:color="#33FFFFFF" />
+        </shape>
+        <padding android:left="80dp" android:top="80dp" android:right="0dp" android:bottom="0dp" />
     </item>
 </layer-list>

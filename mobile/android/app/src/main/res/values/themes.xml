@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Crop_conduit_mobile" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.AgriSmart" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/dark_green</item>
+        <item name="android:navigationBarColor">@color/background_light</item>
+        <item name="android:windowBackground">@color/background_light</item>
+        <item name="materialCardViewStyle">@style/Widget.AgriSmart.Card</item>
+    </style>
 
-    <style name="SplashTheme" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.Splash" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
+
+    <style name="Widget.AgriSmart.Button" parent="Widget.Material3.Button">
+        <item name="cornerRadius">28dp</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
+    <style name="Widget.AgriSmart.Card" parent="Widget.Material3.Card" />
 </resources>
