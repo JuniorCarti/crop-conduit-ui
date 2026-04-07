@@ -1,5 +1,7 @@
 package com.example.crop_conduit_mobile
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,16 +20,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setTheme(R.style.Theme_Crop_conduit_mobile)
         enableEdgeToEdge()
+
+        val sharedPrefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val onboardingCompleted = sharedPrefs.getBoolean("onboarding_completed", false)
+
         setContent {
             Crop_conduit_mobileTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                if (onboardingCompleted) {
+                    MainScreen()
+                } else {
+                    OnboardingScreen(onComplete = {
+                        sharedPrefs.edit().putBoolean("onboarding_completed", true).apply()
+                    })
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MainScreen() {
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        Greeting(
+            name = "Android",
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 }
 
