@@ -6,7 +6,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 const accessByRole: Record<string, { allowed: string[]; blocked: string[]; next: string }> = {
   farmer: {
-    allowed: ["Dashboard", "Market Oracle", "Climate", "Asha", "Harvest", "Profile"],
+    allowed: ["Dashboard", "Market Oracle", "Climate", "Asha", "Harvest", "Transport Marketplace", "Profile"],
     blocked: ["Org Portal", "SuperAdmin Portal"],
     next: "/",
   },
@@ -16,14 +16,24 @@ const accessByRole: Record<string, { allowed: string[]; blocked: string[]; next:
     next: "/marketplace",
   },
   org_admin: {
-    allowed: ["Org Portal", "Members", "Profile"],
+    allowed: ["Org Portal", "Members", "Transport Marketplace", "Profile"],
     blocked: ["Climate", "Harvest", "Advisory"],
     next: "/org",
   },
   org_staff: {
-    allowed: ["Org Portal", "Members", "Profile"],
+    allowed: ["Org Portal", "Members", "Transport Marketplace", "Profile"],
     blocked: ["Climate", "Harvest", "Advisory"],
     next: "/org",
+  },
+  transport_admin: {
+    allowed: ["Transport Portal", "Shipments", "Tracking"],
+    blocked: ["Climate", "Harvest", "Marketplace", "Org Portal"],
+    next: "/transport",
+  },
+  transport_staff: {
+    allowed: ["Transport Portal", "Shipments", "Tracking"],
+    blocked: ["Climate", "Harvest", "Marketplace", "Org Portal"],
+    next: "/transport",
   },
   superadmin: {
     allowed: ["SuperAdmin Portal", "Profile"],

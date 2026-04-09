@@ -25,5 +25,9 @@ export default function ProfileRouter() {
     return <Navigate to="/org/profile" replace />;
   }
 
+  if (role === "transport_admin" || role === "transport_staff") {
+    return <Navigate to="/transport" replace />;
+  }
+
   return <FarmerProfile />;
 }
