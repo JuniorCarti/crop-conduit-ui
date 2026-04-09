@@ -93,10 +93,16 @@ Production-ready, minimal-cost serverless backend for a community feed using AWS
 - CORS: allow browser PUT/GET from:
   - `http://localhost:5173`
   - `https://agrismartkenya.com`
+  - `https://www.agrismartkenya.com`
 
 **Key pattern**
 ```
 community/{postId or userId}/{uuid}.{ext}
+```
+
+If you see **"Failed to fetch"** when publishing a post with media, the bucket CORS is missing. Apply it with:
+```powershell
+.\scripts\apply-media-cors.ps1
 ```
 
 ---
@@ -317,7 +323,7 @@ aws s3api put-public-access-block --region us-east-2 --bucket agrismart-communit
 
 aws s3api put-bucket-cors --region us-east-2 --bucket agrismart-community-media --cors-configuration '{
   "CORSRules":[{
-    "AllowedOrigins":["http://localhost:5173","https://agrismartkenya.com"],
+    "AllowedOrigins":["http://localhost:5173","http://127.0.0.1:5173","http://localhost:8080","http://127.0.0.1:8080","https://agrismartkenya.com","https://www.agrismartkenya.com"],
     "AllowedMethods":["PUT","GET","HEAD"],
     "AllowedHeaders":["*"],
     "MaxAgeSeconds":3000
