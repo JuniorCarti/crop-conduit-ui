@@ -64,6 +64,7 @@ export default function Login() {
     "/registration",
     "/buyer-registration",
     "/org-registration",
+    "/transport-registration",
     "/org",
     "/org/members",
     "/org/market-dashboard",
@@ -87,6 +88,9 @@ export default function Login() {
     "/admin",
     "/superadmin",
     "/access-summary",
+    "/transport",
+    "/transport/driver",
+    "/transport-marketplace",
   ];
 
   const isSafeInternalPath = (path: string) => {
@@ -110,6 +114,7 @@ export default function Login() {
     if (role === "gov_admin" || role === "gov_analyst" || role === "gov_viewer") return "/gov/overview";
     if ((role === "org_admin" || role === "org_staff") && (orgType === "government_national" || orgType === "gov_national")) return "/gov/overview";
     if (role === "org_admin" || role === "org_staff") return "/org";
+    if (role === "transport_admin" || role === "transport_staff") return "/transport";
     if (role === "partner_admin" || role === "partner_analyst" || role === "partner_finance") return "/partner";
     if ((role === "admin" || role === "staff") && hasOrg) return "/org";
     if (role === "admin") return "/admin";

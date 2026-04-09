@@ -6,6 +6,8 @@ interface RoleGuardProps {
   allowed: Array<
     | "farmer"
     | "buyer"
+    | "transport_admin"
+    | "transport_staff"
     | "org_admin"
     | "org_staff"
     | "gov_admin"
