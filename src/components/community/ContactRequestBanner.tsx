@@ -34,7 +34,7 @@ export function ContactRequestBanner({
       >
         <div className="flex items-center gap-2 text-sm text-emerald-700">
           <CheckCircle2 className="h-4 w-4" />
-          Contact approved. You can call safely.
+          Contact approved. Calling is enabled.
         </div>
         {canCall ? (
           <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -52,7 +52,7 @@ export function ContactRequestBanner({
         aria-live="polite"
       >
         <ShieldAlert className="h-4 w-4 text-amber-600" />
-        Contact request was declined. Messaging is disabled.
+        Contact request was declined. Calling is disabled.
       </Card>
     );
   }
@@ -64,7 +64,7 @@ export function ContactRequestBanner({
       >
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
-          {isRequester ? "Waiting for approval" : "Contact request received"}
+          {isRequester ? "Waiting for approval to enable calling" : "Contact request received"}
         </div>
         {canRespond ? (
           <div className="flex flex-wrap gap-2">
@@ -88,7 +88,7 @@ export function ContactRequestBanner({
     >
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <UserPlus className="h-4 w-4" />
-        Request consent before chatting or calling.
+        Request contact to enable calling.
       </div>
       <Button size="sm" onClick={onRequest} disabled={disabled}>
         Request Contact

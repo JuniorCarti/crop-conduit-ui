@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,14 +19,27 @@ import {
   useBlockActions,
 } from "@/hooks/useDirectMessages";
 import { ChatWindow } from "@/components/community/ChatWindow";
+import { startConversation } from "@/services/dmService";
+
+function decodeParam(value?: string) {
+  if (!value) return "";
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
 
 export default function Chat() {
-  const { conversationId } = useParams();
+  const { conversationId: rawConversationId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
   const [localRequest, setLocalRequest] = useState<ContactRequest | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [resolvingConversation, setResolvingConversation] = useState(false);
+
+  const conversationId = useMemo(() => decodeParam(rawConversationId), [rawConversationId]);
 
   const { data: convoData, isLoading: loadingConvos } = useConversations(currentUser?.uid);
   const conversation = useMemo<Conversation | null>(() => {
@@ -41,6 +54,23 @@ export default function Chat() {
     if (!conversation) return null;
     return getOtherUidFromConversation(conversation, currentUser?.uid) || null;
   }, [conversation, conversationId, currentUser?.uid]);
+
+  useEffect(() => {
+    if (!conversationId || conversation || !currentUser?.uid) return;
+    if (conversationId.includes("#")) return;
+    if (conversationId.length <= 20) return;
+    if (resolvingConversation) return;
+    setResolvingConversation(true);
+    startConversation(conversationId)
+      .then((convo) => {
+        if (convo?.conversationId) {
+          navigate(`/community/chat/${encodeURIComponent(convo.conversationId)}`, { replace: true });
+          return;
+        }
+        setResolvingConversation(false);
+      })
+      .catch(() => setResolvingConversation(false));
+  }, [conversationId, conversation, currentUser?.uid, navigate, resolvingConversation]);
 
   const incomingRequestId = (location.state as { requestId?: string } | null)?.requestId;
   const incomingRequestOtherUid = (location.state as { otherUid?: string } | null)?.otherUid;
@@ -62,7 +92,7 @@ export default function Chat() {
   const isRequester = Boolean(localRequest?.requestId);
   const canRespond = contactStatus.status === "pending" && !isRequester;
 
-  const sendMessageMutation = useSendMessage(conversationId || "");
+  const sendMessageMutation = useSendMessage(conversationId || "", otherUid);
 
   const handleRequestContact = async () => {
     if (!otherUid) return;
@@ -108,7 +138,7 @@ export default function Chat() {
     setIsBlocked(true);
   };
 
-  if (loadingConvos) {
+  if (loadingConvos || resolvingConversation) {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 pb-10 pt-6">
         <Skeleton className="h-8 w-48" />
@@ -117,7 +147,17 @@ export default function Chat() {
     );
   }
 
-  if (!conversationId || !conversation) {
+  const resolvedConversation =
+    conversation || (conversationId && otherUid && currentUser?.uid
+      ? {
+          conversationId,
+          userIds: [currentUser.uid, otherUid],
+          lastMessage: "",
+          updatedAt: new Date().toISOString(),
+        }
+      : null);
+
+  if (!conversationId || !resolvedConversation) {
     return (
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-6">
         <Button variant="ghost" className="w-fit gap-2" onClick={() => navigate("/community/inbox")}>
@@ -160,7 +200,7 @@ export default function Chat() {
       </div>
 
       <ChatWindow
-        conversation={conversation}
+        conversation={resolvedConversation}
         currentUserId={currentUser?.uid || ""}
         otherUid={otherUid}
         messages={messages}

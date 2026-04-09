@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { Conversation } from "@/types/dm";
 import { getOtherUidFromConversation } from "@/hooks/useDirectMessages";
 import { getUserVerificationMap } from "@/services/userVerificationService";
+import { listCommunityMembersForCurrentUser } from "@/services/communityMembersService";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -20,6 +21,15 @@ interface ConversationListProps {
 function initialsFromUid(uid?: string | null) {
   if (!uid) return "F";
   return uid.slice(0, 2).toUpperCase();
+}
+
+function initialsFromName(name?: string | null, uid?: string | null) {
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+    if (parts.length > 1) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return initialsFromUid(uid);
 }
 
 function formatTime(value: string) {
@@ -42,6 +52,22 @@ export function ConversationList({ conversations, currentUserId, activeId, onSel
     staleTime: 1000 * 60 * 5,
   });
 
+  const membersQuery = useQuery({
+    queryKey: ["community", "member-names", currentUserId],
+    queryFn: () => (currentUserId ? listCommunityMembersForCurrentUser(currentUserId) : Promise.resolve([])),
+    enabled: Boolean(currentUserId),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const memberNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (membersQuery.data || []).forEach((member) => {
+      if (member.uid) map.set(member.uid, member.name);
+      if (member.id) map.set(member.id, member.name);
+    });
+    return map;
+  }, [membersQuery.data]);
+
   if (!conversations.length) {
     return (
       <Card className="border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
@@ -53,9 +79,13 @@ export function ConversationList({ conversations, currentUserId, activeId, onSel
   return (
     <div className="space-y-3">
       {conversations.map((conversation) => {
-        const otherUid = conversation.otherUser?.uid || getOtherUidFromConversation(conversation, currentUserId) || "Farmer";
-        const verification = verificationQuery.data?.[otherUid];
-        const otherName = verification?.displayName || conversation.otherUser?.displayName || `Farmer ${otherUid.slice(0, 6)}`;
+        const otherUid = conversation.otherUser?.uid || getOtherUidFromConversation(conversation, currentUserId) || null;
+        const verification = otherUid ? verificationQuery.data?.[otherUid] : undefined;
+        const otherName =
+          verification?.displayName ||
+          conversation.otherUser?.displayName ||
+          (otherUid ? memberNameMap.get(otherUid) : null) ||
+          "Farmer";
         const isActive = activeId === conversation.conversationId;
         const recent = Date.now() - new Date(conversation.updatedAt).getTime() < 2 * 60 * 60 * 1000;
         return (
@@ -73,7 +103,7 @@ export function ConversationList({ conversations, currentUserId, activeId, onSel
             <div className="flex items-center gap-3">
               <Avatar className="h-11 w-11">
                 <AvatarFallback className="bg-emerald-100 text-emerald-700 font-semibold">
-                  {initialsFromUid(otherUid)}
+                  {initialsFromName(otherName, otherUid)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">

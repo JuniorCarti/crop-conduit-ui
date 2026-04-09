@@ -71,7 +71,7 @@ export default function CommunityMemberProfile() {
       return startConversation(memberId);
     },
     onSuccess: (data) => {
-      if (data?.conversationId) navigate(`/community/chat/${data.conversationId}`);
+      if (data?.conversationId) navigate(`/community/chat/${encodeURIComponent(data.conversationId)}`);
     },
     onError: (error: any) => {
       toast.error(error?.message || "Unable to open chat");

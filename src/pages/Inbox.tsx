@@ -55,7 +55,7 @@ export default function Inbox() {
         <ConversationList
           conversations={conversations}
           currentUserId={currentUser?.uid || null}
-          onSelect={(conversation) => navigate(`/community/chat/${conversation.conversationId}`)}
+          onSelect={(conversation) => navigate(`/community/chat/${encodeURIComponent(conversation.conversationId)}`)}
         />
       ) : (
         <AlertCard

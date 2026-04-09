@@ -40,10 +40,10 @@ export function useConversationMessages(conversationId?: string, enabled = true)
   });
 }
 
-export function useSendMessage(conversationId: string) {
+export function useSendMessage(conversationId: string, otherUid?: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (text: string) => dmService.sendMessage({ conversationId, text }),
+    mutationFn: (text: string) => dmService.sendMessage({ conversationId, text, otherUid: otherUid || undefined }),
     onSuccess: (message) => {
       queryClient.setQueryData(["dm", "messages", conversationId], (old: any) => {
         if (!old?.items) {
