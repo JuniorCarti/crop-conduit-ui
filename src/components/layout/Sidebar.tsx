@@ -16,6 +16,8 @@ import {
   Gavel,
   LayoutDashboard,
   CreditCard,
+  Truck,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,8 +69,15 @@ export function Sidebar() {
         hasOrgCapability(orgType, "certificates") && { route: "/org/certificates", label: "Certificates", icon: Award },
         hasOrgCapability(orgType, "targets") && { route: "/org/targets", label: "Targets & Rewards", icon: Trophy },
         hasOrgCapability(orgType, "billing") && { route: "/org/billing", label: "Billing", icon: FileText },
+        { route: "/transport-marketplace", label: "Transport", icon: Truck },
       ].filter(Boolean) as Array<{ route: string; label: string; icon: typeof Building2 }>;
       return items.length ? items : [{ route: "/org", label: "Org Portal", icon: Building2 }];
+    }
+    if (role === "transport_admin" || role === "transport_staff") {
+      return [
+        { route: "/transport", label: "Transport Portal", icon: Truck },
+        { route: "/transport/driver", label: "Driver Updates", icon: MapPin },
+      ];
     }
     if (role === "admin") {
       return [{ route: "/admin", label: "Admin", icon: ShoppingCart }];
@@ -162,6 +171,31 @@ export function Sidebar() {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">Marketplace</p>
+                    </div>
+                  </>
+                )}
+              </NavLink>
+              <NavLink
+                to="/transport-marketplace"
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <Truck
+                      className={cn(
+                        "h-5 w-5 transition-transform duration-200",
+                        !isActive && "group-hover:scale-110"
+                      )}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">Transport</p>
                     </div>
                   </>
                 )}

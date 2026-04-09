@@ -20,7 +20,7 @@ Parameters:
     Default: YOUR_FIREBASE_PROJECT_ID
   AllowedOrigins:
     Type: String
-    Default: "http://localhost:8080,http://127.0.0.1:8080,https://agrismartkenya.com"
+    Default: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080,http://127.0.0.1:8080,https://agrismartkenya.com,https://www.agrismartkenya.com"
   AzureSpeechSecretArn:
     Type: String
     Default: arn:aws:secretsmanager:us-east-2:762233767298:secret:agrismart/asha/azure-speech-pxpAuA
@@ -133,6 +133,9 @@ Resources:
       CorsConfiguration:
         AllowOrigins:
           - https://agrismartkenya.com
+          - https://www.agrismartkenya.com
+          - http://localhost:5173
+          - http://127.0.0.1:5173
           - http://localhost:8080
           - http://127.0.0.1:8080
         AllowHeaders:
@@ -479,7 +482,11 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
+              - https://www.agrismartkenya.com
+              - http://localhost:5173
+              - http://127.0.0.1:5173
               - http://localhost:8080
+              - http://127.0.0.1:8080
               - https://agrismartkenya.com
             AllowedHeaders:
               - '*'

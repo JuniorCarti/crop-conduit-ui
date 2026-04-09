@@ -8,6 +8,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
@@ -100,6 +101,14 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true") {
   connectAuthEmulator(auth, "http://localhost:9099");
   connectFirestoreEmulator(db, "localhost", 8080);
+}
+
+// Initialize Firebase Cloud Functions
+const functionsRegion = import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || "us-central1";
+export const functions = getFunctions(app, functionsRegion);
+
+if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true") {
+  connectFunctionsEmulator(functions, "localhost", 5001);
 }
 
 export default app;

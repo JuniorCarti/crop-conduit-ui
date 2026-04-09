@@ -49,6 +49,32 @@ service cloud.firestore {
         : null;
     }
 
+    function isTransportAdmin() {
+      return isAuthenticated()
+        && userRole() in ['transport_admin', 'transport_staff'];
+    }
+
+    function isTransportCompanyOwner(companyId) {
+      return isAuthenticated() && request.auth.uid == companyId;
+    }
+
+    function isApprovedTransportCompany(companyId) {
+      return exists(/databases/$(database)/documents/transportCompanies/$(companyId))
+        && get(/databases/$(database)/documents/transportCompanies/$(companyId)).data.approvalStatus == 'approved';
+    }
+
+    function isTransportApprovalOnlyUpdate() {
+      return request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasOnly(['approvalStatus', 'verifiedAt', 'verifiedBy', 'rejectedAt', 'rejectionReason', 'updatedAt']);
+    }
+
+    function isTransportProfileUpdate() {
+      return !request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasAny(['approvalStatus', 'verifiedAt', 'verifiedBy', 'rejectedAt', 'rejectionReason']);
+    }
+
     function userOrgId() {
       return isAuthenticated()
         ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.orgId
@@ -174,7 +200,7 @@ service cloud.firestore {
         && request.resource.data.uid == userId
         && (
           (
-            request.resource.data.role in ['unassigned', 'farmer', 'buyer']
+            request.resource.data.role in ['unassigned', 'farmer', 'buyer', 'transport_admin']
             && (!('orgId' in request.resource.data) || request.resource.data.orgId == null)
           )
           || (
@@ -214,8 +240,8 @@ service cloud.firestore {
           )
           // limited self-onboarding for non-org accounts
           || (
-            request.resource.data.role in ['unassigned', 'farmer', 'buyer']
-            && resource.data.role in ['unassigned', 'farmer', 'buyer']
+            request.resource.data.role in ['unassigned', 'farmer', 'buyer', 'transport_admin']
+            && resource.data.role in ['unassigned', 'farmer', 'buyer', 'transport_admin']
             && request.resource.data.orgId == null
           )
           // creator can become org_admin only for own created organization
@@ -672,6 +698,90 @@ match /priceSnapshots/{snapshotId} {
     }
 
     // ========================================================================
+    // TRANSPORT COMPANIES (LOGISTICS)
+    // ========================================================================
+
+    match /transportCompanies/{companyId} {
+      allow read: if isAuthenticated()
+        && (isTransportCompanyOwner(companyId)
+          || isAdmin()
+          || isSuperAdmin()
+          || isApprovedTransportCompany(companyId));
+      allow create: if isTransportCompanyOwner(companyId)
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.approvalStatus == 'pending';
+      allow update: if (isTransportCompanyOwner(companyId) && isTransportProfileUpdate())
+        || (isAdmin() && isTransportProfileUpdate())
+        || (isSuperAdmin() && isTransportApprovalOnlyUpdate());
+      allow delete: if isSuperAdmin();
+    }
+
+    match /transportVehicles/{vehicleId} {
+      allow read: if isAuthenticated()
+        && (isTransportCompanyOwner(resource.data.companyId)
+          || isApprovedTransportCompany(resource.data.companyId)
+          || isAdmin()
+          || isSuperAdmin());
+      allow create: if isTransportAdmin()
+        && request.resource.data.companyId == request.auth.uid;
+      allow update: if isTransportAdmin()
+        && resource.data.companyId == request.auth.uid
+        && request.resource.data.companyId == resource.data.companyId;
+      allow delete: if isTransportAdmin()
+        && resource.data.companyId == request.auth.uid;
+    }
+
+    match /transportShipments/{shipmentId} {
+      allow read: if isAuthenticated()
+        && (resource.data.requesterUid == request.auth.uid
+          || resource.data.companyId == request.auth.uid
+          || isAdmin()
+          || isSuperAdmin());
+      allow create: if isAuthenticated()
+        && request.resource.data.requesterUid == request.auth.uid
+        && request.resource.data.requesterRole in ['farmer', 'org_admin', 'org_staff']
+        && request.resource.data.companyId is string
+        && isApprovedTransportCompany(request.resource.data.companyId);
+      allow update: if isAuthenticated()
+        && (resource.data.requesterUid == request.auth.uid
+          || resource.data.companyId == request.auth.uid
+          || isAdmin()
+          || isSuperAdmin())
+        && request.resource.data.requesterUid == resource.data.requesterUid
+        && request.resource.data.companyId == resource.data.companyId;
+      allow delete: if false;
+    }
+
+    match /transportBids/{bidId} {
+      allow read: if isAuthenticated()
+        && (resource.data.requesterUid == request.auth.uid
+          || resource.data.companyId == request.auth.uid
+          || isAdmin()
+          || isSuperAdmin());
+      allow create: if isAuthenticated()
+        && (request.resource.data.requesterUid == request.auth.uid
+          || request.resource.data.companyId == request.auth.uid);
+      allow update: if isAuthenticated()
+        && (resource.data.requesterUid == request.auth.uid
+          || resource.data.companyId == request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /transportTracking/{shipmentId} {
+      allow read: if isAuthenticated()
+        && (resource.data.requesterUid == request.auth.uid
+          || resource.data.companyId == request.auth.uid
+          || isAdmin()
+          || isSuperAdmin());
+      allow create: if isTransportAdmin()
+        && request.resource.data.companyId == request.auth.uid;
+      allow update: if isTransportAdmin()
+        && resource.data.companyId == request.auth.uid
+        && request.resource.data.companyId == resource.data.companyId;
+      allow delete: if false;
+    }
+
+    // ========================================================================
     // ORG MEMBERS (TOP-LEVEL)
     // ========================================================================
 
@@ -980,7 +1090,22 @@ match /priceSnapshots/{snapshotId} {
     // ========================================================================
 
     function isMarketplaceStatus(status) {
-      return status in ['pending', 'accepted', 'in_transit', 'completed', 'cancelled'];
+      return status in [
+        'pending',
+        'pending_payment',
+        'paid_in_escrow',
+        'accepted',
+        'in_transit',
+        'shipped',
+        'delivered',
+        'completed',
+        'cancelled',
+        'dispute'
+      ];
+    }
+
+    function isMarketplaceBuyer() {
+      return isAuthenticated() && userRole() in ['farmer', 'buyer'];
     }
 
     function isPositiveNumber(value) {
@@ -1073,7 +1198,7 @@ match /priceSnapshots/{snapshotId} {
       // Only authenticated buyers can create orders for themselves with valid data
       allow create: if isAuthenticated()
         && request.resource.data.buyerId == request.auth.uid
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approvalStatus == "APPROVED"
+        && (isMarketplaceBuyer() || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approvalStatus == "APPROVED")
         && hasValidTimestamps(request.resource.data)
         && hasValidOrderTotals(request.resource.data)
         && hasValidOrderQuantity(request.resource.data)

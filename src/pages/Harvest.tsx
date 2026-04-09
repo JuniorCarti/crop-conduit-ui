@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Truck,
   Users,
@@ -149,6 +150,7 @@ const deliveryStatusStyles: Record<Delivery["status"], string> = {
 
 export default function Harvest() {
   const { currentUser, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
@@ -806,6 +808,9 @@ export default function Harvest() {
                 Data-driven transport intelligence powered by Cloudflare D1.
               </p>
             </div>
+            <Button size="sm" variant="outline" onClick={() => navigate("/transport-marketplace")}>
+              Browse Transport Marketplace
+            </Button>
             {sortedDeliveries.length > 1 && (
               <div className="w-full sm:w-72 space-y-1">
                 <Label className="text-xs text-muted-foreground">Delivery</Label>

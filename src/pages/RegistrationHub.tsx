@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, CheckCircle2, ShoppingCart, Sprout } from "lucide-react";
+import { Building2, CheckCircle2, ShoppingCart, Sprout, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthCardShell } from "@/components/landing/AuthCardShell";
 import { HeroPanel } from "@/components/landing/HeroPanel";
@@ -33,25 +33,34 @@ const cards = [
     icon: Building2,
     route: "/org-registration",
   },
+  {
+    key: "transport",
+    title: "Transport & Logistics Registration",
+    description: "For logistics companies managing fleets, drivers, and deliveries.",
+    icon: Truck,
+    route: "/transport-registration",
+  },
 ] as const;
 
 export default function RegistrationHub() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { role } = useUserRole();
-  const [completed, setCompleted] = useState<{ farmer: boolean; buyer: boolean; org: boolean }>({
+  const [completed, setCompleted] = useState<{ farmer: boolean; buyer: boolean; org: boolean; transport: boolean }>({
     farmer: false,
     buyer: false,
     org: false,
+    transport: false,
   });
 
   useEffect(() => {
     if (!currentUser?.uid) return;
 
     const load = async () => {
-      const [farmerSnap, buyerSnap, userSnap] = await Promise.all([
+      const [farmerSnap, buyerSnap, transportSnap, userSnap] = await Promise.all([
         getDoc(doc(db, "farmers", currentUser.uid)),
         getDoc(doc(db, "buyerProfiles", currentUser.uid)),
+        getDoc(doc(db, "transportCompanies", currentUser.uid)),
         getDoc(doc(db, "users", currentUser.uid)),
       ]);
 
@@ -60,6 +69,7 @@ export default function RegistrationHub() {
         farmer: farmerSnap.exists(),
         buyer: buyerSnap.exists(),
         org: userRole === "org_admin" || userRole === "org_staff" || role === "org_admin" || role === "org_staff",
+        transport: transportSnap.exists() || userRole === "transport_admin" || role === "transport_admin",
       });
     };
 

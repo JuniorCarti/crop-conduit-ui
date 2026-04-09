@@ -36,7 +36,7 @@ export const FEATURES: FeatureItem[] = [
     id: "dashboard",
     labelKey: "nav.dashboard",
     navDescriptionKey: "navDescriptions.dashboard",
-    route: "/",
+    route: "/dashboard",
     icon: Home,
     tier: "free",
     taglineKey: "features.dashboard.tagline",

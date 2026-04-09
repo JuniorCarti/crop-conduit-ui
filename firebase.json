@@ -47,5 +47,8 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "functions": {
+    "source": "cloud/functions/marketplace"
   }
 }

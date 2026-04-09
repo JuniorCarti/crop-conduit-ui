@@ -121,7 +121,7 @@ export function CreatePostModal({ open, onOpenChange, onCreated }: CreatePostMod
 
       try {
         setUploading(true);
-        const { uploadUrl, fileUrl } = await getPresignedUpload({
+        const { uploadUrl, fileUrl, key } = await getPresignedUpload({
           filename: file.name,
           contentType: file.type || "application/octet-stream",
         });
@@ -134,7 +134,7 @@ export function CreatePostModal({ open, onOpenChange, onCreated }: CreatePostMod
           body: file,
         });
 
-        mediaItems = [{ url: fileUrl, type: mediaType }];
+        mediaItems = [{ url: fileUrl, type: mediaType, key, contentType: file.type || "application/octet-stream" }];
       } catch (error: any) {
         toast.error(error?.message || "Upload failed");
         setUploading(false);

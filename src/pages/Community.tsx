@@ -198,7 +198,7 @@ export default function Community() {
     }
     const convo = await startConversationMutation.mutateAsync(otherUid);
     if (convo?.conversationId) {
-      navigate(`/community/chat/${convo.conversationId}`);
+      navigate(`/community/chat/${encodeURIComponent(convo.conversationId)}`);
     }
   };
 

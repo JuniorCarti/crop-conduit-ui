@@ -29,6 +29,7 @@ import FarmerRegistration from "./pages/FarmerRegistration";
 import RegistrationHub from "./pages/RegistrationHub";
 import BuyerRegistration from "./pages/BuyerRegistration";
 import OrgRegistration from "./pages/OrgRegistration";
+import TransportRegistration from "./pages/TransportRegistration";
 import AccessSummary from "./pages/AccessSummary";
 import SuperAdminPortal from "./pages/SuperAdminPortal";
 import Signup from "./pages/Signup";
@@ -113,6 +114,9 @@ import ResponsibleAIPolicy from "./pages/policies/ResponsibleAIPolicy";
 import TransparencyPolicy from "./pages/policies/TransparencyPolicy";
 import DataOwnershipPolicy from "./pages/policies/DataOwnershipPolicy";
 import PartnershipEthicsPolicy from "./pages/policies/PartnershipEthicsPolicy";
+import TransportPortal from "./pages/TransportPortal";
+import TransportMarketplace from "./pages/TransportMarketplace";
+import TransportDriverUpdate from "./pages/TransportDriverUpdate";
 
 const queryClient = new QueryClient();
 
@@ -148,6 +152,14 @@ const App = () => (
               element={
                 <RoleGuard allowed={["org_admin", "admin", "unassigned"]} redirectTo="/registration">
                   <OrgRegistration />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/transport-registration"
+              element={
+                <RoleGuard allowed={["transport_admin", "transport_staff", "admin", "unassigned"]} redirectTo="/registration">
+                  <TransportRegistration />
                 </RoleGuard>
               }
             />
@@ -374,6 +386,8 @@ const App = () => (
                       allowed={[
                         "farmer",
                         "buyer",
+                        "transport_admin",
+                        "transport_staff",
                         "org_admin",
                         "org_staff",
                         "admin",
@@ -457,6 +471,14 @@ const App = () => (
                       <PremiumRouteGuard featureId="marketplace">
                         <MarketplaceEnhanced />
                       </PremiumRouteGuard>
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/transport-marketplace"
+                  element={
+                    <RoleGuard allowed={["farmer", "org_admin", "org_staff", "admin", "superadmin"]} redirectTo="/registration">
+                      <TransportMarketplace />
                     </RoleGuard>
                   }
                 />
@@ -658,6 +680,22 @@ const App = () => (
                   }
                 />
                 <Route path="/upgrade" element={<Upgrade />} />
+                <Route
+                  path="/transport"
+                  element={
+                    <RoleGuard allowed={["transport_admin", "transport_staff", "admin", "superadmin"]} redirectTo="/registration">
+                      <TransportPortal />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/transport/driver"
+                  element={
+                    <RoleGuard allowed={["transport_admin", "transport_staff", "admin", "superadmin"]} redirectTo="/registration">
+                      <TransportDriverUpdate />
+                    </RoleGuard>
+                  }
+                />
               </Route>
               <Route
                 path="/admin"

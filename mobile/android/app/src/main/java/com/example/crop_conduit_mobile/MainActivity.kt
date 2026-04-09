@@ -1,47 +1,21 @@
 package com.example.crop_conduit_mobile
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.crop_conduit_mobile.ui.theme.Crop_conduit_mobileTheme
+import androidx.appcompat.app.AppCompatActivity
+import com.example.crop_conduit_mobile.databinding.ActivityMainBinding
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            Crop_conduit_mobileTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-        }
-    }
-}
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Crop_conduit_mobileTheme {
-        Greeting("Android")
+        binding.welcomeTitle.text = getString(R.string.main_screen_title)
+        binding.welcomeSubtitle.text = getString(R.string.main_screen_subtitle)
+        binding.featureOneTitle.text = getString(R.string.feature_market)
+        binding.featureTwoTitle.text = getString(R.string.feature_climate)
+        binding.featureThreeTitle.text = getString(R.string.feature_growth)
     }
 }

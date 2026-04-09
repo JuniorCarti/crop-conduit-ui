@@ -5,6 +5,8 @@ export function useUserRole() {
   const role = (accountQuery.data?.role as
     | "farmer"
     | "buyer"
+    | "transport_admin"
+    | "transport_staff"
     | "org_admin"
     | "org_staff"
     | "gov_admin"

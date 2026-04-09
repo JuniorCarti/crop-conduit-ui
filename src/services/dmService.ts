@@ -51,11 +51,30 @@ async function fetchWithAuth<T>(path: string, options: RequestInit = {}): Promis
   });
 
   if (response.status === 401) {
-    toast.error("Session expired. Please sign in again.");
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
+    let details = "Unauthorized";
+    try {
+      const data = await response.json();
+      details = data?.message || details;
+    } catch {
+      // ignore
     }
-    throw new Error("Unauthorized");
+
+    const normalized = details.toLowerCase();
+    const isAuthExpired =
+      normalized.includes("invalid or expired token") ||
+      normalized.includes("missing authorization") ||
+      normalized.includes("missing token");
+
+    if (isAuthExpired) {
+      toast.error("Session expired. Please sign in again.");
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+      throw new Error("Unauthorized");
+    }
+
+    toast.error(details);
+    throw new Error(details);
   }
 
   if (response.status === 403) {
@@ -144,8 +163,9 @@ export async function listMessages(
   cursor?: string,
 ): Promise<PagedResult<Message>> {
   const query = buildQuery({ nextToken: cursor });
+  const encodedId = encodeURIComponent(conversationId);
   const data = await fetchWithAuth<{ items: any[]; nextToken?: string }>(
-    `/dm/conversations/${conversationId}/messages${query}`,
+    `/dm/conversations/${encodedId}/messages${query}`,
   );
   return {
     items: (data.items || []).map(mapMessage),
@@ -153,12 +173,17 @@ export async function listMessages(
   };
 }
 
-export async function sendMessage(params: { conversationId: string; text: string }): Promise<Message> {
+export async function sendMessage(params: {
+  conversationId: string;
+  text: string;
+  otherUid?: string;
+}): Promise<Message> {
+  const encodedId = encodeURIComponent(params.conversationId);
   const data = await fetchWithAuth<{ message: any }>(
-    `/dm/conversations/${params.conversationId}/messages`,
+    `/dm/conversations/${encodedId}/messages`,
     {
       method: "POST",
-      body: JSON.stringify({ text: params.text }),
+      body: JSON.stringify({ text: params.text, otherUid: params.otherUid }),
     },
   );
   return mapMessage(data.message);

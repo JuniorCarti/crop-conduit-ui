@@ -5,6 +5,8 @@ import type { BuyerProfile } from "@/types/marketplace";
 export type UserRole =
   | "farmer"
   | "buyer"
+  | "transport_admin"
+  | "transport_staff"
   | "org_admin"
   | "org_staff"
   | "gov_admin"

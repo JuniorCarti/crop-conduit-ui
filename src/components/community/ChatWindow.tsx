@@ -72,7 +72,7 @@ export function ChatWindow({
   const otherDisplayName =
     otherProfile?.displayName ||
     conversation?.otherUser?.displayName ||
-    (otherUid ? `Farmer ${otherUid.slice(0, 6)}` : "Select a conversation");
+    (otherUid ? "Farmer" : "Select a conversation");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -89,7 +89,7 @@ export function ChatWindow({
     }
   };
 
-  const messagingDisabled = contactStatus.status !== "accepted" || isBlocked;
+  const messagingDisabled = isBlocked;
 
   return (
     <Card className="flex min-h-[70vh] flex-col overflow-hidden border-border/60 bg-card/90 shadow-sm">
@@ -153,14 +153,14 @@ export function ChatWindow({
                 senderName={
                   message.senderId === currentUserId
                     ? verificationQuery.data?.[currentUserId]?.displayName || "You"
-                    : verificationQuery.data?.[message.senderId]?.displayName || `Farmer ${message.senderId.slice(0, 6)}`
+                    : verificationQuery.data?.[message.senderId]?.displayName || "Farmer"
                 }
                 senderBadgeType={verificationQuery.data?.[message.senderId]?.badgeType || null}
               />
             ))
           ) : (
             <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-              No messages yet. Start by requesting contact consent.
+              No messages yet. Say hello to start the conversation.
             </div>
           )}
           <div ref={bottomRef} />
@@ -171,7 +171,7 @@ export function ChatWindow({
         {messagingDisabled ? (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldAlert className="h-4 w-4 text-amber-500" />
-            {isBlocked ? "Messaging is disabled because this user is blocked." : "Messaging is disabled until consent is accepted."}
+            Messaging is disabled because this user is blocked.
           </div>
         ) : (
           <div className="flex items-end gap-3">

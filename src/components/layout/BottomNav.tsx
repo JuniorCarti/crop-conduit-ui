@@ -13,6 +13,8 @@ import {
   Gavel,
   LayoutDashboard,
   CreditCard,
+  Truck,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -46,7 +48,7 @@ export function BottomNav() {
     .map((id) => getFeatureById(id))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const isMoreActive = moreNavItems.some((item) => location.pathname === item.route)
-    || (role === "farmer" && ["/marketplace", "/cooperatives"].includes(location.pathname));
+    || (role === "farmer" && ["/marketplace", "/cooperatives", "/transport-marketplace"].includes(location.pathname));
 
   if (role === "buyer") {
     return (
@@ -142,6 +144,7 @@ export function BottomNav() {
       hasOrgCapability(orgType, "certificates") && { to: "/org/certificates", label: "Certs", icon: Award },
       hasOrgCapability(orgType, "targets") && { to: "/org/targets", label: "Targets", icon: Trophy },
       hasOrgCapability(orgType, "billing") && { to: "/org/billing", label: "Billing", icon: FileText },
+      { to: "/transport-marketplace", label: "Transport", icon: Truck },
     ].filter(Boolean) as Array<{ to: string; label: string; icon: typeof Building2 }>;
     const resolvedOrgItems = orgItems.length ? orgItems : [{ to: "/org", label: "Org", icon: Building2 }];
 
@@ -253,6 +256,43 @@ export function BottomNav() {
     );
   }
 
+  if (role === "transport_admin" || role === "transport_staff") {
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden animate-slide-in-bottom">
+        <div className="flex items-center justify-around h-16 px-2">
+          <NavLink
+            to="/transport"
+            className={({ isActive }) =>
+              cn(
+                "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              )
+            }
+          >
+            <div className="p-1.5 rounded-lg">
+              <Truck className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] font-medium">Transport</span>
+          </NavLink>
+          <NavLink
+            to="/transport/driver"
+            className={({ isActive }) =>
+              cn(
+                "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200",
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              )
+            }
+          >
+            <div className="p-1.5 rounded-lg">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] font-medium">Driver</span>
+          </NavLink>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden animate-slide-in-bottom">
       <div className="flex items-center justify-around h-16 px-2">
@@ -356,6 +396,20 @@ export function BottomNav() {
                   >
                     <Gavel className="h-4 w-4" />
                     Bids & Results
+                  </NavLink>
+                </DropdownMenuItem>
+                <DropdownMenuItem key="transport-marketplace" asChild>
+                  <NavLink
+                    to="/transport-marketplace"
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 w-full cursor-pointer",
+                        isActive && "text-primary font-medium"
+                      )
+                    }
+                  >
+                    <Truck className="h-4 w-4" />
+                    Transport
                   </NavLink>
                 </DropdownMenuItem>
               </>

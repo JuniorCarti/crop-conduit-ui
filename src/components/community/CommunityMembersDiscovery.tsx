@@ -223,7 +223,7 @@ export function CommunityMembersDiscovery({ uid }: CommunityMembersDiscoveryProp
     try {
       const convo = await startConversation(otherUid);
       if (convo?.conversationId) {
-        navigate(`/community/chat/${convo.conversationId}`);
+        navigate(`/community/chat/${encodeURIComponent(convo.conversationId)}`);
       }
     } catch (error: any) {
       toast.error(error?.message || "Unable to open chat");
