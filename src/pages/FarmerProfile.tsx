@@ -216,7 +216,7 @@ export default function FarmerProfile() {
     try {
       const conversation = await startConversation(profile.uid);
       if (conversation?.conversationId) {
-        navigate(`/community/chat/${conversation.conversationId}`);
+        navigate(`/community/chat/${encodeURIComponent(conversation.conversationId)}`);
       }
     } catch (error: any) {
       toast.error(error?.message || "Unable to start conversation");
