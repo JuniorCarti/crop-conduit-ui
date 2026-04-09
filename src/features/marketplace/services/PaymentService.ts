@@ -15,7 +15,9 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import { db } from "@/lib/firebase";
+import { functions } from "@/lib/firebase";
 import type {
   Transaction,
   TransactionStatus,
@@ -26,6 +28,24 @@ import { updateOrderStatus } from "./OrderService";
 
 const TRANSACTIONS_COLLECTION = "transactions";
 const MOCK_MODE = import.meta.env.VITE_MPESA_MOCK_MODE === "true";
+const MPESA_FUNCTION_NAME = import.meta.env.VITE_MPESA_FUNCTION_NAME;
+
+function buildMpesaFunctionCandidates() {
+  const candidates = [
+    MPESA_FUNCTION_NAME,
+    "initiateMpesaPayment",
+    "initiatePayment",
+    "marketplace-initiateMpesaPayment",
+    "marketplace-initiatePayment",
+  ];
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+function isFunctionNotFound(error: any) {
+  const code = String(error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+  return code.includes("not-found") || message.includes("not found");
+}
 
 const convertTimestamp = (timestamp: any): Date => {
   if (!timestamp) return new Date();
@@ -72,7 +92,27 @@ export async function initiateMpesaPayment(
       };
     }
 
-    throw new Error("M-Pesa payments are not configured.");
+    const candidates = buildMpesaFunctionCandidates();
+    if (!candidates.length) {
+      throw new Error("M-Pesa payments are not configured.");
+    }
+
+    let lastError: any = null;
+    for (const name of candidates) {
+      try {
+        const callable = httpsCallable(functions, name);
+        const response = await callable(request);
+        return response.data as MpesaSTKPushResponse;
+      } catch (error: any) {
+        lastError = error;
+        if (isFunctionNotFound(error)) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw lastError || new Error("M-Pesa payments are not configured.");
   } catch (error: any) {
     console.error("Error initiating M-Pesa payment:", error);
     throw new Error(error.message || "Failed to initiate payment");

@@ -12,6 +12,7 @@ interface BuyerInfo {
 
 interface OrdersSummary {
   orderIds: string[];
+  payments: Array<{ orderId: string; amount: number }>;
 }
 
 const buildOrderItems = (items: CartItem[]): OrderItem[] => {
@@ -47,6 +48,7 @@ export async function createOrdersFromCart(
 
   const batch = writeBatch(db);
   const orderIds: string[] = [];
+  const payments: Array<{ orderId: string; amount: number }> = [];
 
   grouped.forEach((items, sellerId) => {
     const orderRef = doc(collection(db, ORDERS_COLLECTION));
@@ -55,12 +57,15 @@ export async function createOrdersFromCart(
     const totalQuantity = orderItems.reduce((sum, item) => sum + item.qty, 0);
     const currency = items[0]?.currency || "KES";
 
+    const status =
+      payment.method === "pay_on_delivery" ? "pending" : "pending_payment";
+
     batch.set(orderRef, {
       buyerId: buyer.id,
       buyerName: buyer.name || buyer.email || "Buyer",
       buyerProfileSnapshot: buyerProfile,
       sellerId,
-      status: "pending",
+      status,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       currency,
@@ -84,9 +89,10 @@ export async function createOrdersFromCart(
     });
 
     orderIds.push(orderRef.id);
+    payments.push({ orderId: orderRef.id, amount: totalAmount });
   });
 
   await batch.commit();
 
-  return { orderIds };
+  return { orderIds, payments };
 }

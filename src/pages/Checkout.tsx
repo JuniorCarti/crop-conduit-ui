@@ -16,6 +16,7 @@ import { createOrdersFromCart } from "@/services/ordersService";
 import { getBuyerProfile, saveBuyerProfile } from "@/services/userProfileService";
 import { ASHA_PREFILL_STORAGE_KEY } from "@/services/ashaActionDispatcher";
 import { formatKsh } from "@/lib/currency";
+import { initiateMpesaPayment } from "@/features/marketplace/services/PaymentService";
 import type { BuyerProfile, PaymentMethod } from "@/types/marketplace";
 import { toast } from "sonner";
 
@@ -232,6 +233,7 @@ export default function Checkout() {
     (paymentMethod !== "pay_on_delivery" || payOnDeliveryEligible);
 
   const handlePlaceOrders = async () => {
+    if (isPlacingOrder) return;
     if (!currentUser?.uid) {
       navigate("/login");
       return;
@@ -265,12 +267,11 @@ export default function Checkout() {
       return;
     }
 
-    if (paymentMethod === "mpesa") {
-      const mpesaNormalized = normalizePhoneNumber(mpesaPhone || phone);
-      if (!mpesaNormalized) {
-        toast.error("Enter a valid M-Pesa phone number.");
-        return;
-      }
+    const mpesaNormalized =
+      paymentMethod === "mpesa" ? normalizePhoneNumber(mpesaPhone || phone) : null;
+    if (paymentMethod === "mpesa" && !mpesaNormalized) {
+      toast.error("Enter a valid M-Pesa phone number.");
+      return;
     }
 
     if (paymentMethod === "airtel") {
@@ -296,7 +297,7 @@ export default function Checkout() {
         }
       }
 
-      await createOrdersFromCart(
+      const orderSummary = await createOrdersFromCart(
         cartItems,
         {
           id: currentUser.uid,
@@ -309,6 +310,18 @@ export default function Checkout() {
           status: paymentStatusValue,
         }
       );
+
+      if (paymentMethod === "mpesa" && mpesaNormalized) {
+        setPaymentStatus("Pending");
+        for (const payment of orderSummary.payments) {
+          await initiateMpesaPayment({
+            orderId: payment.orderId,
+            phone: mpesaNormalized.replace("+", ""),
+            amount: payment.amount,
+          });
+        }
+        toast.success("M-Pesa STK push sent. Please complete payment on your phone.");
+      }
 
       clearCart();
       toast.success("Order placed successfully.");
@@ -557,12 +570,10 @@ export default function Checkout() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => {
-                          setPaymentStatus("Pending");
-                          toast.info("STK Push placeholder");
-                        }}
+                        onClick={handlePlaceOrders}
+                        disabled={!canPlaceOrder || isPlacingOrder}
                       >
-                        Initiate STK Push
+                        {isPlacingOrder ? "Processing..." : "Initiate STK Push"}
                       </Button>
                       <p className="text-xs text-muted-foreground">Status: {paymentStatus}</p>
                     </div>
