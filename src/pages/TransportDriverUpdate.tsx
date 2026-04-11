@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { subscribeCompanyShipments, upsertTracking } from "@/services/transportService";
 import type { TransportShipment } from "@/types/transport";
 
-const UPDATE_INTERVAL_MS = 30 * 60 * 1000;
+const UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
 export default function TransportDriverUpdate() {
   const { currentUser } = useAuth();
@@ -136,7 +136,7 @@ export default function TransportDriverUpdate() {
               </Button>
             </div>
             <div className="text-xs text-muted-foreground">
-              Auto updates send every 30 minutes. Last update: {lastUpdate || "--"}
+              Auto updates send every 5 minutes. Last update: {lastUpdate || "--"}
             </div>
           </CardContent>
         </Card>

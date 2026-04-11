@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Plus, Truck } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   upsertTransportCompany,
   updateTransportShipment,
 } from "@/services/transportService";
+import { useCompanyBids, useRespondToBid } from "@/hooks/useLogisticsInternal";
 import type { TransportCompany, TransportShipment, TransportVehicle } from "@/types/transport";
 
 const VEHICLE_TYPES: TransportVehicle["vehicleType"][] = ["Truck", "Van", "Pickup", "Motorbike"];
@@ -268,6 +269,22 @@ export default function TransportPortal() {
     await updateTransportShipment(shipmentId, { status });
   };
 
+  const { bids, isLoading: bidsLoading } = useCompanyBids();
+  const { counter, accept, reject, loading: bidActionLoading } = useRespondToBid();
+  const [counterBidId, setCounterBidId] = useState<string | null>(null);
+  const [counterPrice, setCounterPrice] = useState("");
+  const [counterMessage, setCounterMessage] = useState("");
+
+  const pendingBids = useMemo(() => bids.filter((b) => b.status === "submitted" || b.status === "countered"), [bids]);
+
+  const handleCounter = async () => {
+    if (!counterBidId || !counterPrice) return;
+    await counter(counterBidId, Number(counterPrice), counterMessage || undefined);
+    setCounterBidId(null);
+    setCounterPrice("");
+    setCounterMessage("");
+  };
+
   const vehicleCount = vehicles.length;
   const availableCount = vehicles.filter((vehicle) => vehicle.status === "available").length;
 
@@ -435,7 +452,72 @@ export default function TransportPortal() {
             </div>
           )}
         </section>
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Incoming bids</h3>
+            <p className="text-sm text-muted-foreground">Review, counter, accept or reject farmer transport bids.</p>
+          </div>
+          {bidsLoading ? (
+            <Card className="border border-border/60"><CardContent className="py-6 text-sm text-muted-foreground">Loading bids...</CardContent></Card>
+          ) : pendingBids.length === 0 ? (
+            <Card className="border border-border/60"><CardContent className="py-6 text-sm text-muted-foreground">No pending bids.</CardContent></Card>
+          ) : (
+            <div className="grid gap-4">
+              {pendingBids.map((bid) => (
+                <Card key={bid.id} className="border border-border/60">
+                  <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle className="text-base">Bid #{bid.id?.slice(-6)}</CardTitle>
+                      <p className="text-xs text-muted-foreground">Shipment: {bid.shipmentId?.slice(-8)}</p>
+                    </div>
+                    <Badge variant="outline" className="capitalize">{bid.status}</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Offered price</p>
+                        <p className="font-semibold text-foreground">{formatKsh(bid.offeredPrice)}</p>
+                      </div>
+                      {bid.message && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Message</p>
+                          <p className="font-semibold text-foreground">{bid.message}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => bid.id && accept(bid.id)} disabled={bidActionLoading}>Accept</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setCounterBidId(bid.id ?? null); setCounterPrice(String(bid.offeredPrice)); }} disabled={bidActionLoading}>Counter</Button>
+                      <Button size="sm" variant="ghost" onClick={() => bid.id && reject(bid.id)} disabled={bidActionLoading}>Reject</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
+
+      {/* Counter-offer dialog */}
+      <Dialog open={Boolean(counterBidId)} onOpenChange={(open) => !open && setCounterBidId(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Send counter-offer</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Counter price (KES)</Label>
+              <Input type="number" value={counterPrice} onChange={(e) => setCounterPrice(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Message (optional)</Label>
+              <Textarea value={counterMessage} onChange={(e) => setCounterMessage(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCounterBidId(null)}>Cancel</Button>
+              <Button onClick={handleCounter} disabled={!counterPrice || bidActionLoading}>Send counter</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showCompanyModal} onOpenChange={(open) => !open && setShowCompanyModal(false)}>
         <DialogContent>
