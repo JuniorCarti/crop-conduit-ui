@@ -43,13 +43,9 @@ export default function SuperAdminPortal() {
           getDocs(collection(db, "buyers")),
           getDocs(collection(db, "transportCompanies")),
         ]);
-        const rows = orgSnap.docs
-          .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as any) }))
-          .filter((org) => String(org.verificationStatus || "pending").toLowerCase() === "pending");
+        const rows = orgSnap.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as any) }));
         setOrgs(rows);
-        const buyerRows = buyerSnap.docs
-          .map((docSnap) => ({ uid: docSnap.id, ...(docSnap.data() as any) }))
-          .filter((buyer) => String(buyer.approvalStatus || "PENDING").toUpperCase() === "PENDING");
+        const buyerRows = buyerSnap.docs.map((docSnap) => ({ uid: docSnap.id, ...(docSnap.data() as any) }));
         setBuyers(buyerRows);
         setBuyerError(null);
         const transportRows = transportSnap.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as any) }));
@@ -71,13 +67,7 @@ export default function SuperAdminPortal() {
       verifiedBy: status === "approved" ? (currentUser?.uid ?? "superadmin") : null,
       rejectionReason: status === "rejected" ? reason || "Not specified" : null,
     });
-    setOrgs((prev) =>
-      prev.map((org) =>
-        org.id === orgId
-          ? { ...org, verificationStatus: status }
-          : org
-      )
-    );
+    setOrgs((prev) => prev.map((org) => org.id === orgId ? { ...org, verificationStatus: status } : org));
   };
 
   const approveBuyer = async (uid: string) => {
@@ -103,7 +93,7 @@ export default function SuperAdminPortal() {
         verifiedBy: currentUser?.uid ?? "superadmin",
       });
       await batch.commit();
-      setBuyers((prev) => prev.filter((buyer) => buyer.uid !== uid));
+      setBuyers((prev) => prev.map((b) => b.uid === uid ? { ...b, approvalStatus: "APPROVED" } : b));
       toast.success("Buyer approved.");
     } catch (error: any) {
       toast.error(error?.message || "Failed to approve buyer.");
@@ -140,7 +130,7 @@ export default function SuperAdminPortal() {
         rejectedBy: currentUser?.uid ?? "superadmin",
       });
       await batch.commit();
-      setBuyers((prev) => prev.filter((buyer) => buyer.uid !== uid));
+      setBuyers((prev) => prev.map((b) => b.uid === uid ? { ...b, approvalStatus: "REJECTED" } : b));
       toast.success("Buyer rejected.");
     } catch (error: any) {
       toast.error(error?.message || "Failed to reject buyer.");
@@ -212,25 +202,32 @@ export default function SuperAdminPortal() {
                 </tr>
               </thead>
               <tbody>
-                {orgs.map((org) => (
-                  <tr key={org.id} className="border-t border-border">
-                    <td className="p-3">{org.orgName || org.id}</td>
-                    <td className="p-3">{org.orgType || "-"}</td>
-                    <td className="p-3">{org.county || "-"}</td>
-                    <td className="p-3 capitalize">{org.verificationStatus || "pending"}</td>
-                    <td className="p-3">
-                      {org.createdAt?.toDate ? org.createdAt.toDate().toLocaleDateString() : "-"}
-                    </td>
-                    <td className="p-3 flex gap-2">
-                      <Button size="sm" onClick={() => updateStatus(org.id, "approved")}>
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => updateStatus(org.id, "rejected")}>
-                        Reject
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {orgs.length === 0 ? (
+                  <tr><td className="p-4 text-muted-foreground" colSpan={6}>No organizations found.</td></tr>
+                ) : orgs.map((org) => {
+                  const status = String(org.verificationStatus || "pending").toLowerCase();
+                  return (
+                    <tr key={org.id} className="border-t border-border">
+                      <td className="p-3">{org.orgName || org.id}</td>
+                      <td className="p-3">{org.orgType || "-"}</td>
+                      <td className="p-3">{org.county || "-"}</td>
+                      <td className="p-3">
+                        <Badge variant="secondary" className={status === "approved" ? "bg-green-100 text-green-800" : status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}>
+                          {status}
+                        </Badge>
+                      </td>
+                      <td className="p-3">{org.createdAt?.toDate ? org.createdAt.toDate().toLocaleDateString() : "-"}</td>
+                      <td className="p-3 flex gap-2">
+                        {status === "pending" && (
+                          <>
+                            <Button size="sm" onClick={() => updateStatus(org.id, "approved")}>Approve</Button>
+                            <Button size="sm" variant="outline" onClick={() => updateStatus(org.id, "rejected")}>Reject</Button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -254,35 +251,33 @@ export default function SuperAdminPortal() {
                   </tr>
                 ) : buyers.length === 0 ? (
                   <tr>
-                    <td className="p-4 text-muted-foreground" colSpan={6}>No pending buyers.</td>
+                    <td className="p-4 text-muted-foreground" colSpan={6}>No buyers found.</td>
                   </tr>
                 ) : (
-                  buyers.map((buyer) => (
-                    <tr key={buyer.uid} className="border-t border-border">
-                      <td className="p-3">{buyer.displayName || buyer.uid}</td>
-                      <td className="p-3">{buyer.companyName || "-"}</td>
-                      <td className="p-3">{buyer?.internationalLocation?.buyerCountry || "-"}</td>
-                      <td className="p-3">{buyer.createdAt ? new Date(buyer.createdAt).toLocaleDateString() : "-"}</td>
-                      <td className="p-3">
-                        <Badge variant="secondary" className="bg-amber-100 text-amber-900">
-                          {buyer.approvalStatus || "PENDING"}
-                        </Badge>
-                      </td>
-                      <td className="p-3 flex gap-2">
-                        <Button size="sm" disabled={processingBuyerUid === buyer.uid} onClick={() => approveBuyer(buyer.uid)}>
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={processingBuyerUid === buyer.uid}
-                          onClick={() => rejectBuyer(buyer.uid)}
-                        >
-                          Reject
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
+                  buyers.map((buyer) => {
+                    const status = String(buyer.approvalStatus || "PENDING").toUpperCase();
+                    return (
+                      <tr key={buyer.uid} className="border-t border-border">
+                        <td className="p-3">{buyer.displayName || buyer.uid}</td>
+                        <td className="p-3">{buyer.companyName || "-"}</td>
+                        <td className="p-3">{buyer?.internationalLocation?.buyerCountry || buyer?.buyerCountry || "-"}</td>
+                        <td className="p-3">{buyer.createdAt?.toDate ? buyer.createdAt.toDate().toLocaleDateString() : buyer.createdAt?.seconds ? new Date(buyer.createdAt.seconds * 1000).toLocaleDateString() : "-"}</td>
+                        <td className="p-3">
+                          <Badge variant="secondary" className={status === "APPROVED" ? "bg-green-100 text-green-800" : status === "REJECTED" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}>
+                            {status}
+                          </Badge>
+                        </td>
+                        <td className="p-3 flex gap-2">
+                          {status === "PENDING" && (
+                            <>
+                              <Button size="sm" disabled={processingBuyerUid === buyer.uid} onClick={() => approveBuyer(buyer.uid)}>Approve</Button>
+                              <Button size="sm" variant="outline" disabled={processingBuyerUid === buyer.uid} onClick={() => rejectBuyer(buyer.uid)}>Reject</Button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -301,33 +296,32 @@ export default function SuperAdminPortal() {
                 </tr>
               </thead>
               <tbody>
-                {transportCompanies.filter((company) => String(company.approvalStatus || "pending").toLowerCase() === "pending").length === 0 ? (
-                  <tr>
-                    <td className="p-4 text-muted-foreground" colSpan={6}>No pending transport companies.</td>
-                  </tr>
-                ) : (
-                  transportCompanies
-                    .filter((company) => String(company.approvalStatus || "pending").toLowerCase() === "pending")
-                    .map((company) => (
+                {transportCompanies.length === 0 ? (
+                  <tr><td className="p-4 text-muted-foreground" colSpan={6}>No transport companies found.</td></tr>
+                ) : transportCompanies.map((company) => {
+                  const status = String(company.approvalStatus || "pending").toLowerCase();
+                  return (
                     <tr key={company.id} className="border-t border-border">
                       <td className="p-3">{company.companyName || company.id}</td>
                       <td className="p-3">{company.county || "-"}</td>
                       <td className="p-3">{company.contactPhone || "-"}</td>
-                      <td className="p-3 capitalize">{company.approvalStatus || "pending"}</td>
                       <td className="p-3">
-                        {company.createdAt?.toDate ? company.createdAt.toDate().toLocaleDateString() : "-"}
+                        <Badge variant="secondary" className={status === "approved" ? "bg-green-100 text-green-800" : status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}>
+                          {status}
+                        </Badge>
                       </td>
+                      <td className="p-3">{company.createdAt?.toDate ? company.createdAt.toDate().toLocaleDateString() : "-"}</td>
                       <td className="p-3 flex gap-2">
-                        <Button size="sm" onClick={() => updateTransportStatus(company.id, "approved")}>
-                          Approve
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => updateTransportStatus(company.id, "rejected")}>
-                          Reject
-                        </Button>
+                        {status === "pending" && (
+                          <>
+                            <Button size="sm" onClick={() => updateTransportStatus(company.id, "approved")}>Approve</Button>
+                            <Button size="sm" variant="outline" onClick={() => updateTransportStatus(company.id, "rejected")}>Reject</Button>
+                          </>
+                        )}
                       </td>
                     </tr>
-                  ))
-                )}
+                  );
+                })}
               </tbody>
             </table>
           </div>

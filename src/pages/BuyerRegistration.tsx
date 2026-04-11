@@ -314,6 +314,20 @@ export default function BuyerRegistration() {
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
+      await setDoc(doc(db, "buyers", uid), {
+        uid,
+        displayName: form.fullName,
+        companyName: form.companyName || internationalProfile?.companyName || form.businessName || null,
+        buyerType: form.buyerScope,
+        ...buyerAccountDefaults,
+        crops: form.crops,
+        markets: persistedMarkets,
+        ...(internationalLocation ? { internationalLocation } : {}),
+        ...(internationalProfile ? { internationalProfile } : {}),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
       await setDoc(doc(db, "buyers", uid, "profile", "v1"), {
         displayName: form.fullName,
         companyName: form.companyName || internationalProfile?.companyName || null,
