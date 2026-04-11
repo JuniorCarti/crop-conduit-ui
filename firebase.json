@@ -49,6 +49,6 @@
     "rules": "storage.rules"
   },
   "functions": {
-    "source": "cloud/functions/marketplace"
+    "source": "functions"
   }
 }
