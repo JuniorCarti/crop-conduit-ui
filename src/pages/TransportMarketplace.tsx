@@ -26,6 +26,7 @@ import {
   subscribeRequesterShipments,
   subscribeTracking,
 } from "@/services/transportService";
+import { useRequesterBids, useRespondToBid } from "@/hooks/useLogisticsInternal";
 import type { TransportBid, TransportShipment, TransportTracking, TransportVehicle } from "@/types/transport";
 
 const DEFAULT_CENTER: [number, number] = [-1.286389, 36.817223];
@@ -195,6 +196,9 @@ export default function TransportMarketplace() {
       offerPrice: "",
     });
   };
+
+  const { bids, isLoading: bidsLoading } = useRequesterBids();
+  const { accept, loading: bidActionLoading } = useRespondToBid();
 
   const trackingPosition: [number, number] | null = tracking?.lat && tracking?.lng ? [tracking.lat, tracking.lng] : null;
 
@@ -376,6 +380,49 @@ export default function TransportMarketplace() {
                   )}
                 </CardContent>
               </Card>
+            </div>
+          )}
+        </section>
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">My bids</h3>
+            <p className="text-sm text-muted-foreground">Track your transport quote requests and counter-offers.</p>
+          </div>
+          {bidsLoading ? (
+            <Card className="border border-border/60"><CardContent className="py-6 text-sm text-muted-foreground">Loading bids...</CardContent></Card>
+          ) : bids.length === 0 ? (
+            <Card className="border border-border/60"><CardContent className="py-6 text-sm text-muted-foreground">No bids yet.</CardContent></Card>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {bids.map((bid) => (
+                <Card key={bid.id} className="border border-border/60">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">Bid #{bid.id?.slice(-6)}</CardTitle>
+                    <Badge variant="outline" className="capitalize">{bid.status}</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Your offer</p>
+                        <p className="font-semibold text-foreground">{formatKsh(bid.offeredPrice)}</p>
+                      </div>
+                      {bid.message && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Message</p>
+                          <p className="font-semibold text-foreground">{bid.message}</p>
+                        </div>
+                      )}
+                    </div>
+                    {bid.status === "countered" && (
+                      <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+                        <p className="font-medium text-warning">Counter-offer received: {formatKsh(bid.offeredPrice)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{bid.message}</p>
+                        <Button size="sm" className="mt-2" onClick={() => bid.id && accept(bid.id)} disabled={bidActionLoading}>Accept counter-offer</Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </section>
