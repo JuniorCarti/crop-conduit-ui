@@ -255,6 +255,32 @@ export async function updateTransportBid(bidId: string, payload: Partial<Transpo
   await updateDoc(doc(db, BIDS_COLLECTION, bidId), cleanPayload);
 }
 
+export function subscribeCompanyBids(
+  companyId: string,
+  callback: (bids: TransportBid[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  return subscribeToQuery(
+    query(collection(db, BIDS_COLLECTION), where("companyId", "==", companyId), orderBy("createdAt", "desc")),
+    mapBid,
+    callback,
+    onError
+  );
+}
+
+export function subscribeRequesterBids(
+  requesterUid: string,
+  callback: (bids: TransportBid[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  return subscribeToQuery(
+    query(collection(db, BIDS_COLLECTION), where("requesterUid", "==", requesterUid), orderBy("createdAt", "desc")),
+    mapBid,
+    callback,
+    onError
+  );
+}
+
 export function subscribeTracking(shipmentId: string, callback: (tracking: TransportTracking | null) => void): Unsubscribe {
   const ref = doc(db, TRACKING_COLLECTION, shipmentId);
   return onSnapshot(ref, (snap) => {

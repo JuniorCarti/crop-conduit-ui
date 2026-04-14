@@ -49,6 +49,7 @@ async function fetchWithAuth<T>(path: string, options: RequestInit = {}): Promis
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
+    mode: 'cors',
   });
 
   if (response.status === 401 || response.status === 403) {

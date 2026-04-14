@@ -20,6 +20,7 @@ import MarketplaceEnhanced from "./pages/MarketplaceEnhanced";
 import ListingDetails from "./pages/ListingDetails";
 import Checkout from "./pages/Checkout";
 import MarketPrices from "./pages/MarketPrices";
+import MarketPricesEnhanced from "./pages/MarketPricesEnhanced";
 import Community from "./pages/Community";
 import CommunityMemberProfile from "./pages/CommunityMemberProfile";
 import Inbox from "./pages/Inbox";
@@ -603,6 +604,14 @@ const App = () => (
                   element={
                     <RoleGuard allowed={["farmer", "admin"]} redirectTo="/marketplace">
                       <MarketPrices />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/market-prices-enhanced"
+                  element={
+                    <RoleGuard allowed={["farmer", "admin"]} redirectTo="/marketplace">
+                      <MarketPricesEnhanced />
                     </RoleGuard>
                   }
                 />

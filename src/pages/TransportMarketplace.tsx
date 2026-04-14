@@ -26,7 +26,16 @@ import {
   subscribeRequesterShipments,
   subscribeTracking,
 } from "@/services/transportService";
+import { useRequesterBids, useRespondToBid } from "@/hooks/useLogisticsInternal";
 import type { TransportBid, TransportShipment, TransportTracking, TransportVehicle } from "@/types/transport";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Batch 4: Logistics & Supply Chain Components
+import { RealTimeFleetTracking } from "@/components/logistics/RealTimeFleetTracking";
+import { ColdChainMonitoring } from "@/components/logistics/ColdChainMonitoring";
+import { SharedTransportPooling } from "@/components/logistics/SharedTransportPooling";
+import { WarehouseManagementSystem } from "@/components/logistics/WarehouseManagementSystem";
+import { LastMileDeliveryOptimization } from "@/components/logistics/LastMileDeliveryOptimization";
 
 const DEFAULT_CENTER: [number, number] = [-1.286389, 36.817223];
 const REFRIGERATION_REQUIRED_CROPS = new Set([
@@ -196,12 +205,22 @@ export default function TransportMarketplace() {
     });
   };
 
+  const { bids, isLoading: bidsLoading } = useRequesterBids();
+  const { accept, loading: bidActionLoading } = useRespondToBid();
+
   const trackingPosition: [number, number] | null = tracking?.lat && tracking?.lng ? [tracking.lat, tracking.lng] : null;
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader title="Transport Marketplace" subtitle="Book logistics and track shipments" icon={Truck} />
       <div className="container mx-auto p-4 md:p-6 space-y-6">
+        <Tabs defaultValue="marketplace" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+            <TabsTrigger value="logistics">Logistics Tools</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="marketplace" className="space-y-6">
         <section className="space-y-3">
           <div>
             <h3 className="text-lg font-semibold text-foreground">Available vehicles</h3>
@@ -379,6 +398,59 @@ export default function TransportMarketplace() {
             </div>
           )}
         </section>
+        <section className="space-y-3">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">My bids</h3>
+            <p className="text-sm text-muted-foreground">Track your transport quote requests and counter-offers.</p>
+          </div>
+          {bidsLoading ? (
+            <Card className="border border-border/60"><CardContent className="py-6 text-sm text-muted-foreground">Loading bids...</CardContent></Card>
+          ) : bids.length === 0 ? (
+            <Card className="border border-border/60"><CardContent className="py-6 text-sm text-muted-foreground">No bids yet.</CardContent></Card>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {bids.map((bid) => (
+                <Card key={bid.id} className="border border-border/60">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">Bid #{bid.id?.slice(-6)}</CardTitle>
+                    <Badge variant="outline" className="capitalize">{bid.status}</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Your offer</p>
+                        <p className="font-semibold text-foreground">{formatKsh(bid.offeredPrice)}</p>
+                      </div>
+                      {bid.message && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Message</p>
+                          <p className="font-semibold text-foreground">{bid.message}</p>
+                        </div>
+                      )}
+                    </div>
+                    {bid.status === "countered" && (
+                      <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+                        <p className="font-medium text-warning">Counter-offer received: {formatKsh(bid.offeredPrice)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{bid.message}</p>
+                        <Button size="sm" className="mt-2" onClick={() => bid.id && accept(bid.id)} disabled={bidActionLoading}>Accept counter-offer</Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+          </TabsContent>
+
+          <TabsContent value="logistics" className="space-y-6">
+            <RealTimeFleetTracking />
+            <ColdChainMonitoring />
+            <SharedTransportPooling />
+            <WarehouseManagementSystem />
+            <LastMileDeliveryOptimization />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={Boolean(bookingVehicle)} onOpenChange={(open) => !open && setBookingVehicle(null)}>
