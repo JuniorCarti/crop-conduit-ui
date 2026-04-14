@@ -5,9 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Package, Users, CheckCircle2 } from "lucide-react";
 import { useUserAccount } from "@/hooks/useUserAccount";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebase";
+import { toast } from "sonner";
 
 
 type CollectionPlan = {
@@ -134,9 +139,26 @@ export default function OrgAggregation() {
   };
 
   const selectedCollection = useMemo(() => collections.find((item) => item.id === selectedId) ?? null, [collections, selectedId]);
+  const totalCommitted = useMemo(() => commitments.reduce((sum, c) => sum + Number(c.expectedVolumeKg || 0), 0), [commitments]);
+  const totalDelivered = useMemo(() => deliveries.reduce((sum, d) => sum + Number(d.deliveredVolumeKg || 0), 0), [deliveries]);
+  const progressPercent = useMemo(() => {
+    if (!selectedCollection) return 0;
+    const target = Number(selectedCollection.targetVolumeKg || 0);
+    return target > 0 ? Math.min(100, (totalDelivered / target) * 100) : 0;
+  }, [selectedCollection, totalDelivered]);
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-border/60"><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Plans</p><p className="text-2xl font-bold">{collections.length}</p></div><Calendar className="h-8 w-8 text-primary" /></div></CardContent></Card>
+        <Card className="border-border/60"><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Commitments</p><p className="text-2xl font-bold">{commitments.length}</p></div><Users className="h-8 w-8 text-blue-600" /></div></CardContent></Card>
+        <Card className="border-border/60"><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Deliveries</p><p className="text-2xl font-bold">{deliveries.length}</p></div><Package className="h-8 w-8 text-green-600" /></div></CardContent></Card>
+        <Card className="border-border/60"><CardContent className="pt-6"><div className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Volume</p><p className="text-2xl font-bold">{totalDelivered.toLocaleString()} kg</p></div><CheckCircle2 className="h-8 w-8 text-emerald-600" /></div></CardContent></Card>
+      </div>
+
+      <Tabs defaultValue="plans" className="space-y-4">
+        <TabsList><TabsTrigger value="plans">Plans</TabsTrigger><TabsTrigger value="create">Create</TabsTrigger>{selectedCollection && <TabsTrigger value="details">Details</TabsTrigger>}</TabsList>
+        <TabsContent value="plans">
       <Card className="border-border/60">
         <CardHeader>
           <CardTitle className="text-base">Create collection plan</CardTitle>
@@ -170,9 +192,8 @@ export default function OrgAggregation() {
             <Button onClick={handleCreate}>Save plan</Button>
           </div>
         </CardContent>
-      </Card>
-
-      <Card className="border-border/60">
+        </TabsContent>
+        <TabsContent value="create">
         <CardHeader>
           <CardTitle className="text-base">Collection plans</CardTitle>
         </CardHeader>
@@ -193,10 +214,21 @@ export default function OrgAggregation() {
             ))
           )}
         </CardContent>
-      </Card>
-
-      {selectedCollection && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        </TabsContent>
+        {selectedCollection && (
+          <TabsContent value="details" className="space-y-4">
+            <Card className="border-border/60">
+              <CardHeader><CardTitle className="text-base">{selectedCollection.crop} - {selectedCollection.collectionCenter}</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-lg border border-border/60 p-4"><p className="text-xs text-muted-foreground mb-1">Target</p><p className="text-2xl font-bold">{Number(selectedCollection.targetVolumeKg || 0).toLocaleString()} kg</p></div>
+                  <div className="rounded-lg border border-border/60 p-4"><p className="text-xs text-muted-foreground mb-1">Committed</p><p className="text-2xl font-bold">{totalCommitted.toLocaleString()} kg</p></div>
+                  <div className="rounded-lg border border-border/60 p-4"><p className="text-xs text-muted-foreground mb-1">Delivered</p><p className="text-2xl font-bold">{totalDelivered.toLocaleString()} kg</p></div>
+                </div>
+                <div><div className="flex items-center justify-between mb-2"><p className="text-sm font-medium">Progress</p><p className="text-sm text-muted-foreground">{progressPercent.toFixed(1)}%</p></div><Progress value={progressPercent} className="h-3" /></div>
+              </CardContent>
+            </Card>
+            <div className="grid gap-4 lg:grid-cols-2">
           <Card className="border-border/60">
             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-base">Commitments</CardTitle>
@@ -280,8 +312,10 @@ export default function OrgAggregation() {
               )}
             </CardContent>
           </Card>
-        </div>
-      )}
+            </div>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
