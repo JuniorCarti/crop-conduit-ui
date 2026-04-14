@@ -28,6 +28,14 @@ import {
 } from "@/services/transportService";
 import { useRequesterBids, useRespondToBid } from "@/hooks/useLogisticsInternal";
 import type { TransportBid, TransportShipment, TransportTracking, TransportVehicle } from "@/types/transport";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Batch 4: Logistics & Supply Chain Components
+import { RealTimeFleetTracking } from "@/components/logistics/RealTimeFleetTracking";
+import { ColdChainMonitoring } from "@/components/logistics/ColdChainMonitoring";
+import { SharedTransportPooling } from "@/components/logistics/SharedTransportPooling";
+import { WarehouseManagementSystem } from "@/components/logistics/WarehouseManagementSystem";
+import { LastMileDeliveryOptimization } from "@/components/logistics/LastMileDeliveryOptimization";
 
 const DEFAULT_CENTER: [number, number] = [-1.286389, 36.817223];
 const REFRIGERATION_REQUIRED_CROPS = new Set([
@@ -206,6 +214,13 @@ export default function TransportMarketplace() {
     <div className="min-h-screen bg-background">
       <PageHeader title="Transport Marketplace" subtitle="Book logistics and track shipments" icon={Truck} />
       <div className="container mx-auto p-4 md:p-6 space-y-6">
+        <Tabs defaultValue="marketplace" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+            <TabsTrigger value="logistics">Logistics Tools</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="marketplace" className="space-y-6">
         <section className="space-y-3">
           <div>
             <h3 className="text-lg font-semibold text-foreground">Available vehicles</h3>
@@ -426,6 +441,16 @@ export default function TransportMarketplace() {
             </div>
           )}
         </section>
+          </TabsContent>
+
+          <TabsContent value="logistics" className="space-y-6">
+            <RealTimeFleetTracking />
+            <ColdChainMonitoring />
+            <SharedTransportPooling />
+            <WarehouseManagementSystem />
+            <LastMileDeliveryOptimization />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={Boolean(bookingVehicle)} onOpenChange={(open) => !open && setBookingVehicle(null)}>
