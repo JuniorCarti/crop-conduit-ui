@@ -25,6 +25,13 @@ import { MarketComparisonPanel } from "@/components/org/international/MarketComp
 import { ExportPartnersSection } from "@/components/org/international/ExportPartnersSection";
 import { InsightsFeed } from "@/components/org/international/InsightsFeed";
 import { SimulationEmptyState } from "@/components/org/international/SimulationEmptyState";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Batch 5: Export Markets Components
+import { ExportComplianceChecker } from "@/components/export/ExportComplianceChecker";
+import { InternationalBuyerMatching } from "@/components/export/InternationalBuyerMatching";
+import { CurrencyHedgingTools } from "@/components/export/CurrencyHedgingTools";
+import { TradeFinanceSolutions } from "@/components/export/TradeFinanceSolutions";
 
 const CROP_OPTIONS = ["Maize", "Tomatoes", "Cabbage", "Kale", "Onions"];
 const STORAGE_KEY = "org_international_controls";
@@ -267,9 +274,9 @@ export default function OrgInternationalMarketsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold">International Markets (Simulation)</h2>
+          <h2 className="text-2xl font-semibold">International Markets</h2>
           <p className="text-sm text-muted-foreground">
-            See how imports, FX, and policy shocks could affect local prices. Simulation only (no real international feeds yet).
+            Export simulation, compliance, buyer matching, and trade finance
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -285,6 +292,14 @@ export default function OrgInternationalMarketsPage() {
           </Button>
         </div>
       </div>
+
+      <Tabs defaultValue="simulation" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="simulation">Simulation</TabsTrigger>
+          <TabsTrigger value="export-tools">Export Tools</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="simulation" className="space-y-6">
 
       {(loadingLocalPrice || loadingListingPrice) && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -333,6 +348,15 @@ export default function OrgInternationalMarketsPage() {
           Cooperative: {orgName} • data source: local market snapshots and simulation assumptions.
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="export-tools" className="space-y-6">
+          <ExportComplianceChecker />
+          <InternationalBuyerMatching />
+          <CurrencyHedgingTools />
+          <TradeFinanceSolutions />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
