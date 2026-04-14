@@ -61,6 +61,8 @@ export default function OrgAggregation() {
     batchId: "",
   });
 
+  const selectedCollection = useMemo(() => collections.find((item) => item.id === selectedId) ?? null, [collections, selectedId]);
+
   const totalCommitted = useMemo(() => {
     return commitments.reduce((sum, c) => sum + (Number(c.expectedVolumeKg) || 0), 0);
   }, [commitments]);
@@ -164,8 +166,6 @@ export default function OrgAggregation() {
     await loadDeliveries(selectedId);
     toast({ title: "Success", description: "Delivery recorded successfully" });
   };
-
-  const selectedCollection = useMemo(() => collections.find((item) => item.id === selectedId) ?? null, [collections, selectedId]);
 
   return (
     <div className="space-y-6">
