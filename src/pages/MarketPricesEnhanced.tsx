@@ -17,6 +17,14 @@ import { ComparativeMarketAnalysis } from "@/components/marketPrices/Comparative
 import { SeasonalPricePatterns } from "@/components/marketPrices/SeasonalPricePatterns";
 import { DemandForecasting } from "@/components/marketPrices/DemandForecasting";
 import { WeatherPriceCorrelation } from "@/components/marketPrices/WeatherPriceCorrelation";
+import { MultiTimeframeForecast } from "@/components/marketPrices/MultiTimeframeForecast";
+import { IntraDayPricePredictions } from "@/components/marketPrices/IntraDayPricePredictions";
+import { PriceVolatilityIndex } from "@/components/marketPrices/PriceVolatilityIndex";
+import { CrossMarketArbitrage } from "@/components/marketPrices/CrossMarketArbitrage";
+import { OptimalSellingWindow } from "@/components/marketPrices/OptimalSellingWindow";
+import { ProfitMarginCalculator } from "@/components/marketPrices/ProfitMarginCalculator";
+import { GamificationDashboard } from "@/components/marketPrices/GamificationDashboard";
+import { HistoricalPerformanceTracking } from "@/components/marketPrices/HistoricalPerformanceTracking";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -42,6 +50,14 @@ export default function MarketPricesEnhanced() {
     seasonalPatterns: true,
     demandForecasting: true,
     weatherCorrelation: true,
+    multiTimeframe: true,
+    intraDayPricing: true,
+    volatilityIndex: true,
+    arbitrage: true,
+    sellingWindow: true,
+    profitCalculator: true,
+    gamification: true,
+    historicalPerformance: true,
   });
 
   const toggleFeature = (feature: keyof typeof featureToggles) => {
@@ -118,6 +134,70 @@ export default function MarketPricesEnhanced() {
                   onCheckedChange={() => toggleFeature("weatherCorrelation")}
                 />
               </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="multiTimeframe">Multi-Timeframe Forecasts</Label>
+                <Switch
+                  id="multiTimeframe"
+                  checked={featureToggles.multiTimeframe}
+                  onCheckedChange={() => toggleFeature("multiTimeframe")}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="intraDayPricing">Intra-Day Pricing</Label>
+                <Switch
+                  id="intraDayPricing"
+                  checked={featureToggles.intraDayPricing}
+                  onCheckedChange={() => toggleFeature("intraDayPricing")}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="volatilityIndex">Volatility Index</Label>
+                <Switch
+                  id="volatilityIndex"
+                  checked={featureToggles.volatilityIndex}
+                  onCheckedChange={() => toggleFeature("volatilityIndex")}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="arbitrage">Cross-Market Arbitrage</Label>
+                <Switch
+                  id="arbitrage"
+                  checked={featureToggles.arbitrage}
+                  onCheckedChange={() => toggleFeature("arbitrage")}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="sellingWindow">Optimal Selling Window</Label>
+                <Switch
+                  id="sellingWindow"
+                  checked={featureToggles.sellingWindow}
+                  onCheckedChange={() => toggleFeature("sellingWindow")}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="profitCalculator">Profit Calculator</Label>
+                <Switch
+                  id="profitCalculator"
+                  checked={featureToggles.profitCalculator}
+                  onCheckedChange={() => toggleFeature("profitCalculator")}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="gamification">Gamification & Rewards</Label>
+                <Switch
+                  id="gamification"
+                  checked={featureToggles.gamification}
+                  onCheckedChange={() => toggleFeature("gamification")}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="historicalPerformance">Historical Performance</Label>
+                <Switch
+                  id="historicalPerformance"
+                  checked={featureToggles.historicalPerformance}
+                  onCheckedChange={() => toggleFeature("historicalPerformance")}
+                />
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -141,11 +221,13 @@ export default function MarketPricesEnhanced() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="forecast">Forecast</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="alerts">Alerts</TabsTrigger>
+            <TabsTrigger value="tools">Tools</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="rewards">Rewards</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -164,6 +246,8 @@ export default function MarketPricesEnhanced() {
 
           {/* Forecast Tab */}
           <TabsContent value="forecast" className="space-y-4">
+            {featureToggles.sellingWindow && <OptimalSellingWindow />}
+            {featureToggles.multiTimeframe && <MultiTimeframeForecast />}
             {featureToggles.forecast7Day && (
               <PriceForecast7Day
                 commodity={selectedCommodity}
@@ -171,6 +255,7 @@ export default function MarketPricesEnhanced() {
                 currentPrice={75}
               />
             )}
+            {featureToggles.intraDayPricing && <IntraDayPricePredictions />}
             {featureToggles.demandForecasting && (
               <DemandForecasting commodity={selectedCommodity} />
             )}
@@ -181,6 +266,8 @@ export default function MarketPricesEnhanced() {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-4">
+            {featureToggles.volatilityIndex && <PriceVolatilityIndex />}
+            {featureToggles.arbitrage && <CrossMarketArbitrage />}
             {featureToggles.marketComparison && (
               <ComparativeMarketAnalysis
                 commodity={selectedCommodity}
@@ -192,9 +279,20 @@ export default function MarketPricesEnhanced() {
             )}
           </TabsContent>
 
-          {/* Alerts Tab */}
-          <TabsContent value="alerts" className="space-y-4">
+          {/* Tools Tab */}
+          <TabsContent value="tools" className="space-y-4">
+            {featureToggles.profitCalculator && <ProfitMarginCalculator />}
             {featureToggles.priceAlerts && <PriceAlertsManager />}
+          </TabsContent>
+
+          {/* Performance Tab */}
+          <TabsContent value="performance" className="space-y-4">
+            {featureToggles.historicalPerformance && <HistoricalPerformanceTracking />}
+          </TabsContent>
+
+          {/* Rewards Tab */}
+          <TabsContent value="rewards" className="space-y-4">
+            {featureToggles.gamification && <GamificationDashboard />}
           </TabsContent>
         </Tabs>
       </div>
