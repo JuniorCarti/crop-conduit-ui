@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Building2, Users, UserCog, BarChart3, GraduationCap, FileText, Trophy, Award, Handshake, PackageCheck, Wallet, LineChart, FileSpreadsheet, Store, Globe2 } from "lucide-react";
+import { Building2, Users, UserCog, BarChart3, GraduationCap, FileText, Trophy, Award, Handshake, PackageCheck, Wallet, LineChart, FileSpreadsheet, Store, Globe2, ChevronDown } from "lucide-react";
 import { useUserAccount } from "@/hooks/useUserAccount";
 import { useEffect, useState } from "react";
 import { getOrganization } from "@/services/orgService";
@@ -13,24 +13,55 @@ import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
 import { getOrgFeatureFlags } from "@/services/orgFeaturesService";
 import { StatusPill } from "@/components/shared/StatusPill";
 import { ProfileDropdown } from "@/components/shared/ProfileDropdown";
+import { Separator } from "@/components/ui/separator";
 
-const navItems = [
-  { to: "/org", label: "Dashboard", icon: Building2, capability: "members" as const, feature: null },
-  { to: "/org/members", label: "Members", icon: Users, capability: "members" as const, feature: null },
-  { to: "/org/staff", label: "Staff", icon: UserCog, capability: "members" as const, feature: null },
-  { to: "/org/aggregation", label: "Aggregation", icon: BarChart3, capability: "aggregation" as const, feature: "harvestPlanner" },
-  { to: "/org/group-prices", label: "Group Prices", icon: BarChart3, capability: "prices" as const, feature: "groupPrices" },
-  { to: "/org/training", label: "Training", icon: GraduationCap, capability: "training" as const, feature: "training" },
-  { to: "/org/certificates", label: "Certificates", icon: Award, capability: "certificates" as const, feature: "certificates" },
-  { to: "/org/targets", label: "Targets & Rewards", icon: Trophy, capability: "targets" as const, feature: "targetsRewards" },
-  { to: "/org/billing", label: "Billing", icon: FileText, capability: "billing" as const, feature: null, settingsFlag: null },
-  { to: "/org/sponsorships", label: "Sponsorships", icon: Handshake, capability: "members" as const, feature: null, settingsFlag: "phase3Sponsorships" },
-  { to: "/org/sales-batches", label: "Sales Batches", icon: PackageCheck, capability: "members" as const, feature: null, settingsFlag: "phase3SellOnBehalf" },
-  { to: "/org/revenue-model", label: "Revenue Model", icon: Wallet, capability: "billing" as const, feature: null, settingsFlag: "phase3RevenueShare" },
-  { to: "/org/impact", label: "Impact", icon: LineChart, capability: "members" as const, feature: null, settingsFlag: "phase3Impact" },
-  { to: "/org/reports", label: "Reports", icon: FileSpreadsheet, capability: "members" as const, feature: null, settingsFlag: "phase3Reports" },
-  { to: "/org/trade", label: "Trade / Exchange", icon: Store, capability: "members" as const, feature: null, settingsFlag: "coopTradeEnabled" },
-  { to: "/org/international", label: "International Markets", icon: Globe2, capability: "members" as const, feature: null, settingsFlag: "coopTradeEnabled", envFlag: "intlSim" as const },
+const navGroups = [
+  {
+    label: "Overview",
+    items: [
+      { to: "/org", label: "Dashboard", icon: Building2, capability: "members" as const, feature: null },
+    ],
+  },
+  {
+    label: "Management",
+    items: [
+      { to: "/org/members", label: "Members", icon: Users, capability: "members" as const, feature: null },
+      { to: "/org/staff", label: "Staff", icon: UserCog, capability: "members" as const, feature: null },
+      { to: "/org/aggregation", label: "Aggregation", icon: BarChart3, capability: "aggregation" as const, feature: "harvestPlanner" },
+      { to: "/org/group-prices", label: "Group Prices", icon: BarChart3, capability: "prices" as const, feature: "groupPrices" },
+    ],
+  },
+  {
+    label: "Training & Development",
+    items: [
+      { to: "/org/training", label: "Training", icon: GraduationCap, capability: "training" as const, feature: "training" },
+      { to: "/org/certificates", label: "Certificates", icon: Award, capability: "certificates" as const, feature: "certificates" },
+      { to: "/org/targets", label: "Targets & Rewards", icon: Trophy, capability: "targets" as const, feature: "targetsRewards" },
+    ],
+  },
+  {
+    label: "Finance & Partnerships",
+    items: [
+      { to: "/org/billing", label: "Billing", icon: FileText, capability: "billing" as const, feature: null, settingsFlag: null },
+      { to: "/org/sponsorships", label: "Sponsorships", icon: Handshake, capability: "members" as const, feature: null, settingsFlag: "phase3Sponsorships" },
+      { to: "/org/revenue-model", label: "Revenue Model", icon: Wallet, capability: "billing" as const, feature: null, settingsFlag: "phase3RevenueShare" },
+    ],
+  },
+  {
+    label: "Sales & Markets",
+    items: [
+      { to: "/org/sales-batches", label: "Sales Batches", icon: PackageCheck, capability: "members" as const, feature: null, settingsFlag: "phase3SellOnBehalf" },
+      { to: "/org/trade", label: "Trade / Exchange", icon: Store, capability: "members" as const, feature: null, settingsFlag: "coopTradeEnabled" },
+      { to: "/org/international", label: "International Markets", icon: Globe2, capability: "members" as const, feature: null, settingsFlag: "coopTradeEnabled", envFlag: "intlSim" as const },
+    ],
+  },
+  {
+    label: "Analytics & Reports",
+    items: [
+      { to: "/org/impact", label: "Impact", icon: LineChart, capability: "members" as const, feature: null, settingsFlag: "phase3Impact" },
+      { to: "/org/reports", label: "Reports", icon: FileSpreadsheet, capability: "members" as const, feature: null, settingsFlag: "phase3Reports" },
+    ],
+  },
 ];
 
 const envTradeEnabled = String((import.meta as any).env?.VITE_ENABLE_COOP_TRADE ?? "false").toLowerCase() === "true";
@@ -41,6 +72,7 @@ export function OrgLayout() {
   const [org, setOrg] = useState<OrganizationDoc | null>(null);
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({});
   const [orgSettingsFlags, setOrgSettingsFlags] = useState<Record<string, boolean>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const { orgType } = useOrgType();
   const navigate = useNavigate();
 
@@ -72,6 +104,23 @@ export function OrgLayout() {
       })
       .catch(() => setFeatureFlags({}));
   }, [accountQuery.data?.orgId, accountQuery.isFetched]);
+
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const filterItem = (item: any) => {
+    return (
+      hasOrgCapability(orgType, item.capability) &&
+      (item.feature ? featureFlags[item.feature] !== false : true) &&
+      (item.settingsFlag
+        ? item.settingsFlag === "coopTradeEnabled"
+          ? envTradeEnabled || orgSettingsFlags[item.settingsFlag] === true
+          : orgSettingsFlags[item.settingsFlag] === true
+        : true) &&
+      (item.envFlag === "intlSim" ? envIntlEnabled : true)
+    );
+  };
 
   if (accountQuery.isLoading) {
     return (
@@ -108,7 +157,7 @@ export function OrgLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <AgriSmartLogo variant="inline" size="sm" showTagline={false} />
@@ -130,39 +179,47 @@ export function OrgLayout() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-          <nav className="flex gap-2 overflow-x-auto lg:flex-col">
-            {(navItems.filter((item) => hasOrgCapability(orgType, item.capability)
-              && (item.feature ? featureFlags[item.feature] !== false : true)
-              && (item.settingsFlag
-                ? item.settingsFlag === "coopTradeEnabled"
-                  ? envTradeEnabled || orgSettingsFlags[item.settingsFlag] === true
-                  : orgSettingsFlags[item.settingsFlag] === true
-                : true)
-              && (item.envFlag === "intlSim" ? envIntlEnabled : true)).length
-              ? navItems.filter((item) => hasOrgCapability(orgType, item.capability)
-                && (item.feature ? featureFlags[item.feature] !== false : true)
-                && (item.settingsFlag
-                  ? item.settingsFlag === "coopTradeEnabled"
-                    ? envTradeEnabled || orgSettingsFlags[item.settingsFlag] === true
-                    : orgSettingsFlags[item.settingsFlag] === true
-                  : true)
-                && (item.envFlag === "intlSim" ? envIntlEnabled : true))
-              : [{ to: "/org", label: "Dashboard", icon: Building2, capability: "members" as const, feature: null }]
-            ).map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-                    isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`
-                }
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </NavLink>
-            ))}
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+          <nav className="space-y-1 overflow-x-auto lg:sticky lg:top-6 lg:h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-2">
+            {navGroups.map((group) => {
+              const visibleItems = group.items.filter(filterItem);
+              if (visibleItems.length === 0) return null;
+
+              const isCollapsed = collapsedGroups[group.label];
+
+              return (
+                <div key={group.label} className="space-y-1">
+                  <button
+                    onClick={() => toggleGroup(group.label)}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <span>{group.label}</span>
+                    <ChevronDown className={`h-3 w-3 transition-transform ${isCollapsed ? "-rotate-90" : ""}`} />
+                  </button>
+                  {!isCollapsed && (
+                    <div className="space-y-0.5">
+                      {visibleItems.map((item) => (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                              isActive
+                                ? "bg-primary text-primary-foreground font-medium"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            }`
+                          }
+                        >
+                          <item.icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                  <Separator className="my-2" />
+                </div>
+              );
+            })}
           </nav>
           <div className="space-y-4">
             <Outlet />
