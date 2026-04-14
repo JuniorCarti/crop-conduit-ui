@@ -174,10 +174,7 @@ const MEMBERSHIP_ROLES: MemberFormState["membershipRole"][] = [
 const OWNERSHIP_TYPES = ["Owner", "Tenant", "Family land", "Lease", "Other"];
 
 const steps = [
-  "Identity",
-  "Location",
-  "Farm",
-  "Financial",
+  "Identity & Farm",
   "Documents",
   "Review",
 ];
@@ -1959,10 +1956,58 @@ export default function OrgMembers() {
 
   return (
     <div className="space-y-6">
+      {/* Quick Stats Dashboard */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="border-border/60">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Members</p>
+                <p className="text-2xl font-bold">{members.length}</p>
+              </div>
+              <Users className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold">{members.filter(m => (m.status ?? m.verificationStatus) === 'active').length}</p>
+              </div>
+              <Users className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Pending Approval</p>
+                <p className="text-2xl font-bold">{pendingApprovalMembers.length + pendingApplications.length + pendingJoinRequests.length}</p>
+              </div>
+              <Users className="h-8 w-8 text-amber-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Seats Used</p>
+                <p className="text-2xl font-bold">{usage.paidUsed + usage.sponsoredUsed}/{usage.paidTotal + usage.sponsoredTotal}</p>
+              </div>
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="border-border/60">
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Member management</CardTitle>
+            <CardTitle>Member Management</CardTitle>
             <p className="text-sm text-muted-foreground">Onboard, verify, and track cooperative members.</p>
           </div>
           <div className="flex flex-wrap gap-2">
