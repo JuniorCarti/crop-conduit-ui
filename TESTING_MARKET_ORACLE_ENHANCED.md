@@ -4,7 +4,7 @@
 
 ### Option 1: Direct URL
 1. Start your dev server: `npm run dev`
-2. Navigate to: `http://localhost:5173/market-prices-enhanced`
+2. Navigate to: `http://localhost:8080/market-prices-enhanced`
 3. Login as a farmer or admin user
 
 ### Option 2: Add to Navigation
