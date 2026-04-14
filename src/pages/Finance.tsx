@@ -111,6 +111,14 @@ import {
 import { uploadFile } from "@/services/storage";
 import type { LoanApplication, ProfitLossStatement } from "@/services/firestore-finance";
 
+// Batch 3: Financial Services Components
+import { MicroInsuranceIntegration } from "@/components/finance/MicroInsuranceIntegration";
+import { DigitalWalletIntegration } from "@/components/finance/DigitalWalletIntegration";
+import { InvoicePaymentTracking } from "@/components/finance/InvoicePaymentTracking";
+import { CreditScoringSystem } from "@/components/finance/CreditScoringSystem";
+import { InputFinancingMarketplace } from "@/components/finance/InputFinancingMarketplace";
+import { SavingsInvestmentPools } from "@/components/finance/SavingsInvestmentPools";
+
 // Fallback dummy data for development/testing
 const FALLBACK_CASHFLOW_DATA = [
   { month: "Jan", income: 500000, expenses: 300000 },
@@ -1164,10 +1172,11 @@ function FinanceContent() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="eligibility">
-                    <TabsList className="grid grid-cols-3">
+                    <TabsList className="grid grid-cols-4">
                       <TabsTrigger value="eligibility">{copy.eligibility}</TabsTrigger>
                       <TabsTrigger value="compare">{copy.compare}</TabsTrigger>
                       <TabsTrigger value="tracker">{copy.tracker}</TabsTrigger>
+                      <TabsTrigger value="services">Services</TabsTrigger>
                     </TabsList>
 
                     {/* Eligibility Tab */}
@@ -1431,6 +1440,16 @@ function FinanceContent() {
                           </Badge>
                         </div>
                       )}
+                    </TabsContent>
+
+                    {/* Financial Services Tab - Batch 3 */}
+                    <TabsContent value="services" className="mt-4 space-y-6">
+                      <MicroInsuranceIntegration />
+                      <DigitalWalletIntegration />
+                      <InvoicePaymentTracking />
+                      <CreditScoringSystem />
+                      <InputFinancingMarketplace />
+                      <SavingsInvestmentPools />
                     </TabsContent>
                   </Tabs>
                 </CardContent>
