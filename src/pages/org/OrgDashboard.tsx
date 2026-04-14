@@ -10,6 +10,10 @@ import { getOrgFeatureFlags } from "@/services/orgFeaturesService";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import KenyaMemberMap from "@/components/org/KenyaMemberMap";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { Users, UserCheck, Calendar, TrendingUp, TrendingDown, Minus, Plus, UserPlus, Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 
 
 type PriceSignal = {
@@ -210,12 +214,45 @@ export default function OrgDashboard() {
 
   const metrics = useMemo(
     () => [
-      { title: "Members", value: memberCount.toString(), subtitle: `${newMembers} new this month` },
-      { title: "Active members", value: activeMembers.toString(), subtitle: `${pendingMembers} pending verification` },
+      { 
+        title: "Total Members", 
+        value: memberCount.toString(), 
+        subtitle: `${newMembers} new this month`,
+        icon: Users,
+        trend: newMembers > 0 ? "up" : "neutral",
+        trendValue: newMembers > 0 ? `+${newMembers}` : "0",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50"
+      },
+      { 
+        title: "Active Members", 
+        value: activeMembers.toString(), 
+        subtitle: `${pendingMembers} pending approval`,
+        icon: UserCheck,
+        trend: "neutral",
+        trendValue: `${Math.round((activeMembers / memberCount) * 100)}%`,
+        color: "text-green-600",
+        bgColor: "bg-green-50"
+      },
       {
-        title: "Next collection",
+        title: "Next Collection",
         value: nextCollection?.startDate ?? "None scheduled",
-        subtitle: nextCollection?.crop ? `${nextCollection.crop} - ${nextCollection.targetVolumeKg ?? 0} kg` : "",
+        subtitle: nextCollection?.crop ? `${nextCollection.crop} - ${nextCollection.targetVolumeKg ?? 0} kg` : "Plan a collection",
+        icon: Calendar,
+        trend: "neutral",
+        trendValue: nextCollection ? "Scheduled" : "--",
+        color: "text-purple-600",
+        bgColor: "bg-purple-50"
+      },
+      {
+        title: "Pending Approvals",
+        value: pendingMembers.toString(),
+        subtitle: "Require your attention",
+        icon: UserPlus,
+        trend: pendingMembers > 0 ? "up" : "neutral",
+        trendValue: pendingMembers > 0 ? "Action needed" : "All clear",
+        color: "text-amber-600",
+        bgColor: "bg-amber-50"
       },
     ],
     [memberCount, newMembers, activeMembers, pendingMembers, nextCollection]
@@ -223,138 +260,188 @@ export default function OrgDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Enhanced Metrics Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((card) => (
-          <Card
-            key={card.title}
-            className="border-border/60 cursor-pointer transition hover:border-foreground/20"
-            onClick={() => {
-              if (card.title === "Members") navigate("/org/members");
-              if (card.title === "Active members") navigate("/org/members?status=active");
-              if (card.title === "Next collection") navigate("/org/aggregation");
-            }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                if (card.title === "Members") navigate("/org/members");
-                if (card.title === "Active members") navigate("/org/members?status=active");
-                if (card.title === "Next collection") navigate("/org/aggregation");
-              }
-            }}
-          >
-            <CardHeader>
-              <CardTitle className="text-sm text-muted-foreground">{card.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-semibold text-foreground">{card.value}</p>
-              {card.subtitle && <p className="text-xs text-muted-foreground">{card.subtitle}</p>}
-            </CardContent>
-          </Card>
-        ))}
-        <Card
-          className="border-border/60 cursor-pointer transition hover:border-foreground/20"
-          onClick={() => navigate("/org/group-prices")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              navigate("/org/group-prices");
-            }
-          }}
-        >
-          <CardHeader className="space-y-2">
-            <CardTitle className="text-sm text-muted-foreground">Prices today</CardTitle>
-            {marketOptions.length > 0 && (
-              <select
-                className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
-                value={selectedMarket ?? marketOptions[0]}
-                onChange={(event) => setSelectedMarket(event.target.value)}
-              >
-                {marketOptions.map((market) => (
-                  <option key={market} value={market}>{market}</option>
-                ))}
-              </select>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {priceLoading ? (
-              <div className="space-y-2">
-                <div className="h-3 w-full rounded bg-muted" />
-                <div className="h-3 w-5/6 rounded bg-muted" />
-                <div className="h-3 w-4/6 rounded bg-muted" />
-              </div>
-            ) : priceError ? (
-              <div className="space-y-2">
-                <p className="text-xs text-destructive">{priceError}</p>
-                <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Retry</Button>
-              </div>
-            ) : priceSignals.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No member crop data yet. Add members to generate price insights.</p>
-            ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  {priceMeta?.market}{priceMeta?.updatedAt ? ` - Updated ${priceMeta.updatedAt}` : ""}
-                </p>
-                {priceSignals.map((signal) => (
-                  <div key={signal.crop} className="flex items-center justify-between text-xs">
-                    <span>{signal.crop}</span>
-                    <span className="text-muted-foreground">KES {signal.price ? signal.price.toFixed(0) : "--"}/kg</span>
-                    <span className="font-semibold">{signal.trend === "up" ? "up" : signal.trend === "down" ? "down" : "flat"}</span>
+        {metrics.map((metric) => {
+          const Icon = metric.icon;
+          const TrendIcon = metric.trend === "up" ? TrendingUp : metric.trend === "down" ? TrendingDown : Minus;
+          return (
+            <Card
+              key={metric.title}
+              className="border-border/60 cursor-pointer transition-all hover:shadow-md hover:border-primary/40"
+              onClick={() => {
+                if (metric.title === "Total Members") navigate("/org/members");
+                if (metric.title === "Active Members") navigate("/org/members?status=active");
+                if (metric.title === "Next Collection") navigate("/org/aggregation");
+                if (metric.title === "Pending Approvals") navigate("/org/members?status=submitted");
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground">{metric.title}</p>
+                    <p className="mt-2 text-3xl font-bold">{metric.value}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{metric.subtitle}</p>
                   </div>
-                ))}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  <div className={`rounded-lg p-3 ${metric.bgColor}`}>
+                    <Icon className={`h-6 w-6 ${metric.color}`} />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-1 text-xs">
+                  <TrendIcon className={`h-3 w-3 ${metric.trend === "up" ? "text-green-600" : metric.trend === "down" ? "text-red-600" : "text-gray-400"}`} />
+                  <span className={metric.trend === "up" ? "text-green-600 font-medium" : metric.trend === "down" ? "text-red-600 font-medium" : "text-gray-600"}>
+                    {metric.trendValue}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
+      {/* Market Prices Dashboard */}
+      <Card className="border-border/60">
+        <CardHeader>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Market Prices Today
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Live prices for your cooperative's crops
+              </p>
+            </div>
+            {marketOptions.length > 0 && (
+              <Select value={selectedMarket ?? marketOptions[0]} onValueChange={setSelectedMarket}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select market" />
+                </SelectTrigger>
+                <SelectContent>
+                  {marketOptions.map((market) => (
+                    <SelectItem key={market} value={market}>{market}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {priceLoading ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : priceError ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-destructive mb-3">{priceError}</p>
+              <Button size="sm" variant="outline" onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+          ) : priceSignals.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No member crop data yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">Add members to generate price insights.</p>
+              <Button size="sm" className="mt-4" onClick={() => navigate("/org/members?open=add")}>Add Members</Button>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
+                <span>{priceMeta?.market}</span>
+                <span>{priceMeta?.updatedAt ? `Updated ${priceMeta.updatedAt}` : ""}</span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {priceSignals.map((signal) => {
+                  const TrendIcon = signal.trend === "up" ? TrendingUp : signal.trend === "down" ? TrendingDown : Minus;
+                  return (
+                    <div key={signal.crop} className="rounded-lg border border-border/60 p-4 hover:border-primary/40 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold">{signal.crop}</p>
+                          <p className="text-2xl font-bold mt-1">KES {signal.price ? signal.price.toFixed(0) : "--"}</p>
+                          <p className="text-xs text-muted-foreground">per kg</p>
+                        </div>
+                        <Badge variant={signal.trend === "up" ? "default" : signal.trend === "down" ? "destructive" : "outline"} className="flex items-center gap-1">
+                          <TrendIcon className="h-3 w-3" />
+                          {signal.trend === "up" ? "Up" : signal.trend === "down" ? "Down" : "Stable"}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 text-center">
+                <Button variant="outline" size="sm" onClick={() => navigate("/org/group-prices")}>View Full Market Dashboard</Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       {analyticsV2Enabled && (
-        <Card className="border-border/60">
-          <CardHeader>
-            <CardTitle>Analytics</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded border border-border/60 p-3 text-sm">
-                <p className="text-xs text-muted-foreground">Total Members</p>
-                <p className="font-semibold">{memberCount || "--"}</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Seat Usage */}
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="text-base">Seat Usage</CardTitle>
+              <p className="text-sm text-muted-foreground">Track your cooperative's seat allocation</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Sponsored Seats</span>
+                  <span className="text-sm text-muted-foreground">{sponsoredUsed} / {sponsoredTotal}</span>
+                </div>
+                <Progress value={(sponsoredUsed / Math.max(sponsoredTotal, 1)) * 100} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Math.max(0, sponsoredTotal - sponsoredUsed)} seats remaining
+                </p>
               </div>
-              <div className="rounded border border-border/60 p-3 text-sm">
-                <p className="text-xs text-muted-foreground">Active Members</p>
-                <p className="font-semibold">{activeMembers || "--"}</p>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Paid Seats</span>
+                  <span className="text-sm text-muted-foreground">{paidUsed} / {paidTotal}</span>
+                </div>
+                <Progress value={(paidUsed / Math.max(paidTotal, 1)) * 100} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Math.max(0, paidTotal - paidUsed)} seats remaining
+                </p>
               </div>
-              <div className="rounded border border-border/60 p-3 text-sm">
-                <p className="text-xs text-muted-foreground">Pending Approvals</p>
-                <p className="font-semibold">{pendingMembers || "--"}</p>
+              <div className="pt-4 border-t border-border/60">
+                <Button variant="outline" size="sm" className="w-full" onClick={() => navigate("/org/subscription")}>Manage Subscription</Button>
               </div>
-              <div className="rounded border border-border/60 p-3 text-sm">
-                <p className="text-xs text-muted-foreground">Sponsored Used / Total</p>
-                <p className="font-semibold">{sponsoredUsed}/{sponsoredTotal}</p>
+            </CardContent>
+          </Card>
+
+          {/* Member Growth */}
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="text-base">Member Growth</CardTitle>
+              <p className="text-sm text-muted-foreground">New members joined over time</p>
+            </CardHeader>
+            <CardContent>
+              <div className="h-56">
+                {joinedPerMonth.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-sm text-muted-foreground">No growth data yet</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={joinedPerMonth}>
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar dataKey="joined" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
-              <div className="rounded border border-border/60 p-3 text-sm">
-                <p className="text-xs text-muted-foreground">Paid Used / Total</p>
-                <p className="font-semibold">{paidUsed}/{paidTotal}</p>
-              </div>
-            </div>
-            <div className="h-56 rounded border border-border/60 p-2">
-              {joinedPerMonth.length === 0 ? (
-                <p className="p-4 text-sm text-muted-foreground">--</p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={joinedPerMonth}>
-                    <XAxis dataKey="month" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Bar dataKey="joined" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {kenyaMemberMapEnabled && orgId && (
@@ -376,19 +463,35 @@ export default function OrgDashboard() {
         </ErrorBoundary>
       )}
 
+      {/* Quick Actions */}
       <Card className="border-border/60">
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>Cooperative actions</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => navigate("/org/members?open=add")}>Add members</Button>
-            <Button size="sm" variant="outline" onClick={() => navigate("/org/members?open=joinCode")}>Create join code</Button>
-            <Button size="sm" variant="secondary" onClick={() => navigate("/org/aggregation/new")}>Plan collection</Button>
-          </div>
+        <CardHeader>
+          <CardTitle className="text-base">Quick Actions</CardTitle>
+          <p className="text-sm text-muted-foreground">Common tasks for managing your cooperative</p>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Stay on top of member onboarding, collection planning, and market updates with live cooperative data.
-          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Button variant="outline" className="h-auto flex-col items-start p-4 text-left" onClick={() => navigate("/org/members?open=add")}>
+              <UserPlus className="h-5 w-5 mb-2 text-primary" />
+              <span className="font-semibold">Add Members</span>
+              <span className="text-xs text-muted-foreground mt-1">Onboard new farmers</span>
+            </Button>
+            <Button variant="outline" className="h-auto flex-col items-start p-4 text-left" onClick={() => navigate("/org/members?open=joinCode")}>
+              <Plus className="h-5 w-5 mb-2 text-primary" />
+              <span className="font-semibold">Join Code</span>
+              <span className="text-xs text-muted-foreground mt-1">Generate invite codes</span>
+            </Button>
+            <Button variant="outline" className="h-auto flex-col items-start p-4 text-left" onClick={() => navigate("/org/aggregation")}>
+              <Calendar className="h-5 w-5 mb-2 text-primary" />
+              <span className="font-semibold">Plan Collection</span>
+              <span className="text-xs text-muted-foreground mt-1">Schedule harvest events</span>
+            </Button>
+            <Button variant="outline" className="h-auto flex-col items-start p-4 text-left" onClick={() => navigate("/org/group-prices")}>
+              <TrendingUp className="h-5 w-5 mb-2 text-primary" />
+              <span className="font-semibold">Market Insights</span>
+              <span className="text-xs text-muted-foreground mt-1">View price trends</span>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
