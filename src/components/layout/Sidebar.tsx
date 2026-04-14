@@ -18,6 +18,8 @@ import {
   CreditCard,
   Truck,
   MapPin,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +34,7 @@ import { hasOrgCapability } from "@/config/orgCapabilities";
 import { AgriSmartLogo } from "@/components/Brand/AgriSmartLogo";
 import { BUYER_TRADE_ENABLED } from "@/services/buyerTradeService";
 import { BUYER_BILLING_ENABLED, BUYER_DASHBOARD_ENABLED } from "@/config/buyerFeatures";
+import { useState } from "react";
 
 export function Sidebar() {
   const { currentUser, logout } = useAuth();
@@ -41,6 +44,16 @@ export function Sidebar() {
   const { role } = useUserRole();
   const { orgType } = useOrgType();
   const profileRoute = role === "buyer" ? "/buyer/profile" : "/profile";
+
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    core: true,
+    marketplace: true,
+    premium: false,
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const farmerNav = FEATURES.filter((feature) =>
     ["dashboard", "market", "climate", "asha", "harvest", "community"].includes(feature.id)
@@ -110,12 +123,236 @@ export function Sidebar() {
       
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         <div className="space-y-1">
-          {role === "farmer" &&
-            farmerFreeNav.map((item) => (
+          {role === "farmer" && (
+            <>
+              {/* Core Features Section */}
+              <div className="mb-2">
+                <button
+                  onClick={() => toggleSection("core")}
+                  className="flex items-center gap-2 px-3 py-2 w-full text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {expandedSections.core ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                  Core Features
+                </button>
+                {expandedSections.core && (
+                  <div className="space-y-1 mt-1">
+                    {farmerFreeNav.map((item) => (
+                      <NavLink
+                        key={item.id}
+                        to={item.route}
+                        end={item.route === "/"}
+                        className={({ isActive }) =>
+                          cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-sm"
+                              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                          )
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <item.icon
+                              className={cn(
+                                "h-5 w-5 transition-transform duration-200",
+                                !isActive && "group-hover:scale-110"
+                              )}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{t(item.labelKey)}</p>
+                              <p
+                                className={cn(
+                                  "text-[10px] truncate transition-colors",
+                                  isActive ? "text-primary-foreground/70" : "text-muted-foreground"
+                                )}
+                              >
+                                {t(item.navDescriptionKey)}
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Marketplace & Services Section */}
+              <div className="mb-2">
+                <button
+                  onClick={() => toggleSection("marketplace")}
+                  className="flex items-center gap-2 px-3 py-2 w-full text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {expandedSections.marketplace ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                  Marketplace & Services
+                </button>
+                {expandedSections.marketplace && (
+                  <div className="space-y-1 mt-1">
+                    <NavLink
+                      to="/marketplace"
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <Store
+                            className={cn(
+                              "h-5 w-5 transition-transform duration-200",
+                              !isActive && "group-hover:scale-110"
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">Marketplace</p>
+                          </div>
+                        </>
+                      )}
+                    </NavLink>
+                    <NavLink
+                      to="/transport-marketplace"
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <Truck
+                            className={cn(
+                              "h-5 w-5 transition-transform duration-200",
+                              !isActive && "group-hover:scale-110"
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">Transport</p>
+                          </div>
+                        </>
+                      )}
+                    </NavLink>
+                    <NavLink
+                      to="/cooperatives"
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <Users
+                            className={cn(
+                              "h-5 w-5 transition-transform duration-200",
+                              !isActive && "group-hover:scale-110"
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">Cooperatives</p>
+                          </div>
+                        </>
+                      )}
+                    </NavLink>
+                    <NavLink
+                      to="/farmer/bids"
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <Gavel
+                            className={cn(
+                              "h-5 w-5 transition-transform duration-200",
+                              !isActive && "group-hover:scale-110"
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">Bids & Results</p>
+                          </div>
+                        </>
+                      )}
+                    </NavLink>
+                  </div>
+                )}
+              </div>
+
+              {/* Premium Features Section */}
+              {farmerPremiumNav.length > 0 && (
+                <div className="mb-2">
+                  <button
+                    onClick={() => toggleSection("premium")}
+                    className="flex items-center gap-2 px-3 py-2 w-full text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {expandedSections.premium ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                    {t("premium.sectionLabel")}
+                  </button>
+                  {expandedSections.premium && (
+                    <div className="space-y-1 mt-1">
+                      {farmerPremiumNav.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => open({ featureId: item.id, route: item.route })}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group w-full text-left",
+                            "text-muted-foreground/70 hover:bg-secondary/60",
+                            "cursor-not-allowed"
+                          )}
+                          aria-disabled
+                        >
+                          <item.icon className="h-5 w-5 opacity-70" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium truncate">{t(item.labelKey)}</p>
+                              <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+                                {t("premium.badge")}
+                              </Badge>
+                            </div>
+                            <p className="text-[10px] truncate text-muted-foreground/80">
+                              {t(item.navDescriptionKey)}
+                            </p>
+                          </div>
+                          <Lock className="h-4 w-4 opacity-70" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="border-t border-border my-2" />
+
+              {/* Profile */}
               <NavLink
-                key={item.id}
-                to={item.route}
-                end={item.route === "/"}
+                to={profileRoute}
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
@@ -127,125 +364,22 @@ export function Sidebar() {
               >
                 {({ isActive }) => (
                   <>
-                    <item.icon
+                    <User
                       className={cn(
                         "h-5 w-5 transition-transform duration-200",
                         !isActive && "group-hover:scale-110"
                       )}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{t(item.labelKey)}</p>
+                      <p className="text-sm font-medium truncate">{t("nav.profile")}</p>
                       <p
                         className={cn(
                           "text-[10px] truncate transition-colors",
                           isActive ? "text-primary-foreground/70" : "text-muted-foreground"
                         )}
                       >
-                        {t(item.navDescriptionKey)}
+                        {t("navDescriptions.profile")}
                       </p>
-                    </div>
-                  </>
-                )}
-              </NavLink>
-            ))}
-          {role === "farmer" && (
-            <>
-              <NavLink
-                to="/marketplace"
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Store
-                      className={cn(
-                        "h-5 w-5 transition-transform duration-200",
-                        !isActive && "group-hover:scale-110"
-                      )}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">Marketplace</p>
-                    </div>
-                  </>
-                )}
-              </NavLink>
-              <NavLink
-                to="/transport-marketplace"
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Truck
-                      className={cn(
-                        "h-5 w-5 transition-transform duration-200",
-                        !isActive && "group-hover:scale-110"
-                      )}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">Transport</p>
-                    </div>
-                  </>
-                )}
-              </NavLink>
-              <NavLink
-                to="/cooperatives"
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Users
-                      className={cn(
-                        "h-5 w-5 transition-transform duration-200",
-                        !isActive && "group-hover:scale-110"
-                      )}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">Cooperatives</p>
-                    </div>
-                  </>
-                )}
-              </NavLink>
-              <NavLink
-                to="/farmer/bids"
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Gavel
-                      className={cn(
-                        "h-5 w-5 transition-transform duration-200",
-                        !isActive && "group-hover:scale-110"
-                      )}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">Bids & Results</p>
                     </div>
                   </>
                 )}
@@ -283,43 +417,7 @@ export function Sidebar() {
                 )}
               </NavLink>
             ))}
-          {role === "farmer" && farmerPremiumNav.length > 0 && (
-            <>
-              <div className="pt-3">
-                <p className="px-3 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/80">
-                  {t("premium.sectionLabel")}
-                </p>
-              </div>
-              {farmerPremiumNav.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => open({ featureId: item.id, route: item.route })}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group w-full text-left",
-                    "text-muted-foreground/70 hover:bg-secondary/60",
-                    "cursor-not-allowed"
-                  )}
-                  aria-disabled
-                >
-                  <item.icon className="h-5 w-5 opacity-70" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate">{t(item.labelKey)}</p>
-                      <Badge variant="outline" className="text-[10px] px-2 py-0.5">
-                        {t("premium.badge")}
-                      </Badge>
-                    </div>
-                    <p className="text-[10px] truncate text-muted-foreground/80">
-                      {t(item.navDescriptionKey)}
-                    </p>
-                  </div>
-                  <Lock className="h-4 w-4 opacity-70" />
-                </button>
-              ))}
-            </>
-          )}
-          {role !== "buyer" ? (
+          {role === "buyer" && (
             <NavLink
               to={profileRoute}
               className={({ isActive }) =>
@@ -341,19 +439,11 @@ export function Sidebar() {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{t("nav.profile")}</p>
-                    <p
-                      className={cn(
-                        "text-[10px] truncate transition-colors",
-                        isActive ? "text-primary-foreground/70" : "text-muted-foreground"
-                      )}
-                    >
-                      {t("navDescriptions.profile")}
-                    </p>
                   </div>
                 </>
               )}
             </NavLink>
-          ) : null}
+          )}
         </div>
       </nav>
       
