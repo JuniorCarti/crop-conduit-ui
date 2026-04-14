@@ -26,6 +26,22 @@ import { ProfitMarginCalculator } from "@/components/marketPrices/ProfitMarginCa
 import { GamificationDashboard } from "@/components/marketPrices/GamificationDashboard";
 import { HistoricalPerformanceTracking } from "@/components/marketPrices/HistoricalPerformanceTracking";
 import { useTranslation } from "react-i18next";
+
+// Batch 1: AI/ML Features
+import { AIPriceNegotiationAssistant } from "@/components/marketPrices/AIPriceNegotiationAssistant";
+import { PredictiveCropRecommendationEngine } from "@/components/marketPrices/PredictiveCropRecommendationEngine";
+import { ComputerVisionQualityGrading } from "@/components/marketPrices/ComputerVisionQualityGrading";
+import { MarketSentimentAnalysis } from "@/components/marketPrices/MarketSentimentAnalysis";
+import { DynamicPricingAlgorithm } from "@/components/marketPrices/DynamicPricingAlgorithm";
+import { SatelliteYieldPrediction } from "@/components/marketPrices/SatelliteYieldPrediction";
+
+// Batch 2: Network & Marketplace Features
+import { FarmerTradingNetwork } from "@/components/marketPrices/FarmerTradingNetwork";
+import { CooperativeBulkBuying } from "@/components/marketPrices/CooperativeBulkBuying";
+import { ForwardContractsFutures } from "@/components/marketPrices/ForwardContractsFutures";
+import { ProduceAuctionSystem } from "@/components/marketPrices/ProduceAuctionSystem";
+import { BuyerSubscriptionModel } from "@/components/marketPrices/BuyerSubscriptionModel";
+import { ProduceExchangePlatform } from "@/components/marketPrices/ProduceExchangePlatform";
 import {
   Dialog,
   DialogContent,
@@ -221,13 +237,15 @@ export default function MarketPricesEnhanced() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="forecast">Forecast</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="tools">Tools</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
             <TabsTrigger value="rewards">Rewards</TabsTrigger>
+            <TabsTrigger value="ai-tools">AI Tools</TabsTrigger>
+            <TabsTrigger value="network">Network</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -293,6 +311,26 @@ export default function MarketPricesEnhanced() {
           {/* Rewards Tab */}
           <TabsContent value="rewards" className="space-y-4">
             {featureToggles.gamification && <GamificationDashboard />}
+          </TabsContent>
+
+          {/* AI Tools Tab - Batch 1 */}
+          <TabsContent value="ai-tools" className="space-y-6">
+            <AIPriceNegotiationAssistant />
+            <PredictiveCropRecommendationEngine />
+            <ComputerVisionQualityGrading />
+            <MarketSentimentAnalysis />
+            <DynamicPricingAlgorithm />
+            <SatelliteYieldPrediction />
+          </TabsContent>
+
+          {/* Network & Trading Tab - Batch 2 */}
+          <TabsContent value="network" className="space-y-6">
+            <FarmerTradingNetwork />
+            <CooperativeBulkBuying />
+            <ForwardContractsFutures />
+            <ProduceAuctionSystem />
+            <BuyerSubscriptionModel />
+            <ProduceExchangePlatform />
           </TabsContent>
         </Tabs>
       </div>
