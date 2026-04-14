@@ -42,17 +42,17 @@ const COMMODITIES = [
 
 export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCommodity, setSelectedCommodity] = useState<string>(initialFilters?.commodity || "");
-  const [selectedMarket, setSelectedMarket] = useState<string>(initialFilters?.market || "");
-  const [selectedCounty, setSelectedCounty] = useState<string>(initialFilters?.county || "");
+  const [selectedCommodity, setSelectedCommodity] = useState<string>(initialFilters?.commodity || "all");
+  const [selectedMarket, setSelectedMarket] = useState<string>(initialFilters?.market || "all");
+  const [selectedCounty, setSelectedCounty] = useState<string>(initialFilters?.county || "all");
   const [sortBy, setSortBy] = useState<"date" | "wholesale" | "retail" | "volume">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const { t } = useTranslation();
 
   const { prices, isLoading } = useMarketPrices({
-    commodity: selectedCommodity || undefined,
-    market: selectedMarket || undefined,
-    county: selectedCounty || undefined,
+    commodity: selectedCommodity === "all" ? undefined : selectedCommodity,
+    market: selectedMarket === "all" ? undefined : selectedMarket,
+    county: selectedCounty === "all" ? undefined : selectedCounty,
   });
 
   const syncPrices = useSyncMarketPrices();
@@ -170,7 +170,7 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
               <SelectValue placeholder={t("marketPrices.table.allCommodities")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t("marketPrices.table.allCommodities")}</SelectItem>
+              <SelectItem value="all">{t("marketPrices.table.allCommodities")}</SelectItem>
               {COMMODITIES.map((c) => (
                 <SelectItem key={c.value} value={c.value}>
                   {t(c.labelKey)}
@@ -183,7 +183,7 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
               <SelectValue placeholder={t("marketPrices.table.allMarkets")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t("marketPrices.table.allMarkets")}</SelectItem>
+              <SelectItem value="all">{t("marketPrices.table.allMarkets")}</SelectItem>
               {markets.map((m) => (
                 <SelectItem key={m} value={m}>
                   {m}
@@ -196,7 +196,7 @@ export function MarketPriceTable({ initialFilters }: MarketPriceTableProps) {
               <SelectValue placeholder={t("marketPrices.table.allCounties")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t("marketPrices.table.allCounties")}</SelectItem>
+              <SelectItem value="all">{t("marketPrices.table.allCounties")}</SelectItem>
               {counties.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
