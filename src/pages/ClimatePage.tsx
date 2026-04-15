@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   AlertTriangle,
+  BarChart3,
   Bell,
   ChevronDown,
   CloudRain,
@@ -39,6 +40,12 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ForecastOverviewCard } from "@/components/climate/ForecastOverviewCard";
+import { TemperatureTrendChart } from "@/components/climate/TemperatureTrendChart";
+import { RainfallBarChart } from "@/components/climate/RainfallBarChart";
+import { WindSpeedChart } from "@/components/climate/WindSpeedChart";
+import { HumidityTrendChart } from "@/components/climate/HumidityTrendChart";
+import { TempRainComboChart } from "@/components/climate/TempRainComboChart";
+import { ClimateSignalGauges } from "@/components/climate/ClimateSignalGauges";
 import { FrostRiskCard } from "@/components/climate/FrostRiskCard";
 import { RainOutlookCard } from "@/components/climate/RainOutlookCard";
 import { AdvisoryCard } from "@/components/climate/AdvisoryCard";
@@ -1154,6 +1161,27 @@ export default function ClimatePage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Batch 1 — Visual Charts */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                      <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Climate Charts</h2>
+                      <p className="text-xs text-muted-foreground">Visual breakdown of forecast data across all dimensions</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <TemperatureTrendChart forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
+                    <RainfallBarChart forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
+                    <WindSpeedChart forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
+                    <HumidityTrendChart forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
+                  </div>
+                  <TempRainComboChart forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
+                  <ClimateSignalGauges signals={climateSignals} />
+                </div>
 
             {keyAlertSignals.length > 0 && (
               <div className="space-y-3">
