@@ -11,16 +11,17 @@ import {
   Droplet,
   Leaf,
   MapPin,
+  Sparkles,
   Sprout,
   Snowflake,
   Sun,
   Thermometer,
+  TrendingUp,
   Truck,
   WifiOff,
   Wind,
   X,
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -772,7 +773,12 @@ export default function ClimatePage() {
   if (farmsLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <PageHeader title={t("climate.title")} subtitle={t("climate.subtitle")} icon={CloudSun} />
+        <div className="border-b border-border bg-card px-4 py-5 md:px-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[1,2,3,4].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+          </div>
+        </div>
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
           <Skeleton className="h-40 rounded-xl" />
         </div>
@@ -780,17 +786,71 @@ export default function ClimatePage() {
     );
   }
 
+  const headerStats = [
+    {
+      label: "Farm",
+      value: selectedFarm?.name || t("climate.farmSelector.placeholder"),
+      icon: Sprout,
+      color: "text-primary",
+      bg: "bg-primary/10",
+    },
+    {
+      label: "Avg Max Temp",
+      value: headerSummary.avgMax != null ? `${headerSummary.avgMax}°C` : "--",
+      icon: Thermometer,
+      color: "text-warning",
+      bg: "bg-warning/10",
+    },
+    {
+      label: "Rain Chance",
+      value: headerSummary.avgChance != null ? `${headerSummary.avgChance}%` : "--",
+      icon: CloudRain,
+      color: "text-info",
+      bg: "bg-info/10",
+    },
+    {
+      label: "Total Rain",
+      value: headerSummary.totalRain != null ? `${headerSummary.totalRain} mm` : "--",
+      icon: Droplet,
+      color: "text-success",
+      bg: "bg-success/10",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <PageHeader
-        title={t("climate.title")}
-        subtitle={t("climate.subtitle")}
-        icon={CloudSun}
-      >
-        <Button variant="outline" onClick={handleUpgrade}>
-          {t("climate.premium.upgrade")}
-        </Button>
-      </PageHeader>
+      {/* Header */}
+      <div className="border-b border-border bg-card px-4 py-5 md:px-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10">
+              <CloudSun className="h-5 w-5 text-info" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">{t("climate.title")}</h1>
+              <p className="text-sm text-muted-foreground">{t("climate.subtitle")}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleUpgrade}>
+            {t("climate.premium.upgrade")}
+          </Button>
+        </div>
+
+        {/* Stat cards */}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {headerStats.map((stat) => (
+            <div key={stat.label} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.bg}`}>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-4">
         {isOffline && (
@@ -824,47 +884,38 @@ export default function ClimatePage() {
         ) : (
           <>
             <div className="space-y-6">
-              <Card className="border-border/60">
-                <CardContent className="space-y-4 p-5 md:p-6">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Farm snapshot</p>
-                      <h2 className="text-2xl font-semibold text-foreground">
+              <Card className="border-border/60 bg-gradient-to-br from-info/5 via-card to-card">
+                <CardContent className="p-5 md:p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {selectedFarm
+                            ? [selectedFarm.county, selectedFarm.subCounty, selectedFarm.ward].filter(Boolean).join(" / ")
+                            : t("climate.signals.selectFarm")}
+                        </p>
+                      </div>
+                      <h2 className="text-xl font-bold text-foreground">
                         {selectedFarm?.name || t("climate.farmSelector.placeholder")}
                       </h2>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedFarm
-                          ? [selectedFarm.county, selectedFarm.subCounty, selectedFarm.ward]
-                              .filter(Boolean)
-                              .join(" / ")
-                          : t("climate.signals.selectFarm")}
-                      </p>
+                      <p className="text-sm text-foreground/80">{weekSummary}</p>
                     </div>
-                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
-                      <Leaf className="h-4 w-4 text-success" />
-                      <span>Crop: {cropLabel}</span>
-                    </div>
+                    <Badge variant="secondary" className="flex items-center gap-1.5 self-start">
+                      <Leaf className="h-3.5 w-3.5 text-success" />
+                      {cropLabel}
+                    </Badge>
                   </div>
-                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
-                      <CloudRain className="h-4 w-4 text-info" />
-                      <span>{headerSummary.avgChance != null ? `${headerSummary.avgChance}% rain` : "--"}</span>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
-                      <Thermometer className="h-4 w-4 text-warning" />
-                      <span>{headerSummary.avgMax != null ? `${headerSummary.avgMax}C avg max` : "--"}</span>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
-                      <Sprout className="h-4 w-4 text-success" />
-                      <span>Next 7 days</span>
-                    </div>
-                  </div>
-                  <p className="text-base font-medium text-foreground">{weekSummary}</p>
                 </CardContent>
               </Card>
 
               <div className="space-y-3">
-                <h2 className="text-lg font-semibold">What you should do this week</h2>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/10">
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                  </div>
+                  <h2 className="text-base font-semibold text-foreground">What you should do this week</h2>
+                </div>
                 <div className="grid gap-3 md:grid-cols-3">
                   {actionCards.map((action) => (
                     <Card
@@ -889,7 +940,12 @@ export default function ClimatePage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <Card className="border-border/60">
                   <CardHeader>
-                    <CardTitle className="text-base">Risk alerts</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10">
+                        <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                      </div>
+                      <CardTitle className="text-base">Risk alerts</CardTitle>
+                    </div>
                     <p className="text-sm text-muted-foreground">Simple warnings to avoid losses.</p>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -907,7 +963,12 @@ export default function ClimatePage() {
 
                 <Card className="border-border/60">
                   <CardHeader>
-                    <CardTitle className="text-base">Market opportunity</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/10">
+                        <TrendingUp className="h-3.5 w-3.5 text-success" />
+                      </div>
+                      <CardTitle className="text-base">Market opportunity</CardTitle>
+                    </div>
                     <p className="text-sm text-muted-foreground">Use Market Oracle signals.</p>
                   </CardHeader>
                   <CardContent className="space-y-2">
@@ -931,12 +992,10 @@ export default function ClimatePage() {
                 </CardContent>
               </Card>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
                 <div>
-                  <p className="text-sm font-semibold">View details</p>
-                  <p className="text-xs text-muted-foreground">
-                    Forecasts, AI advisory, and full alerts.
-                  </p>
+                  <p className="text-sm font-semibold text-foreground">Detailed forecasts & AI advisory</p>
+                  <p className="text-xs text-muted-foreground">Forecasts, signals, AI advisory, and full alerts.</p>
                 </div>
                 <Button
                   type="button"
@@ -1094,11 +1153,14 @@ export default function ClimatePage() {
             </div>
 
             <div className="space-y-3">
-              <div>
-                <h2 className="text-base font-semibold">{t("climate.signals.title")}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {t("climate.signals.subtitle")}
-                </p>
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Activity className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">{t("climate.signals.title")}</h2>
+                  <p className="text-xs text-muted-foreground">{t("climate.signals.subtitle")}</p>
+                </div>
               </div>
 
               {!selectedFarm ? (
@@ -1192,9 +1254,14 @@ export default function ClimatePage() {
 
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-base font-semibold">{t("climate.snapshot.title")}</h2>
-                  <p className="text-sm text-muted-foreground">{t("climate.snapshot.subtitle")}</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/10">
+                    <CloudSun className="h-3.5 w-3.5 text-info" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">{t("climate.snapshot.title")}</h2>
+                    <p className="text-xs text-muted-foreground">{t("climate.snapshot.subtitle")}</p>
+                  </div>
                 </div>
                 <Button
                   type="button"
@@ -1289,12 +1356,15 @@ export default function ClimatePage() {
               </Card>
             </div>
 
-            <div className="rounded-2xl border border-border/60 bg-muted/40 p-4 md:p-6">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold">{t("climate.aiAdvisory.title")}</h2>
-                <Badge variant="outline" className="mt-2 text-xs">
-                  {t("climate.aiAdvisory.sectionLabel")}
-                </Badge>
+            <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-card p-4 md:p-6">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">{t("climate.aiAdvisory.title")}</h2>
+                  <Badge variant="outline" className="mt-1 text-xs">{t("climate.aiAdvisory.sectionLabel")}</Badge>
+                </div>
               </div>
               <AdvisoryCard
                 aiData={advisoryResult ?? null}
@@ -1322,8 +1392,10 @@ export default function ClimatePage() {
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-primary" />
-                <h2 className="text-base font-semibold">{t("climate.alertsSection.title")}</h2>
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Bell className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <h2 className="text-base font-semibold text-foreground">{t("climate.alertsSection.title")}</h2>
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card className="border-border/60">
