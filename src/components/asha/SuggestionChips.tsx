@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 export function SuggestionChips({
   suggestions,
@@ -11,14 +11,15 @@ export function SuggestionChips({
   return (
     <div className="flex flex-wrap gap-2">
       {suggestions.map((suggestion) => (
-        <Button
+        <button
           key={suggestion}
-          variant="outline"
-          size="sm"
+          type="button"
           onClick={() => onSelect(suggestion)}
+          className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground hover:border-primary"
         >
           {suggestion}
-        </Button>
+          <ArrowRight className="h-3 w-3 opacity-60" />
+        </button>
       ))}
     </div>
   );

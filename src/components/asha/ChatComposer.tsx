@@ -25,42 +25,55 @@ export function ChatComposer({
   isVoiceSupported: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      {isRecording && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg bg-rose-500/10 px-3 py-2">
+          <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+          <span className="text-xs font-medium text-rose-600">Listening... speak now</span>
+        </div>
+      )}
+      {isTranscribing && (
+        <div className="mb-3 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          Transcribing your voice...
+        </div>
+      )}
       <Textarea
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (!disabled && value.trim()) onSend();
+          }
+        }}
         placeholder="Ask Asha anything about your farm, market, or weather..."
-        className="min-h-[90px] resize-none"
+        className="min-h-[80px] resize-none border-0 bg-transparent p-0 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
         disabled={disabled}
       />
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {isRecording && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <span className={cn("h-2 w-2 rounded-full bg-rose-500", "animate-pulse")} />
-                <span className="text-rose-600">Listening...</span>
-              </div>
-            </div>
-          )}
-          {isTranscribing && <span>Transcribing...</span>}
-          {!isVoiceSupported && <span>Voice input not supported</span>}
-        </div>
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+        <p className="text-[11px] text-muted-foreground">
+          {!isVoiceSupported ? "Voice not supported" : "Press Enter to send · Shift+Enter for new line"}
+        </p>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant={isRecording ? "destructive" : "outline"}
+            size="sm"
             onClick={isRecording ? onStop : onMic}
             disabled={!isVoiceSupported}
+            className="gap-1.5"
           >
-            {isRecording ? (
-              <Square className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
+            {isRecording ? <Square className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+            {isRecording ? "Stop" : "Voice"}
           </Button>
-          <Button type="button" onClick={onSend} disabled={disabled || !value.trim()}>
-            <Send className="mr-2 h-4 w-4" />
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSend}
+            disabled={disabled || !value.trim()}
+            className="gap-1.5"
+          >
+            <Send className="h-3.5 w-3.5" />
             Send
           </Button>
         </div>

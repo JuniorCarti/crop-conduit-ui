@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Mic, Sparkles } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { Bot, CloudSun, Mic, RotateCcw, Sparkles, TrendingUp, Wheat } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useUserAccount } from "@/hooks/useUserAccount";
@@ -124,9 +124,7 @@ export default function AshaVoice() {
   } = useVoice({ language: selectedLanguage });
 
   useEffect(() => {
-    if (transcript) {
-      setInput(transcript);
-    }
+    if (transcript) setInput(transcript);
   }, [transcript]);
 
   useEffect(() => {
@@ -155,11 +153,7 @@ export default function AshaVoice() {
     const trimmed = input.trim();
     if (!trimmed) return;
     const languageForChat =
-      selectedLanguage === "sw"
-        ? "sw"
-        : selectedLanguage === "en"
-        ? "en"
-        : detectedLanguage || "en";
+      selectedLanguage === "sw" ? "sw" : selectedLanguage === "en" ? "en" : detectedLanguage || "en";
 
     setInput("");
     setTranscript("");
@@ -182,11 +176,7 @@ export default function AshaVoice() {
 
     if (selectedFarm?.lat != null && selectedFarm?.lon != null && !weatherContext) {
       try {
-        const forecast = await fetchForecast({
-          lat: Number(selectedFarm.lat),
-          lon: Number(selectedFarm.lon),
-          days: 3,
-        });
+        const forecast = await fetchForecast({ lat: Number(selectedFarm.lat), lon: Number(selectedFarm.lon), days: 3 });
         weatherContext = extractWeatherSummary(forecast) ?? undefined;
       } catch {
         weatherContext = undefined;
@@ -198,11 +188,7 @@ export default function AshaVoice() {
         const crop = selectedFarm?.crops?.[0];
         if (crop) {
           const { getMarketPrices } = await import("@/services/marketPriceService");
-          const marketPrices = await getMarketPrices({
-            commodity: crop,
-            county: selectedFarm?.county,
-            limitCount: 1,
-          });
+          const marketPrices = await getMarketPrices({ commodity: crop, county: selectedFarm?.county, limitCount: 1 });
           if (marketPrices.length) {
             const price = marketPrices[0];
             marketContext = {
@@ -221,11 +207,7 @@ export default function AshaVoice() {
     }
 
     if (cacheKey) {
-      contextCacheRef.current[cacheKey] = {
-        weather: weatherContext,
-        market: marketContext,
-        updatedAt: Date.now(),
-      };
+      contextCacheRef.current[cacheKey] = { weather: weatherContext, market: marketContext, updatedAt: Date.now() };
     }
     setWeatherSummary(weatherContext ?? null);
 
@@ -251,38 +233,92 @@ export default function AshaVoice() {
     );
   };
 
-  const handleSuggestion = (value: string) => {
-    setInput(value);
-  };
+  const handleSuggestion = (value: string) => setInput(value);
 
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        className="lg:hidden"
-        onClick={() => setShowContext((prev) => !prev)}
-      >
-        {showContext ? "Hide context" : "Show context"}
-      </Button>
-      <Button variant="outline" size="sm" onClick={resetSession}>
-        New chat
-      </Button>
-    </div>
-  );
+  const farmName = selectedFarm
+    ? [selectedFarm.county, selectedFarm.ward].filter(Boolean).join(", ") || "Your Farm"
+    : "No farm selected";
+
+  const statCards = [
+    {
+      label: "Farm",
+      value: selectedFarm ? (selectedFarm.county || "Active") : "None",
+      icon: Wheat,
+      color: "text-primary",
+      bg: "bg-primary/10",
+    },
+    {
+      label: "Weather",
+      value: weatherSummary ? `${weatherSummary.rainChance}% rain` : "Fetching...",
+      icon: CloudSun,
+      color: "text-info",
+      bg: "bg-info/10",
+    },
+    {
+      label: "Messages",
+      value: String(messages.length),
+      icon: Bot,
+      color: "text-success",
+      bg: "bg-success/10",
+    },
+    {
+      label: "Language",
+      value: selectedLanguage === "sw" ? "Kiswahili" : selectedLanguage === "en" ? "English" : "Auto",
+      icon: Sparkles,
+      color: "text-warning",
+      bg: "bg-warning/10",
+    },
+  ];
 
   return (
-    <div className="min-h-screen">
-      <PageHeader
-        title="Asha"
-        subtitle="Your farming copilot for market, climate, and orders"
-        icon={Mic}
-      >
-        {headerActions}
-      </PageHeader>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b border-border bg-card px-4 py-5 md:px-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Mic className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Asha</h1>
+              <p className="text-sm text-muted-foreground">Your farming copilot · {farmName}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setShowContext((prev) => !prev)}
+            >
+              {showContext ? "Hide context" : "Context"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetSession}>
+              <RotateCcw className="mr-2 h-3 w-3" />
+              New chat
+            </Button>
+          </div>
+        </div>
+
+        {/* Stat cards */}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {statCards.map((stat) => (
+            <div key={stat.label} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+              <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", stat.bg)}>
+                <stat.icon className={cn("h-4 w-4", stat.color)} />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="p-4 md:p-6">
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+          {/* Context panel */}
           <div className={cn(showContext ? "block" : "hidden", "lg:block")}>
             <ContextPanel
               sessionId={sessionId}
@@ -292,13 +328,7 @@ export default function AshaVoice() {
               onAutoReadChange={setAutoRead}
               farm={
                 selectedFarm
-                  ? {
-                      lat: selectedFarm.lat,
-                      lon: selectedFarm.lon,
-                      county: selectedFarm.county,
-                      ward: selectedFarm.ward,
-                      crops: selectedFarm.crops,
-                    }
+                  ? { lat: selectedFarm.lat, lon: selectedFarm.lon, county: selectedFarm.county, ward: selectedFarm.ward, crops: selectedFarm.crops }
                   : {}
               }
               onNewSession={resetSession}
@@ -306,11 +336,12 @@ export default function AshaVoice() {
             />
           </div>
 
-          <div className="space-y-4">
+          {/* Chat area */}
+          <div className="flex flex-col gap-4">
             {!farmsLoading && !selectedFarm && (
               <Alert>
                 <AlertDescription>
-                  Looks like you haven&apos;t added a farm yet. Please add a farm in Climate - Add Farm, then come back.
+                  No farm added yet. Go to Climate → Add Farm, then come back.
                 </AlertDescription>
               </Alert>
             )}
@@ -326,18 +357,23 @@ export default function AshaVoice() {
             )}
 
             {!hasMessages && (
-              <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Sparkles className="h-4 w-4" />
-                  Try one of these starters
+              <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">Try asking Asha</p>
                 </div>
-                <div className="mt-3">
-                  <SuggestionChips suggestions={defaultSuggestions} onSelect={handleSuggestion} />
-                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Get instant insights on weather, prices, and farm decisions.
+                </p>
+                <SuggestionChips suggestions={defaultSuggestions} onSelect={handleSuggestion} />
               </div>
             )}
 
-            <ChatThread messages={messages} isLoading={isLoading} />
+            <div className="rounded-2xl border border-border bg-card min-h-[300px]">
+              <ChatThread messages={messages} isLoading={isLoading} />
+            </div>
 
             <ChatComposer
               value={input}
@@ -350,13 +386,14 @@ export default function AshaVoice() {
               isTranscribing={isTranscribing}
               isVoiceSupported={isSupported}
             />
+
             {transcript && (
-              <div className="rounded-2xl border border-border bg-muted/10 px-4 py-3 text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-border bg-muted/10 px-4 py-3">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Transcript preview</p>
                 <p className="mt-1 text-base text-foreground break-words">{transcript}</p>
-                <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Detected language: {detectedLanguage === "sw" ? "Kiswahili" : "English"}
-                </p>
+                <Badge variant="secondary" className="mt-2 text-[10px]">
+                  {detectedLanguage === "sw" ? "Kiswahili" : "English"} detected
+                </Badge>
               </div>
             )}
           </div>

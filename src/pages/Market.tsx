@@ -1,5 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { TrendingUp, TrendingDown, MapPin, Bell, Search, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import {
+  TrendingUp,
+  MapPin,
+  Bell,
+  Search,
+  Loader2,
+  Check,
+  ChevronsUpDown,
+  ArrowRight,
+  Activity,
+  BarChart3,
+  CalendarDays,
+  Target,
+} from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +68,13 @@ type TodayPrice = {
   pricetype: "retail" | "wholesale";
   price_per_kg: number;
   updatedAt?: Date | string;
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  good: "bg-success/10 text-success border-success/30",
+  warning: "bg-warning/10 text-warning border-warning/30",
+  critical: "bg-destructive/10 text-destructive border-destructive/30",
+  neutral: "bg-secondary/70 text-muted-foreground border-border",
 };
 
 export default function Market() {
@@ -177,7 +197,7 @@ export default function Market() {
 
     const marketSet = new Set(filtered.map((price) => price.market));
     return Array.from(marketSet).sort();
-  }, [normalizedSelectedCommodity, predictionForm.admin1, todayPriceRows]);
+  }, [normalizedSelectedCommodity, predictionForm.admin1, predictionForm.pricetype, todayPriceRows]);
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -314,13 +334,21 @@ export default function Market() {
             JSON.stringify(marketSignalPayload)
           );
         }
-      } catch (error: any) {
-      if (error?.isNetworkError) {
+      } catch (error: unknown) {
+      const predictionIssue = error as {
+        isNetworkError?: boolean;
+        status?: number;
+        details?: string;
+      };
+      if (predictionIssue?.isNetworkError) {
         setPredictionError(t("marketOracle.errors.network"));
         return;
       }
 
-      if (error?.status === 400 && String(error?.details || "").toLowerCase().includes("commodity")) {
+      if (
+        predictionIssue?.status === 400 &&
+        String(predictionIssue?.details || "").toLowerCase().includes("commodity")
+      ) {
         setPredictionError(
           t("marketOracle.errors.unsupportedCommodity", {
             commodities: supportedCommodityLabels.join(", "),
@@ -329,7 +357,10 @@ export default function Market() {
         return;
       }
 
-      if (error?.status === 400 && String(error?.details || "").toLowerCase().includes("market")) {
+      if (
+        predictionIssue?.status === 400 &&
+        String(predictionIssue?.details || "").toLowerCase().includes("market")
+      ) {
         setPredictionError(
           t("marketOracle.errors.unsupportedMarket", {
             markets: supportedMarkets.join(", "),
@@ -341,6 +372,76 @@ export default function Market() {
       setPredictionError(t("marketOracle.errors.generic"));
     }
   };
+
+  const uniqueMarketCount = useMemo(
+    () => new Set(todayPriceRows.map((price) => price.market)).size,
+    [todayPriceRows]
+  );
+  const uniqueCommodityCount = useMemo(
+    () =>
+      new Set(
+        todayPriceRows
+          .map((price) => normalizeCommodity(price.commodity || ""))
+          .filter((name) => Boolean(name))
+      ).size,
+    [todayPriceRows]
+  );
+  const bestRecommendedMarket = recommendedMarkets?.[0] ?? null;
+  const highestPriceToday = useMemo(
+    () =>
+      filteredTodayPrices.length > 0
+        ? Math.max(...filteredTodayPrices.map((price) => price.price_per_kg || 0))
+        : null,
+    [filteredTodayPrices]
+  );
+  const predictionConfidence =
+    typeof predictionResult?.confidence_pct === "number"
+      ? `${predictionResult.confidence_pct}%`
+      : t("marketOracle.results.na");
+  const oracleStatus = predictMutation.isPending
+    ? t("marketOracle.form.loading")
+    : predictionError
+    ? t("marketOracle.errors.title")
+    : predictionResult
+    ? t("marketOracle.results.title")
+    : t("marketOracle.results.empty");
+  const oracleStatusTone = predictMutation.isPending
+    ? "warning"
+    : predictionError
+    ? "critical"
+    : predictionResult
+    ? "good"
+    : "neutral";
+  const metricCards = [
+    {
+      title: "Markets tracked",
+      value: uniqueMarketCount.toString(),
+      note: "Active markets in today feed.",
+      icon: MapPin,
+      tone: uniqueMarketCount > 0 ? "good" : "warning",
+    },
+    {
+      title: "Commodities",
+      value: uniqueCommodityCount.toString(),
+      note: "Commodity coverage from synced rows.",
+      icon: BarChart3,
+      tone: uniqueCommodityCount > 0 ? "good" : "neutral",
+    },
+    {
+      title: "Top price today",
+      value: highestPriceToday ? formatKshDecimal(highestPriceToday, 2) : "--",
+      note: highestPriceToday ? "Highest observed price per kg." : "Sync prices to populate.",
+      icon: TrendingUp,
+      tone: highestPriceToday ? "good" : "warning",
+    },
+    {
+      title: "Prediction confidence",
+      value: predictionConfidence,
+      note: "From the latest Oracle run.",
+      icon: Target,
+      tone: predictionResult ? "good" : predictionError ? "critical" : "neutral",
+    },
+  ] as const;
 
   return (
     <div className="min-h-screen">
@@ -381,20 +482,107 @@ export default function Market() {
         </div>
       </PageHeader>
 
-      <div className="p-4 md:p-6 space-y-6">
-        <div className="relative animate-fade-up">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("market.searchPlaceholder")}
-            className="pl-10 bg-card"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+      <div className="px-4 pb-8 pt-5 md:px-6 md:pt-6 space-y-6">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/20 via-card to-card shadow-card">
+            <div className="pointer-events-none absolute -top-12 -right-10 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+            <CardContent className="relative space-y-5 p-5 md:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Market command center</p>
+                  <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("marketOracle.title")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("marketOracle.subtitle")}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={`border px-3 py-1 text-xs ${STATUS_STYLES[oracleStatusTone]}`}>
+                    {oracleStatus}
+                  </Badge>
+                  {bestRecommendedMarket && (
+                    <Badge className={`border px-3 py-1 text-xs ${STATUS_STYLES.good}`}>
+                      Best: {bestRecommendedMarket.market}
+                    </Badge>
+                  )}
+                  <Badge className={`border px-3 py-1 text-xs ${STATUS_STYLES[uniqueMarketCount > 0 ? "good" : "warning"]}`}>
+                    Markets: {uniqueMarketCount}
+                  </Badge>
+                </div>
+              </div>
 
-        <section className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("market.searchPlaceholder")}
+                  className="pl-10 bg-background/80"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Oracle pulse</CardTitle>
+              <CardDescription>Live prediction and feed readiness</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <span>Prediction engine</span>
+                </div>
+                <Badge className={`border px-2 py-0.5 text-xs ${STATUS_STYLES[oracleStatusTone]}`}>{oracleStatus}</Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <span>Selected date</span>
+                </div>
+                <span className="text-xs font-medium text-foreground">{predictionForm.date}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>Market focus</span>
+                </div>
+                <span className="text-xs font-medium text-foreground">{predictionForm.market || "--"}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between"
+                onClick={handlePredictionSubmit}
+                disabled={predictMutation.isPending}
+              >
+                Run prediction
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-1 duration-500">
+          {metricCards.map((metric) => (
+            <Card key={metric.title} className="border-border/60 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{metric.title}</p>
+                    <p className="text-lg font-semibold text-foreground">{metric.value}</p>
+                  </div>
+                  <div className={`rounded-lg p-2 ${metric.tone === "good" ? "bg-success/10" : metric.tone === "warning" ? "bg-warning/10" : metric.tone === "critical" ? "bg-destructive/10" : "bg-muted"}`}>
+                    <metric.icon className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{metric.note}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
+        <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-            <Card className="shadow-card border-border/50">
+            <Card className="shadow-card border-border/60">
               <CardHeader>
                 <CardTitle>{t("marketOracle.title")}</CardTitle>
                 <CardDescription>{t("marketOracle.subtitle")}</CardDescription>
@@ -605,7 +793,7 @@ export default function Market() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-card border-border/50">
+            <Card className="shadow-card border-border/60">
               <CardHeader>
                 <CardTitle>{t("marketOracle.results.title")}</CardTitle>
                 <CardDescription>{t("marketOracle.results.subtitle")}</CardDescription>
@@ -693,7 +881,7 @@ export default function Market() {
           />
         )}
 
-        <section className="animate-fade-up" style={{ animationDelay: "0.1s" }}>
+        <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-foreground">{t("market.todayPrices")}</h3>
             <span className="text-xs text-muted-foreground">
@@ -785,7 +973,7 @@ export default function Market() {
           )}
         </section>
 
-        <section className="animate-fade-up" style={{ animationDelay: "0.15s" }}>
+        <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="bg-card rounded-xl p-4 shadow-card border border-border/50">
             <Tabs value={pricePeriod} onValueChange={(v) => setPricePeriod(v as "daily" | "weekly" | "monthly")}>
               <div className="flex items-center justify-between mb-4">
@@ -878,7 +1066,7 @@ export default function Market() {
           </div>
         </section>
 
-        <section className="animate-fade-up" style={{ animationDelay: "0.2s" }}>
+        <section className="animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-foreground">
               {t("market.recommendations.title", "Recommended Markets")}

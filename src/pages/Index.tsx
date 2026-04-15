@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowRight,
   AlertTriangle,
   Bell,
   Calendar,
@@ -8,9 +9,12 @@ import {
   Droplets,
   Leaf,
   Lock,
+  MapPin,
   Mic,
+  ShieldCheck,
   Sprout,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -90,6 +94,13 @@ const STATUS_TEXT: Record<string, string> = {
 };
 
 const DASHBOARD_PROFILE_BANNER_KEY = "dashboard_profile_prompt_dismissed";
+
+const formatDashboardDate = (value: string | number | Date | null | undefined) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return format(date, "MMM dd");
+};
 
 export default function Index() {
   const navigate = useNavigate();
@@ -221,7 +232,7 @@ export default function Index() {
       return {
         title: "Action needed today",
         severity: "High",
-        message: "Heavy rain expected soon — protect sensitive crops.",
+        message: "Heavy rain expected soon - protect sensitive crops.",
         actions: ["Review Climate Insights", "Prepare drainage paths"],
       };
     }
@@ -229,7 +240,7 @@ export default function Index() {
       return {
         title: "Action needed today",
         severity: "Medium",
-        message: "Frost risk elevated — keep crops warm overnight.",
+        message: "Frost risk elevated - keep crops warm overnight.",
         actions: ["Check frost alert details", "Prepare covers"],
       };
     }
@@ -244,7 +255,7 @@ export default function Index() {
     return {
       title: "All clear today",
       severity: "Low",
-      message: "No urgent risks detected — keep routine checks.",
+      message: "No urgent risks detected - keep routine checks.",
       actions: ["Review farm health", "Update harvest plan"],
     };
   }, [rainAlert, frostAlert, cropPrices]);
@@ -327,6 +338,52 @@ export default function Index() {
   const totalRevenue = cashflowData?.reduce((sum, entry) => sum + entry.income, 0) ?? 0;
   const bestPrice = cropPrices && cropPrices.length > 0 ? cropPrices[0] : null;
   const premiumFeatures = FEATURES.filter((feature) => feature.tier === "premium");
+  const alertCount = alerts?.length ?? 0;
+  const riskCount = healthCards.filter((card) => card.tone === "critical" || card.tone === "warning").length;
+  const nextHarvestDate = harvestSchedule?.[0]?.optimalDate ?? null;
+  const nextHarvestLabel = formatDashboardDate(nextHarvestDate) ?? "Not scheduled";
+
+  const dashboardMetrics = [
+    {
+      title: "Profile",
+      value: profilePending ? "Pending" : hasProfile ? "Verified" : "Setup",
+      note: profilePending
+        ? "Verification is in progress."
+        : hasProfile
+        ? "Account profile is ready."
+        : "Complete profile for tailored insights.",
+      icon: ShieldCheck,
+      tone: profilePending || !hasProfile ? "warning" : "good",
+      route: hasProfile ? "/profile" : "/registration",
+    },
+    {
+      title: "Soil Moisture",
+      value: avgMoisture === null ? "--" : `${Math.round(avgMoisture)}%`,
+      note: soilMoistureStatus.note,
+      icon: Droplets,
+      tone: soilMoistureStatus.tone,
+      route: "/climate",
+    },
+    {
+      title: "Revenue (6m)",
+      value: totalRevenue > 0 ? formatKsh(totalRevenue) : "No sales",
+      note:
+        totalRevenue > 0
+          ? "Captured from your cashflow records."
+          : "Add transactions to unlock trend analytics.",
+      icon: Wallet,
+      tone: totalRevenue > 0 ? "good" : "neutral",
+      route: "/finance",
+    },
+    {
+      title: "Next Harvest",
+      value: nextHarvestLabel,
+      note: nextHarvestDate ? "Planned harvest milestone." : "Schedule your next harvest cycle.",
+      icon: Calendar,
+      tone: nextHarvestDate ? "good" : "warning",
+      route: "/harvest",
+    },
+  ] as const;
 
   return (
     <div className="min-h-screen bg-background">
@@ -347,7 +404,7 @@ export default function Index() {
         </Button>
       </PageHeader>
 
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="px-4 pb-8 pt-5 md:px-6 md:pt-6 space-y-6">
         {!hasProfile && !profileLoading && !dismissedProfilePrompt && (
           <AlertCard
             type="info"
@@ -364,48 +421,146 @@ export default function Index() {
           />
         )}
 
-        <Card className="border-border/60 shadow-card">
-          <CardContent className="p-5 md:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Farm snapshot</p>
-                <h2 className="text-2xl font-semibold text-foreground">{farmName}</h2>
-                <p className="text-sm text-muted-foreground">{farmLocation}</p>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {crops.length > 0 ? (
-                    crops.map((crop) => (
-                      <Badge key={crop} variant="secondary" className="text-xs">
-                        {crop}
-                      </Badge>
-                    ))
-                  ) : (
-                    <Badge variant="outline" className="text-xs">
-                      Add crops to personalize insights
-                    </Badge>
-                  )}
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/20 via-card to-card shadow-card">
+            <div className="pointer-events-none absolute -top-14 -right-10 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+            <CardContent className="relative space-y-5 p-5 md:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Cooperative field command</p>
+                  <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{farmName}</h2>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{farmLocation}</span>
+                  </div>
                 </div>
-                {!hasFarm && !farmsLoading && (
-                  <p className="text-xs text-muted-foreground">
-                    Add a farm location to unlock weather insights.
-                  </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", STATUS_STYLES[priorityCard.severity === "High" ? "critical" : priorityCard.severity === "Medium" ? "warning" : "good"])}>
+                    Priority: {priorityCard.severity}
+                  </Badge>
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", STATUS_STYLES[riskCount > 0 ? "warning" : "good"])}>
+                    Risk Items: {riskCount}
+                  </Badge>
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", STATUS_STYLES[alertCount > 0 ? "critical" : "good"])}>
+                    Alerts: {alertCount}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {crops.length > 0 ? (
+                  crops.map((crop) => (
+                    <Badge key={crop} variant="secondary" className="text-xs">
+                      {crop}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="outline" className="text-xs">
+                    Add crops to personalize insights
+                  </Badge>
                 )}
               </div>
+
+              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+                <p className="text-xs uppercase tracking-wide text-warning">Today&apos;s priority</p>
+                <p className="mt-1 text-sm text-foreground">{priorityCard.message}</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {priorityCard.actions.map((action) => (
+                    <div key={action} className="flex items-center gap-2 text-sm text-foreground">
+                      <span className="h-2 w-2 rounded-full bg-warning" />
+                      {action}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {!hasFarm && !farmsLoading && (
+                <p className="text-xs text-muted-foreground">
+                  Add a farm location to unlock weather insights.
+                </p>
+              )}
+
               <div className="flex flex-wrap gap-2">
-                {statusChips.map((chip) => (
+                <Button size="sm" onClick={() => navigate("/climate")}>
+                  Review Climate
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => navigate("/market")}>
+                  Open Market Prices
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Field Pulse</CardTitle>
+              <p className="text-sm text-muted-foreground">Live farm conditions and profile state</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {statusChips.map((chip) => (
+                <div
+                  key={chip.label}
+                  className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3"
+                >
+                  <p className="text-sm font-medium text-foreground">{chip.label}</p>
                   <Badge
-                    key={chip.label}
                     className={cn(
-                      "border px-3 py-1 text-xs font-medium",
+                      "border px-2.5 py-0.5 text-xs font-medium",
                       STATUS_STYLES[chip.tone] ?? STATUS_STYLES.neutral
                     )}
                   >
-                    {chip.label}: {chip.value}
+                    {chip.value}
                   </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between"
+                onClick={() => setShowAlerts(true)}
+              >
+                Open Alerts Center
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-1 duration-500">
+          {dashboardMetrics.map((metric) => (
+            <Card
+              key={metric.title}
+              className="cursor-pointer border-border/60 transition-all hover:-translate-y-0.5 hover:shadow-md"
+              onClick={() => navigate(metric.route)}
+              role="button"
+              tabIndex={0}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1.5">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{metric.title}</p>
+                    <p className="text-lg font-semibold text-foreground">{metric.value}</p>
+                  </div>
+                  <div
+                    className={cn(
+                      "rounded-lg p-2",
+                      metric.tone === "good"
+                        ? "bg-success/10"
+                        : metric.tone === "warning"
+                        ? "bg-warning/10"
+                        : metric.tone === "critical"
+                        ? "bg-destructive/10"
+                        : "bg-muted"
+                    )}
+                  >
+                    <metric.icon className={cn("h-4 w-4", STATUS_TEXT[metric.tone] ?? STATUS_TEXT.neutral)} />
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{metric.note}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
 
         <section className="space-y-3">
           <h3 className="text-lg font-semibold text-foreground">Quick actions</h3>
@@ -414,12 +569,12 @@ export default function Index() {
               <button
                 key={action.label}
                 onClick={() => navigate(action.route)}
-                className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4 text-left shadow-sm transition hover:shadow-md"
+                className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center", action.bg)}>
                   <action.icon className={cn("h-6 w-6", action.tone)} />
                 </div>
-                <div>
+                <div className="space-y-0.5">
                   <p className="text-sm text-muted-foreground">Go to</p>
                   <p className="text-base font-semibold text-foreground">{action.label}</p>
                 </div>
@@ -428,184 +583,172 @@ export default function Index() {
           </div>
         </section>
 
-        <section>
-          <Card className="border-border/60 bg-gradient-to-br from-warning/10 via-card to-card shadow-card">
-            <CardContent className="p-5 md:p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-warning">Today&apos;s priority</p>
-                  <h3 className="text-xl font-semibold text-foreground">
-                    {priorityCard.title}
-                  </h3>
-                </div>
-                <Badge
-                  className={cn(
-                    "border px-3 py-1 text-xs font-semibold",
-                    priorityCard.severity === "High"
-                      ? STATUS_STYLES.critical
-                      : priorityCard.severity === "Medium"
-                      ? STATUS_STYLES.warning
-                      : STATUS_STYLES.good
-                  )}
-                >
-                  {priorityCard.severity}
-                </Badge>
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+          <div className="space-y-6">
+            <section className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Farm health overview</h3>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2">
+                {healthCards.map((card) => (
+                  <Card key={card.title} className="border-border/60 shadow-sm">
+                    <CardContent className="space-y-3 p-4">
+                      <div className="flex items-center justify-between">
+                        <card.icon className={cn("h-5 w-5", STATUS_TEXT[card.tone] ?? STATUS_TEXT.neutral)} />
+                        <Badge
+                          className={cn(
+                            "border px-2 py-0.5 text-[10px] font-semibold",
+                            STATUS_STYLES[card.tone] ?? STATUS_STYLES.neutral
+                          )}
+                        >
+                          {card.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{card.title}</p>
+                        <p className="text-xs text-muted-foreground">{card.note}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <p className="text-sm text-foreground/80">{priorityCard.message}</p>
-              <div className="grid gap-2 sm:grid-cols-2">
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Market and income snapshot</h3>
+              <div className="grid gap-3 lg:grid-cols-2">
+                <Card className="border-border/60 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-base">Best price today</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {pricesLoading ? (
+                      <Skeleton className="h-16 w-full rounded-xl" />
+                    ) : bestPrice ? (
+                      <>
+                        <p className="text-2xl font-semibold text-foreground">
+                          {formatKsh(bestPrice.price)} / {bestPrice.unit}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {bestPrice.name} {bestPrice.change >= 0 ? "+" : ""}
+                          {bestPrice.change}% today
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Start selling to see price insights.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/60 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-base">Revenue trend (6 months)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {cashflowLoading ? (
+                      <Skeleton className="h-24 w-full rounded-xl" />
+                    ) : cashflowData && cashflowData.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-2xl font-semibold text-foreground">
+                          {formatKsh(totalRevenue)}
+                        </p>
+                        <div className="h-24">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={cashflowData}>
+                              <XAxis dataKey="month" hide />
+                              <YAxis hide />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--card))",
+                                  border: "1px solid hsl(var(--border))",
+                                  borderRadius: "8px",
+                                  fontSize: "12px",
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="income"
+                                stroke="hsl(var(--primary))"
+                                strokeWidth={2}
+                                dot={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Start selling to see revenue trends.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="border-border/60 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-base">Upcoming events</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/harvest")}>
+                    View schedule
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {harvestLoading && (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((item) => (
+                      <Skeleton key={item} className="h-14 rounded-xl" />
+                    ))}
+                  </div>
+                )}
+                {!harvestLoading && timelineItems.length === 0 && (
+                  <p className="rounded-xl border border-border/60 bg-card p-4 text-sm text-muted-foreground">
+                    No upcoming events yet. Add a harvest plan to get a timeline.
+                  </p>
+                )}
+                {!harvestLoading &&
+                  timelineItems.length > 0 &&
+                  timelineItems.map((item) => (
+                    <div
+                      key={`${item.label}-${item.date}`}
+                      className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3"
+                    >
+                      <div
+                        className={cn(
+                          "h-9 w-9 rounded-full flex items-center justify-center",
+                          STATUS_STYLES[item.tone] ?? STATUS_STYLES.neutral
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.date}</p>
+                      </div>
+                    </div>
+                  ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 bg-gradient-to-br from-warning/10 via-card to-card shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Execution checklist</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-foreground/90">{priorityCard.title}</p>
                 {priorityCard.actions.map((action) => (
                   <div key={action} className="flex items-center gap-2 text-sm text-foreground">
                     <span className="h-2 w-2 rounded-full bg-warning" />
                     {action}
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground">Farm health overview</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {healthCards.map((card) => (
-              <Card key={card.title} className="border-border/60 shadow-sm">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <card.icon className={cn("h-5 w-5", STATUS_TEXT[card.tone] ?? STATUS_TEXT.neutral)} />
-                    <Badge
-                      className={cn(
-                        "border px-2 py-0.5 text-[10px] font-semibold",
-                        STATUS_STYLES[card.tone] ?? STATUS_STYLES.neutral
-                      )}
-                    >
-                      {card.status}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{card.title}</p>
-                    <p className="text-xs text-muted-foreground">{card.note}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">Upcoming events</h3>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/harvest")}>
-              View schedule
-            </Button>
-          </div>
-          {harvestLoading && (
-            <div className="space-y-2">
-              {[1, 2, 3].map((item) => (
-                <Skeleton key={item} className="h-14 rounded-xl" />
-              ))}
-            </div>
-          )}
-          {!harvestLoading && timelineItems.length === 0 && (
-            <Card className="border-border/60">
-              <CardContent className="p-4 text-sm text-muted-foreground">
-                No upcoming events yet. Add a harvest plan to get a timeline.
-              </CardContent>
-            </Card>
-          )}
-          {!harvestLoading && timelineItems.length > 0 && (
-            <div className="space-y-3">
-              {timelineItems.map((item) => (
-                <div
-                  key={`${item.label}-${item.date}`}
-                  className="flex items-center gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-sm"
-                >
-                  <div
-                    className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center",
-                      STATUS_STYLES[item.tone] ?? STATUS_STYLES.neutral
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{item.label}</p>
-                    <p className="text-xs text-muted-foreground">{item.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground">Market & income snapshot</h3>
-          <div className="grid gap-3 lg:grid-cols-2">
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Best price today</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {pricesLoading ? (
-                  <Skeleton className="h-16 w-full rounded-xl" />
-                ) : bestPrice ? (
-                  <>
-                    <p className="text-2xl font-semibold text-foreground">
-                      {formatKsh(bestPrice.price)} / {bestPrice.unit}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {bestPrice.name} {bestPrice.change >= 0 ? "+" : ""}
-                      {bestPrice.change}% today
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Start selling to see price insights.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base">Revenue trend (6 months)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {cashflowLoading ? (
-                  <Skeleton className="h-24 w-full rounded-xl" />
-                ) : cashflowData && cashflowData.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-2xl font-semibold text-foreground">
-                      {formatKsh(totalRevenue)}
-                    </p>
-                    <div className="h-24">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={cashflowData}>
-                          <XAxis dataKey="month" hide />
-                          <YAxis hide />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "hsl(var(--card))",
-                              border: "1px solid hsl(var(--border))",
-                              borderRadius: "8px",
-                              fontSize: "12px",
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="income"
-                            stroke="hsl(var(--primary))"
-                            strokeWidth={2}
-                            dot={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Start selling to see revenue trends.
-                  </p>
-                )}
+                <Button variant="outline" size="sm" className="w-full" onClick={() => navigate("/climate")}>
+                  Open Climate Insights
+                </Button>
               </CardContent>
             </Card>
           </div>

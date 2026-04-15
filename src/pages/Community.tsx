@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Leaf } from "lucide-react";
+import { ArrowRight, Bookmark, Leaf, Users, Activity, CalendarDays, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { CommunityTabs } from "@/components/community/CommunityTabs";
@@ -25,6 +27,23 @@ const CROP_OPTIONS = ["Maize", "Tomatoes", "Potatoes", "Beans", "Millet", "Dairy
 const BOOKMARK_STORAGE_KEY = "community.bookmarks";
 const LIKE_STORAGE_KEY = "community.likes";
 const COMMUNITY_FARMD_ENABLED = (import.meta.env.VITE_ENABLE_COMMUNITY_FARMD ?? "true") === "true";
+
+const STATUS_STYLES: Record<string, string> = {
+  good: "bg-success/10 text-success border-success/30",
+  warning: "bg-warning/10 text-warning border-warning/30",
+  critical: "bg-destructive/10 text-destructive border-destructive/30",
+  neutral: "bg-secondary/70 text-muted-foreground border-border",
+};
+
+type CommunityFeedPage = {
+  items: CommunityPost[];
+  nextCursor?: string | null;
+};
+
+type CommunityFeedCache = {
+  pages: CommunityFeedPage[];
+  pageParams: unknown[];
+};
 
 function loadStoredIds(key: string) {
   if (typeof window === "undefined") return [] as string[];
@@ -87,13 +106,13 @@ export default function Community() {
 
   const startConversationMutation = useMutation({
     mutationFn: (otherUid: string) => startConversation(otherUid),
-    onError: (error: any) => {
-      const message = String(error?.message || "").toLowerCase();
+    onError: (error: unknown) => {
+      const message = String((error as { message?: string })?.message || "").toLowerCase();
       if (message.includes("blocked")) {
         toast.error("You cannot message this farmer.");
         return;
       }
-      toast.error(error?.message || "Unable to start conversation");
+      toast.error((error as { message?: string })?.message || "Unable to start conversation");
     },
   });
 
@@ -129,10 +148,49 @@ export default function Community() {
     };
   }, [filteredPosts, currentUser?.uid]);
 
+  const currentTabPosts = postsByTab[tab as keyof typeof postsByTab];
+  const activeFilterCount = selectedTopics.length + selectedCrops.length + (searchQuery.trim() ? 1 : 0);
+  const feedStateTone = feedQuery.isLoading ? "warning" : feedQuery.error ? "critical" : "good";
+  const feedStateLabel = feedQuery.isLoading
+    ? "Loading feed"
+    : feedQuery.error
+    ? "Feed issue"
+    : "Feed healthy";
+  const communityMetrics = [
+    {
+      title: "Posts Visible",
+      value: currentTabPosts.length.toString(),
+      note: `Viewing ${tab === "my" ? "my posts" : tab === "bookmarks" ? "bookmarks" : "feed"}.`,
+      icon: Activity,
+      tone: currentTabPosts.length > 0 ? "good" : "warning",
+    },
+    {
+      title: "Bookmarks",
+      value: postsByTab.bookmarks.length.toString(),
+      note: "Saved posts ready for quick access.",
+      icon: Bookmark,
+      tone: postsByTab.bookmarks.length > 0 ? "good" : "neutral",
+    },
+    {
+      title: "Active Filters",
+      value: activeFilterCount.toString(),
+      note: activeFilterCount > 0 ? "Filters are refining this stream." : "No filters applied.",
+      icon: Filter,
+      tone: activeFilterCount > 0 ? "warning" : "neutral",
+    },
+    {
+      title: "Community Mode",
+      value: communityView === "feed" ? "Feed" : communityView === "members" ? "Members" : "Events",
+      note: "Switch between conversations, people, and activities.",
+      icon: communityView === "events" ? CalendarDays : Users,
+      tone: "good",
+    },
+  ] as const;
+
   const updatePostInCache = (postId: string, updater: (post: CommunityPost) => CommunityPost) => {
-    queryClient.setQueryData(["community", "feed"], (old: any) => {
+    queryClient.setQueryData<CommunityFeedCache>(["community", "feed"], (old) => {
       if (!old?.pages?.length) return old;
-      const pages = old.pages.map((page: any) => ({
+      const pages = old.pages.map((page) => ({
         ...page,
         items: page.items.map((item: CommunityPost) => (item.id === postId ? updater(item) : item)),
       }));
@@ -229,38 +287,159 @@ export default function Community() {
       <CommunityHeader onCreate={() => setCreateOpen(true)} onInbox={() => navigate("/community/inbox")} />
 
       <div className="mx-auto max-w-6xl px-4 md:px-6 py-6 space-y-6">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/20 via-card to-card shadow-card">
+            <div className="pointer-events-none absolute -top-14 -right-10 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+            <CardContent className="relative space-y-5 p-5 md:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Cooperative community hub</p>
+                  <h2 className="text-2xl font-semibold text-foreground md:text-3xl">Community Connect</h2>
+                  <p className="text-sm text-muted-foreground">Share experiences, ask questions, and coordinate field actions.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", STATUS_STYLES[feedStateTone])}>
+                    {feedStateLabel}
+                  </Badge>
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", STATUS_STYLES[activeFilterCount > 0 ? "warning" : "neutral"])}>
+                    Filters: {activeFilterCount}
+                  </Badge>
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", STATUS_STYLES[postsByTab.bookmarks.length > 0 ? "good" : "neutral"])}>
+                    Bookmarks: {postsByTab.bookmarks.length}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="relative">
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search posts (e.g. pests, maize, prices...)"
+                  className="h-11 bg-background/80"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" onClick={() => setCreateOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+                  Create Post
+                </Button>
+                <Button type="button" variant="outline" onClick={() => navigate("/community/inbox")}>
+                  Open Inbox
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Community pulse</CardTitle>
+              <CardDescription>Live status for feed, people, and activity windows</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span>Current view</span>
+                </div>
+                <Badge className={cn("border px-2 py-0.5 text-xs", STATUS_STYLES.good)}>
+                  {communityView === "feed" ? "Feed" : communityView === "members" ? "Members" : "Events"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <span>Tab focus</span>
+                </div>
+                <Badge className={cn("border px-2 py-0.5 text-xs", STATUS_STYLES.neutral)}>
+                  {tab === "feed" ? "Feed" : tab === "my" ? "My Posts" : "Bookmarks"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <span>Visible posts</span>
+                </div>
+                <span className="text-xs font-semibold text-foreground">{currentTabPosts.length}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between"
+                onClick={() => setCommunityView("feed")}
+              >
+                Return to feed
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-1 duration-500">
+          {communityMetrics.map((metric) => (
+            <Card key={metric.title} className="border-border/60 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{metric.title}</p>
+                    <p className="text-lg font-semibold text-foreground">{metric.value}</p>
+                  </div>
+                  <div
+                    className={cn(
+                      "rounded-lg p-2",
+                      metric.tone === "good"
+                        ? "bg-success/10"
+                        : metric.tone === "warning"
+                        ? "bg-warning/10"
+                        : metric.tone === "critical"
+                        ? "bg-destructive/10"
+                        : "bg-muted"
+                    )}
+                  >
+                    <metric.icon className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{metric.note}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-6">
             {COMMUNITY_FARMD_ENABLED ? (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={communityView === "feed" ? "default" : "outline"}
-                  className={communityView === "feed" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                  onClick={() => setCommunityView("feed")}
-                >
-                  Feed
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={communityView === "members" ? "default" : "outline"}
-                  className={communityView === "members" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                  onClick={() => setCommunityView("members")}
-                >
-                  Members
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={communityView === "events" ? "default" : "outline"}
-                  className={communityView === "events" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                  onClick={() => setCommunityView("events")}
-                >
-                  Events
-                </Button>
-              </div>
+              <Card className="border-border/60 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={communityView === "feed" ? "default" : "outline"}
+                      className={communityView === "feed" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                      onClick={() => setCommunityView("feed")}
+                    >
+                      Feed
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={communityView === "members" ? "default" : "outline"}
+                      className={communityView === "members" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                      onClick={() => setCommunityView("members")}
+                    >
+                      Members
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={communityView === "events" ? "default" : "outline"}
+                      className={communityView === "events" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                      onClick={() => setCommunityView("events")}
+                    >
+                      Events
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ) : null}
 
             {communityView === "members" && COMMUNITY_FARMD_ENABLED ? (
@@ -273,81 +452,73 @@ export default function Community() {
 
             {communityView === "feed" ? (
               <>
-            <div className="relative">
-              <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search posts (e.g. pests, maize, prices...)"
-                className="h-11"
-              />
-            </div>
+                <Card className="border-border/60 shadow-sm">
+                  <CardContent className="space-y-4 p-4">
+                    <CommunityFilters
+                      label="Topics"
+                      options={TOPIC_OPTIONS}
+                      selected={selectedTopics}
+                      onToggle={(value) => toggleSelection(value, setSelectedTopics, selectedTopics)}
+                    />
+                    <CommunityFilters
+                      label="Crops"
+                      options={CROP_OPTIONS}
+                      selected={selectedCrops}
+                      onToggle={(value) => toggleSelection(value, setSelectedCrops, selectedCrops)}
+                    />
+                    <CommunityTabs value={tab} onChange={setTab} />
+                  </CardContent>
+                </Card>
 
-            <div className="space-y-4">
-              <CommunityFilters
-                label="Topics"
-                options={TOPIC_OPTIONS}
-                selected={selectedTopics}
-                onToggle={(value) => toggleSelection(value, setSelectedTopics, selectedTopics)}
-              />
-              <CommunityFilters
-                label="Crops"
-                options={CROP_OPTIONS}
-                selected={selectedCrops}
-                onToggle={(value) => toggleSelection(value, setSelectedCrops, selectedCrops)}
-              />
-            </div>
-
-            <CommunityTabs value={tab} onChange={setTab} />
-
-            <div className="space-y-4">
-              {feedQuery.isLoading ? (
                 <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-44 rounded-2xl" />
-                  ))}
+                  {feedQuery.isLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-44 rounded-2xl" />
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {!feedQuery.isLoading && currentTabPosts.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border/70 bg-muted/40 p-8 text-center">
+                      <Leaf className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {tab === "feed"
+                          ? "No posts yet. Start the conversation."
+                          : tab === "my"
+                          ? "You haven't posted yet."
+                          : "No bookmarked posts yet."}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-4">
+                    {currentTabPosts.map((post) => (
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        onLike={handleToggleLike}
+                        onComment={(selected) => setSelectedPost(selected)}
+                        onBookmark={handleBookmark}
+                        onShare={handleShare}
+                        onMessage={handleMessage}
+                      />
+                    ))}
+                  </div>
+
+                  {tab === "feed" && feedQuery.hasNextPage ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full h-11"
+                      onClick={() => feedQuery.fetchNextPage()}
+                      disabled={feedQuery.isFetchingNextPage}
+                    >
+                      {feedQuery.isFetchingNextPage ? "Loading..." : "Load more posts"}
+                    </Button>
+                  ) : null}
                 </div>
-              ) : null}
-
-              {!feedQuery.isLoading && postsByTab[tab as keyof typeof postsByTab].length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/40 p-8 text-center">
-                  <Leaf className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {tab === "feed"
-                      ? "No posts yet. Start the conversation."
-                      : tab === "my"
-                      ? "You haven't posted yet."
-                      : "No bookmarked posts yet."}
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="space-y-4">
-                {postsByTab[tab as keyof typeof postsByTab].map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onLike={handleToggleLike}
-                    onComment={(selected) => setSelectedPost(selected)}
-                    onBookmark={handleBookmark}
-                    onShare={handleShare}
-                    onMessage={handleMessage}
-                  />
-                ))}
-              </div>
-
-              {tab === "feed" && feedQuery.hasNextPage ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full h-11"
-                  onClick={() => feedQuery.fetchNextPage()}
-                  disabled={feedQuery.isFetchingNextPage}
-                >
-                  {feedQuery.isFetchingNextPage ? "Loading..." : "Load more posts"}
-                </Button>
-              ) : null}
-            </div>
-            </>
+              </>
             ) : null}
           </div>
 
