@@ -102,6 +102,7 @@ import type { AdvisoryGenerateResponse } from "@/types/advisory";
 import type { UserFeatureFlags } from "@/types/climate";
 import { computeClimateInsights, type ClimateSignal } from "@/lib/climateInsights";
 import { cn } from "@/lib/utils";
+import { getEconomicSnapshot, type EconomicSignal } from "@/services/economicSignalsService";
 import { getConstituencies, getCounties, getWards } from "@/utils/kenyaAdminData";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -213,6 +214,11 @@ export default function ClimatePage() {
   });
   const [cropInput, setCropInput] = useState("");
   const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const [economicSignals, setEconomicSignals] = useState<EconomicSignal[]>([]);
+
+  useEffect(() => {
+    getEconomicSnapshot().then((snap) => setEconomicSignals(snap.signals)).catch(() => {});
+  }, []);
 
   const premiumPlan = true;
   const frostAccess = true;
@@ -487,8 +493,9 @@ export default function ClimatePage() {
       },
       forecastDaily: decisionForecast,
       marketOracleData: oraclePrices ?? [],
+      economicSignals,
     });
-  }, [aiCrop, decisionForecast, oraclePrices, selectedFarm?.county, selectedFarm?.name, selectedFarm?.ward]);
+  }, [aiCrop, decisionForecast, oraclePrices, economicSignals, selectedFarm?.county, selectedFarm?.name, selectedFarm?.ward]);
 
   const decisionSupportError = oracleError
     ? "Market Oracle unavailable - using weather-only guidance."
