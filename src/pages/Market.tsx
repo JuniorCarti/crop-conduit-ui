@@ -26,6 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useCropPrices, usePriceHistory, useRecommendedMarkets } from "@/hooks/useApi";
 import { useMarketOraclePrediction } from "@/hooks/useMarketOraclePrediction";
+import { EconomicSignalsPanel } from "@/components/marketPrices/EconomicSignalsPanel";
 import { useMarketPricesQuery, useSyncMarketPrices } from "@/hooks/useMarketPrices";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCard } from "@/components/shared/AlertCard";
@@ -870,6 +871,16 @@ export default function Market() {
                 )}
               </CardContent>
             </Card>
+
+              {/* Economic Signals — adjusts raw prediction for fuel, exchange rate, inflation */}
+              <EconomicSignalsPanel
+                rawPredictedPrice={
+                  typeof predictionResult?.prediction_per_kg === "number"
+                    ? predictionResult.prediction_per_kg
+                    : null
+                }
+                commodity={predictionForm.commodity || "Tomatoes"}
+              />
           </div>
         </section>
 

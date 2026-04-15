@@ -51,7 +51,6 @@ export default function MarketPrices() {
           </TabsList>
 
           <TabsContent value="table" className="space-y-4">
-            <EconomicSignalsPanel commodity={selectedCommodity || "Tomatoes"} />
             <MarketPriceTable
               initialFilters={{
                 commodity: selectedCommodity || undefined,
