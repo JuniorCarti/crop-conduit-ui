@@ -36,6 +36,11 @@ import { useLogisticsRoute } from "@/hooks/useLogisticsRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatKsh } from "@/lib/currency";
 import { Delivery, HarvestSchedule, Worker } from "@/types/harvest";
+import { HarvestDashboard } from "@/components/harvest/HarvestDashboard";
+import { HarvestReadinessScore } from "@/components/harvest/HarvestReadinessScore";
+import { WeatherHarvestRecommendation } from "@/components/harvest/WeatherHarvestRecommendation";
+import { MarketTimingSignal } from "@/components/harvest/MarketTimingSignal";
+import { YieldVsTargetTracker } from "@/components/harvest/YieldVsTargetTracker";
 
 type ScheduleFormState = {
   cropId: string;
@@ -553,6 +558,33 @@ export default function Harvest() {
             action="View Details"
           />
         )}
+
+        {/* Batch 1 — Dashboard & Intelligence */}
+        <HarvestDashboard
+          schedules={schedules}
+          workers={workers}
+          deliveries={deliveries}
+        />
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <HarvestReadinessScore
+            schedule={selectedSchedule}
+            workers={workers}
+            deliveries={deliveries}
+          />
+          <WeatherHarvestRecommendation
+            cropName={selectedSchedule?.cropName}
+          />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <MarketTimingSignal
+            cropName={selectedSchedule?.cropName}
+          />
+          <YieldVsTargetTracker
+            schedules={schedules}
+          />
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="outline">Harvest</Badge>
