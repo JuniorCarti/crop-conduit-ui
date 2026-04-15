@@ -46,6 +46,12 @@ import { WindSpeedChart } from "@/components/climate/WindSpeedChart";
 import { HumidityTrendChart } from "@/components/climate/HumidityTrendChart";
 import { TempRainComboChart } from "@/components/climate/TempRainComboChart";
 import { ClimateSignalGauges } from "@/components/climate/ClimateSignalGauges";
+import { FarmHealthScoreCard } from "@/components/climate/FarmHealthScoreCard";
+import { SprayCalendarCard } from "@/components/climate/SprayCalendarCard";
+import { IrrigationScheduleCard } from "@/components/climate/IrrigationScheduleCard";
+import { HarvestWindowOptimizer } from "@/components/climate/HarvestWindowOptimizer";
+import { PostHarvestStorageCard } from "@/components/climate/PostHarvestStorageCard";
+import { CropRotationCard } from "@/components/climate/CropRotationCard";
 import { FrostRiskCard } from "@/components/climate/FrostRiskCard";
 import { RainOutlookCard } from "@/components/climate/RainOutlookCard";
 import { AdvisoryCard } from "@/components/climate/AdvisoryCard";
@@ -1181,6 +1187,40 @@ export default function ClimatePage() {
                   </div>
                   <TempRainComboChart forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
                   <ClimateSignalGauges signals={climateSignals} />
+                </div>
+
+                {/* Batch 2 — Farm Intelligence Cards */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/10">
+                      <Sprout className="h-3.5 w-3.5 text-success" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Farm Intelligence</h2>
+                      <p className="text-xs text-muted-foreground">Actionable decisions derived from your forecast and signals</p>
+                    </div>
+                  </div>
+                  <FarmHealthScoreCard signals={climateSignals} farmName={selectedFarm?.name} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <SprayCalendarCard forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
+                    <IrrigationScheduleCard forecast={climateData?.forecast ?? null} isLoading={forecastLoading} />
+                  </div>
+                  <HarvestWindowOptimizer
+                    forecast={climateData?.forecast ?? null}
+                    isLoading={forecastLoading}
+                    crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                  />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <PostHarvestStorageCard
+                      forecast={climateData?.forecast ?? null}
+                      isLoading={forecastLoading}
+                      crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                    />
+                    <CropRotationCard
+                      signals={climateSignals}
+                      currentCrops={selectedFarm?.crops ?? []}
+                    />
+                  </div>
                 </div>
 
             {keyAlertSignals.length > 0 && (
