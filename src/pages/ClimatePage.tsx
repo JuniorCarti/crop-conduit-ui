@@ -13,6 +13,7 @@ import {
   Droplet,
   Leaf,
   MapPin,
+  Share2,
   Sparkles,
   Sprout,
   Snowflake,
@@ -73,6 +74,11 @@ import { FarmHealthHistoryChart } from "@/components/climate/FarmHealthHistoryCh
 import { SoilTypeCard } from "@/components/climate/SoilTypeCard";
 import { CropGrowthStageTracker } from "@/components/climate/CropGrowthStageTracker";
 import { FarmSizeCard } from "@/components/climate/FarmSizeCard";
+import { ShareAdvisoryWhatsApp } from "@/components/climate/ShareAdvisoryWhatsApp";
+import { ExportSnapshotCSV } from "@/components/climate/ExportSnapshotCSV";
+import { PrintClimateReport } from "@/components/climate/PrintClimateReport";
+import { SyncHarvestDates } from "@/components/climate/SyncHarvestDates";
+import { HeatmapCalendar } from "@/components/climate/HeatmapCalendar";
 import { FrostRiskCard } from "@/components/climate/FrostRiskCard";
 import { RainOutlookCard } from "@/components/climate/RainOutlookCard";
 import { AdvisoryCard } from "@/components/climate/AdvisoryCard";
@@ -1781,6 +1787,49 @@ export default function ClimatePage() {
                 lon={alertsLon}
               />
             </div>
+
+                {/* Batch 7 — Export, Share & Integration */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/10">
+                      <Share2 className="h-3.5 w-3.5 text-success" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Export, Share & Integration</h2>
+                      <p className="text-xs text-muted-foreground">Share advisories, export data, print reports, sync to harvest planner, and heatmap calendar</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <ShareAdvisoryWhatsApp
+                      advisory={advisoryResult ?? null}
+                      farmName={selectedFarm?.name}
+                      crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                    />
+                    <ExportSnapshotCSV
+                      forecast={climateData?.forecast ?? null}
+                      farmName={selectedFarm?.name}
+                    />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <PrintClimateReport
+                      forecast={climateData?.forecast ?? null}
+                      signals={climateSignals}
+                      decisionSupport={decisionSupport}
+                      farmName={selectedFarm?.name}
+                      crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                    />
+                    <SyncHarvestDates
+                      forecast={climateData?.forecast ?? null}
+                      crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                      farmName={selectedFarm?.name}
+                    />
+                  </div>
+                  <HeatmapCalendar
+                    forecast={climateData?.forecast ?? null}
+                    signals={climateSignals}
+                  />
+                </div>
+
               </CollapsibleContent>
             </Collapsible>
           </>
