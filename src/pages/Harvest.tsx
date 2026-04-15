@@ -41,6 +41,11 @@ import { HarvestReadinessScore } from "@/components/harvest/HarvestReadinessScor
 import { WeatherHarvestRecommendation } from "@/components/harvest/WeatherHarvestRecommendation";
 import { MarketTimingSignal } from "@/components/harvest/MarketTimingSignal";
 import { YieldVsTargetTracker } from "@/components/harvest/YieldVsTargetTracker";
+import { PostHarvestLossTracker } from "@/components/harvest/PostHarvestLossTracker";
+import { QualityGradingLog } from "@/components/harvest/QualityGradingLog";
+import { HarvestCostCalculator } from "@/components/harvest/HarvestCostCalculator";
+import { BatchSplitting } from "@/components/harvest/BatchSplitting";
+import { WorkerAttendanceTracker } from "@/components/harvest/WorkerAttendanceTracker";
 
 type ScheduleFormState = {
   cropId: string;
@@ -585,6 +590,17 @@ export default function Harvest() {
             schedules={schedules}
           />
         </div>
+
+        {/* Batch 2 — Operations & Quality */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PostHarvestLossTracker schedules={schedules} />
+          <QualityGradingLog schedules={schedules} />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <HarvestCostCalculator schedule={selectedSchedule} />
+          <BatchSplitting schedules={schedules} />
+        </div>
+        <WorkerAttendanceTracker workers={workers} />
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="outline">Harvest</Badge>
