@@ -58,6 +58,10 @@ import { PestDiseaseCalendar } from "@/components/climate/PestDiseaseCalendar";
 import { InputCostAdvisoryCard } from "@/components/climate/InputCostAdvisoryCard";
 import { BreakEvenCalculator } from "@/components/climate/BreakEvenCalculator";
 import { AutoAdvisoryScheduler } from "@/components/climate/AutoAdvisoryScheduler";
+import { AlertHistoryLog } from "@/components/climate/AlertHistoryLog";
+import { CustomAlertThresholds } from "@/components/climate/CustomAlertThresholds";
+import { PushNotificationOptIn } from "@/components/climate/PushNotificationOptIn";
+import { TelegramAlertSubscription } from "@/components/climate/TelegramAlertSubscription";
 import { FrostRiskCard } from "@/components/climate/FrostRiskCard";
 import { RainOutlookCard } from "@/components/climate/RainOutlookCard";
 import { AdvisoryCard } from "@/components/climate/AdvisoryCard";
@@ -1565,21 +1569,24 @@ export default function ClimatePage() {
               />
             </div>
 
-            <div className="space-y-4 rounded-2xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-card p-4 md:p-6">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/10">
                   <Bell className="h-3.5 w-3.5 text-info" />
                 </div>
-                <h2 className="text-base font-semibold text-foreground">{t("climate.alertsSection.title")}</h2>
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">{t("climate.alertsSection.title")}</h2>
+                  <p className="text-xs text-muted-foreground">History, custom thresholds, push notifications, and multi-channel delivery</p>
+                </div>
               </div>
+
+              {/* Existing email + WhatsApp + SMS subscriptions */}
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card className="border-border/60 bg-background/80 shadow-sm">
                   <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle className="text-base">{t("climate.weatherAlerts.title")}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {t("climate.weatherAlerts.subtitle")}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{t("climate.weatherAlerts.subtitle")}</p>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1589,45 +1596,23 @@ export default function ClimatePage() {
                         <AlertDescription>{t("climate.weatherAlerts.configMissing")}</AlertDescription>
                       </Alert>
                     )}
-
                     <div className="rounded-xl border border-border/60 bg-card/70 p-3 text-sm">
                       <p className="text-muted-foreground">{t("climate.weatherAlerts.locationLabel")}</p>
                       <p className="font-semibold">{alertsLocationName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("climate.weatherAlerts.coordsLabel")}: {alertsCoordsLabel}
-                      </p>
-                      {!hasLocation && (
-                        <p className="text-xs text-muted-foreground">
-                          {t("climate.weatherAlerts.selectLocation")}
-                        </p>
-                      )}
+                      <p className="text-xs text-muted-foreground">{t("climate.weatherAlerts.coordsLabel")}: {alertsCoordsLabel}</p>
+                      {!hasLocation && <p className="text-xs text-muted-foreground">{t("climate.weatherAlerts.selectLocation")}</p>}
                     </div>
-
                     <div className="flex flex-col gap-2 rounded-xl border border-border/60 bg-card/70 p-3 sm:flex-row sm:gap-6">
                       <div className="flex items-center gap-2 rounded-lg bg-background/70 px-2.5 py-2">
-                        <Checkbox
-                          id="alerts-frost"
-                          checked={alertsForm.wantsFrost}
-                          onCheckedChange={(value) =>
-                            setAlertsForm((prev) => ({ ...prev, wantsFrost: value === true }))
-                          }
-                        />
+                        <Checkbox id="alerts-frost" checked={alertsForm.wantsFrost} onCheckedChange={(v) => setAlertsForm((p) => ({ ...p, wantsFrost: v === true }))} />
                         <Label htmlFor="alerts-frost">{t("climate.weatherAlerts.frostLabel")}</Label>
                       </div>
                       <div className="flex items-center gap-2 rounded-lg bg-background/70 px-2.5 py-2">
-                        <Checkbox
-                          id="alerts-rain"
-                          checked={alertsForm.wantsRain}
-                          onCheckedChange={(value) =>
-                            setAlertsForm((prev) => ({ ...prev, wantsRain: value === true }))
-                          }
-                        />
+                        <Checkbox id="alerts-rain" checked={alertsForm.wantsRain} onCheckedChange={(v) => setAlertsForm((p) => ({ ...p, wantsRain: v === true }))} />
                         <Label htmlFor="alerts-rain">{t("climate.weatherAlerts.rainLabel")}</Label>
                       </div>
                     </div>
-
                     <Separator />
-
                     <Tabs defaultValue="email">
                       <TabsList className="grid w-full grid-cols-2 rounded-lg bg-muted/70 p-1">
                         <TabsTrigger value="email">{t("climate.weatherAlerts.emailTab")}</TabsTrigger>
@@ -1636,91 +1621,25 @@ export default function ClimatePage() {
                       <TabsContent value="email" className="space-y-3">
                         <div>
                           <Label htmlFor="alerts-email">{t("climate.weatherAlerts.emailLabel")}</Label>
-                          <Input
-                            id="alerts-email"
-                            type="email"
-                            placeholder={t("climate.weatherAlerts.emailPlaceholder")}
-                            value={alertsForm.email}
-                            onChange={(e) =>
-                              setAlertsForm((prev) => ({ ...prev, email: e.target.value }))
-                            }
-                          />
+                          <Input id="alerts-email" type="email" placeholder={t("climate.weatherAlerts.emailPlaceholder")} value={alertsForm.email} onChange={(e) => setAlertsForm((p) => ({ ...p, email: e.target.value }))} />
                         </div>
-                        {!emailValid && alertsForm.email.length > 0 && (
-                          <p className="text-xs text-destructive">
-                            {t("climate.weatherAlerts.errorInvalidEmail")}
-                          </p>
-                        )}
-                        {subscribeEmailAlerts.error && (
-                          <p className="text-xs text-destructive">
-                            {subscribeEmailAlerts.error.message ||
-                              t("climate.weatherAlerts.errorGeneric")}
-                          </p>
-                        )}
-                        {subscribeEmailAlerts.isSuccess && (
-                          <p className="text-xs text-success">
-                            {t("climate.weatherAlerts.enabled")}
-                          </p>
-                        )}
-                        <Button
-                          className="w-full sm:w-auto"
-                          type="button"
-                          onClick={handleSubscribeEmail}
-                          disabled={
-                            subscribeEmailAlerts.isPending ||
-                            !alertsConfigured ||
-                            !hasLocation ||
-                            !emailValid
-                          }
-                        >
-                          {subscribeEmailAlerts.isPending
-                            ? t("climate.weatherAlerts.enabling")
-                            : t("climate.weatherAlerts.enableEmail")}
+                        {!emailValid && alertsForm.email.length > 0 && <p className="text-xs text-destructive">{t("climate.weatherAlerts.errorInvalidEmail")}</p>}
+                        {subscribeEmailAlerts.error && <p className="text-xs text-destructive">{subscribeEmailAlerts.error.message || t("climate.weatherAlerts.errorGeneric")}</p>}
+                        {subscribeEmailAlerts.isSuccess && <p className="text-xs text-success">{t("climate.weatherAlerts.enabled")}</p>}
+                        <Button className="w-full sm:w-auto" type="button" onClick={handleSubscribeEmail} disabled={subscribeEmailAlerts.isPending || !alertsConfigured || !hasLocation || !emailValid}>
+                          {subscribeEmailAlerts.isPending ? t("climate.weatherAlerts.enabling") : t("climate.weatherAlerts.enableEmail")}
                         </Button>
                       </TabsContent>
                       <TabsContent value="whatsapp" className="space-y-3">
                         <div>
                           <Label htmlFor="alerts-whatsapp">{t("climate.weatherAlerts.whatsappLabel")}</Label>
-                          <Input
-                            id="alerts-whatsapp"
-                            type="tel"
-                            placeholder={t("climate.weatherAlerts.whatsappPlaceholder")}
-                            value={alertsForm.msisdn}
-                            onChange={(e) =>
-                              setAlertsForm((prev) => ({ ...prev, msisdn: e.target.value }))
-                            }
-                          />
+                          <Input id="alerts-whatsapp" type="tel" placeholder={t("climate.weatherAlerts.whatsappPlaceholder")} value={alertsForm.msisdn} onChange={(e) => setAlertsForm((p) => ({ ...p, msisdn: e.target.value }))} />
                         </div>
-                        {!whatsappValid && alertsForm.msisdn.length > 0 && (
-                          <p className="text-xs text-destructive">
-                            {t("climate.weatherAlerts.errorInvalidWhatsApp")}
-                          </p>
-                        )}
-                        {subscribeWhatsAppAlerts.error && (
-                          <p className="text-xs text-destructive">
-                            {subscribeWhatsAppAlerts.error.message ||
-                              t("climate.weatherAlerts.errorGeneric")}
-                          </p>
-                        )}
-                        {subscribeWhatsAppAlerts.isSuccess && (
-                          <p className="text-xs text-success">
-                            {t("climate.weatherAlerts.enabled")}
-                          </p>
-                        )}
-                        <Button
-                          className="w-full sm:w-auto"
-                          type="button"
-                          onClick={handleSubscribeWhatsApp}
-                          disabled={
-                            subscribeWhatsAppAlerts.isPending ||
-                            !alertsConfigured ||
-                            !hasLocation ||
-                            !whatsappValid
-                          }
-                        >
-                          {subscribeWhatsAppAlerts.isPending
-                            ? t("climate.weatherAlerts.enabling")
-                            : t("climate.weatherAlerts.enableWhatsApp")}
+                        {!whatsappValid && alertsForm.msisdn.length > 0 && <p className="text-xs text-destructive">{t("climate.weatherAlerts.errorInvalidWhatsApp")}</p>}
+                        {subscribeWhatsAppAlerts.error && <p className="text-xs text-destructive">{subscribeWhatsAppAlerts.error.message || t("climate.weatherAlerts.errorGeneric")}</p>}
+                        {subscribeWhatsAppAlerts.isSuccess && <p className="text-xs text-success">{t("climate.weatherAlerts.enabled")}</p>}
+                        <Button className="w-full sm:w-auto" type="button" onClick={handleSubscribeWhatsApp} disabled={subscribeWhatsAppAlerts.isPending || !alertsConfigured || !hasLocation || !whatsappValid}>
+                          {subscribeWhatsAppAlerts.isPending ? t("climate.weatherAlerts.enabling") : t("climate.weatherAlerts.enableWhatsApp")}
                         </Button>
                       </TabsContent>
                     </Tabs>
@@ -1730,38 +1649,22 @@ export default function ClimatePage() {
                 <Card className="border-border/60 bg-background/80 shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-base">{t("climate.alertsSection.notifications")}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {t("climate.alertsSection.notificationsHint")}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t("climate.alertsSection.notificationsHint")}</p>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/70 p-3">
                       <div>
                         <p className="text-sm font-semibold">{t("climate.sms.title")}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {isOffline ? t("climate.sms.offlineHint") : t("climate.sms.helper")}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{isOffline ? t("climate.sms.offlineHint") : t("climate.sms.helper")}</p>
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div>
-                            <Switch
-                              checked={smsEnabled}
-                              disabled={!hasPhoneNumber || !smsAccess}
-                              onCheckedChange={handleToggleSms}
-                            />
-                          </div>
+                          <div><Switch checked={smsEnabled} disabled={!hasPhoneNumber || !smsAccess} onCheckedChange={handleToggleSms} /></div>
                         </TooltipTrigger>
-                        {!hasPhoneNumber && (
-                          <TooltipContent>
-                            <p>{t("climate.sms.needsPhone")}</p>
-                          </TooltipContent>
-                        )}
+                        {!hasPhoneNumber && <TooltipContent><p>{t("climate.sms.needsPhone")}</p></TooltipContent>}
                       </Tooltip>
                     </div>
-
                     <Separator />
-
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold">{t("climate.alertsSection.recent")}</p>
@@ -1775,18 +1678,10 @@ export default function ClimatePage() {
                             <div key={alert.id} className="relative space-y-1">
                               <span className="absolute -left-2 top-1 h-2 w-2 rounded-full bg-primary" />
                               <div className="flex items-center gap-2">
-                                <Badge className="text-xs" variant="outline">
-                                  {t(`climate.alerts.${alert.type}`)}
-                                </Badge>
-                                <Badge className="text-xs" variant="outline">
-                                  {t(`climate.risk.${alert.severity.toLowerCase()}`)}
-                                </Badge>
+                                <Badge className="text-xs" variant="outline">{t(`climate.alerts.${alert.type}`)}</Badge>
+                                <Badge className="text-xs" variant="outline">{t(`climate.risk.${alert.severity.toLowerCase()}`)}</Badge>
                               </div>
-                              <p className="text-xs text-muted-foreground">
-                                {activeLanguage === "sw"
-                                  ? alert.messageSw || alert.messageEn
-                                  : alert.messageEn || alert.messageSw}
-                              </p>
+                              <p className="text-xs text-muted-foreground">{activeLanguage === "sw" ? alert.messageSw || alert.messageEn : alert.messageEn || alert.messageSw}</p>
                             </div>
                           ))}
                         </div>
@@ -1795,6 +1690,18 @@ export default function ClimatePage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Batch 4 — Alerts & Notifications Upgrade */}
+              <AlertHistoryLog alerts={alerts} language={activeLanguage} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <CustomAlertThresholds />
+                <PushNotificationOptIn />
+              </div>
+              <TelegramAlertSubscription
+                locationName={alertsLocationName}
+                lat={alertsLat}
+                lon={alertsLon}
+              />
             </div>
               </CollapsibleContent>
             </Collapsible>
