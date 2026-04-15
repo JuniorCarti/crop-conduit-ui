@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   BarChart3,
   Bell,
+  CalendarDays,
   ChevronDown,
   CloudRain,
   CloudSun,
@@ -62,6 +63,11 @@ import { AlertHistoryLog } from "@/components/climate/AlertHistoryLog";
 import { CustomAlertThresholds } from "@/components/climate/CustomAlertThresholds";
 import { PushNotificationOptIn } from "@/components/climate/PushNotificationOptIn";
 import { TelegramAlertSubscription } from "@/components/climate/TelegramAlertSubscription";
+import { ExtendedOutlookCard } from "@/components/climate/ExtendedOutlookCard";
+import { HourlyForecastPanel } from "@/components/climate/HourlyForecastPanel";
+import { UVIndexCard } from "@/components/climate/UVIndexCard";
+import { EvapotranspirationCard } from "@/components/climate/EvapotranspirationCard";
+import { DewPointHumidityCard } from "@/components/climate/DewPointHumidityCard";
 import { FrostRiskCard } from "@/components/climate/FrostRiskCard";
 import { RainOutlookCard } from "@/components/climate/RainOutlookCard";
 import { AdvisoryCard } from "@/components/climate/AdvisoryCard";
@@ -1177,6 +1183,33 @@ export default function ClimatePage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Batch 5 — Extended Forecast & Data */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/10">
+                      <CalendarDays className="h-3.5 w-3.5 text-info" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Extended Forecast & Data</h2>
+                      <p className="text-xs text-muted-foreground">14-day outlook, hourly breakdown, UV, ET₀, and dew point</p>
+                    </div>
+                  </div>
+                  <ExtendedOutlookCard
+                    forecast={climateData?.forecast ?? null}
+                    isPremium={premiumPlan}
+                    onUpgrade={handleUpgrade}
+                  />
+                  <HourlyForecastPanel forecast={climateData?.forecast ?? null} />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <UVIndexCard forecast={climateData?.forecast ?? null} />
+                    <EvapotranspirationCard
+                      forecast={climateData?.forecast ?? null}
+                      crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                    />
+                  </div>
+                  <DewPointHumidityCard forecast={climateData?.forecast ?? null} />
+                </div>
 
                 {/* Batch 1 — Visual Charts */}
                 <div className="space-y-3">
