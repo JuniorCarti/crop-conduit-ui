@@ -52,6 +52,12 @@ import { IrrigationScheduleCard } from "@/components/climate/IrrigationScheduleC
 import { HarvestWindowOptimizer } from "@/components/climate/HarvestWindowOptimizer";
 import { PostHarvestStorageCard } from "@/components/climate/PostHarvestStorageCard";
 import { CropRotationCard } from "@/components/climate/CropRotationCard";
+import { AdvisoryHistoryLog } from "@/components/climate/AdvisoryHistoryLog";
+import { AdvisoryConfidenceScore } from "@/components/climate/AdvisoryConfidenceScore";
+import { PestDiseaseCalendar } from "@/components/climate/PestDiseaseCalendar";
+import { InputCostAdvisoryCard } from "@/components/climate/InputCostAdvisoryCard";
+import { BreakEvenCalculator } from "@/components/climate/BreakEvenCalculator";
+import { AutoAdvisoryScheduler } from "@/components/climate/AutoAdvisoryScheduler";
 import { FrostRiskCard } from "@/components/climate/FrostRiskCard";
 import { RainOutlookCard } from "@/components/climate/RainOutlookCard";
 import { AdvisoryCard } from "@/components/climate/AdvisoryCard";
@@ -1521,6 +1527,41 @@ export default function ClimatePage() {
                 isPremium={smsAccess}
                 t={t}
                 onUpgrade={handleUpgrade}
+              />
+            </div>
+
+            {/* Batch 3 — AI & Advisory Enhancements */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">Advisory Intelligence</h2>
+                  <p className="text-xs text-muted-foreground">History, confidence, pest calendar, input timing, and planning tools</p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <AdvisoryConfidenceScore advisory={advisoryResult ?? null} />
+                <AdvisoryHistoryLog history={[]} />
+              </div>
+              <PestDiseaseCalendar
+                crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                currentMonth={new Date().getMonth() + 1}
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputCostAdvisoryCard
+                  forecast={climateData?.forecast ?? null}
+                  crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                />
+                <BreakEvenCalculator
+                  currentMarketPrice={decisionSupport.marketSignal.price ?? null}
+                  crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                />
+              </div>
+              <AutoAdvisoryScheduler
+                crop={selectedFarm?.crops?.[0] ?? aiCrop}
+                farmName={selectedFarm?.name}
               />
             </div>
 
