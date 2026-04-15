@@ -61,6 +61,7 @@ import { usePremiumModalStore } from "@/store/premiumStore";
 import type { AdvisoryGenerateResponse } from "@/types/advisory";
 import type { UserFeatureFlags } from "@/types/climate";
 import { computeClimateInsights, type ClimateSignal } from "@/lib/climateInsights";
+import { cn } from "@/lib/utils";
 import { getConstituencies, getCounties, getWards } from "@/utils/kenyaAdminData";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -607,8 +608,9 @@ export default function ClimatePage() {
       });
       setCropInput("");
       setSelectedFarmId(farmId);
-    } catch (err: any) {
-      toast.error(err?.message || t("climate.form.error"));
+    } catch (err: unknown) {
+      const message = (err as { message?: string })?.message;
+      toast.error(message || t("climate.form.error"));
     }
   };
 
@@ -757,12 +759,13 @@ export default function ClimatePage() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(ADVISORY_STORAGE_KEY, JSON.stringify(enriched));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (error as { message?: string })?.message;
       setAdvisoryError(
-        error?.message || t("climate.aiAdvisory.error", "Unable to generate advisory.")
+        message || t("climate.aiAdvisory.error", "Unable to generate advisory.")
       );
       toast.error(
-        error?.message || t("climate.aiAdvisory.error", "Unable to generate advisory.")
+        message || t("climate.aiAdvisory.error", "Unable to generate advisory.")
       );
     } finally {
       setAdvisoryBusy(false);
@@ -773,14 +776,14 @@ export default function ClimatePage() {
   if (farmsLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="border-b border-border bg-card px-4 py-5 md:px-6">
-          <Skeleton className="h-8 w-48" />
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[1,2,3,4].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 space-y-4">
+          <Skeleton className="h-44 rounded-2xl" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
           </div>
-        </div>
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
-          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-56 rounded-2xl" />
         </div>
       </div>
     );
@@ -796,7 +799,7 @@ export default function ClimatePage() {
     },
     {
       label: "Avg Max Temp",
-      value: headerSummary.avgMax != null ? `${headerSummary.avgMax}°C` : "--",
+      value: headerSummary.avgMax != null ? `${headerSummary.avgMax}C` : "--",
       icon: Thermometer,
       color: "text-warning",
       bg: "bg-warning/10",
@@ -817,42 +820,133 @@ export default function ClimatePage() {
     },
   ];
 
+  const dashboardToneClasses: Record<"good" | "warning" | "critical" | "neutral", string> = {
+    good: "bg-success/10 text-success border-success/30",
+    warning: "bg-warning/10 text-warning border-warning/30",
+    critical: "bg-destructive/10 text-destructive border-destructive/30",
+    neutral: "bg-secondary/70 text-muted-foreground border-border",
+  };
+
+  const forecastStateLabel = forecastLoading
+    ? "Refreshing forecast"
+    : error
+    ? "Forecast issue"
+    : climateData?.forecast
+    ? "Forecast ready"
+    : "No forecast";
+  const forecastStateTone: "good" | "warning" | "critical" | "neutral" = forecastLoading
+    ? "warning"
+    : error
+    ? "critical"
+    : climateData?.forecast
+    ? "good"
+    : "neutral";
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card px-4 py-5 md:px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10">
-              <CloudSun className="h-5 w-5 text-info" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{t("climate.title")}</h1>
-              <p className="text-sm text-muted-foreground">{t("climate.subtitle")}</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={handleUpgrade}>
-            {t("climate.premium.upgrade")}
-          </Button>
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 space-y-6">
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/20 via-card to-card shadow-card">
+            <div className="pointer-events-none absolute -top-14 -right-10 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+            <CardContent className="relative space-y-5 p-5 md:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Cooperative climate command</p>
+                  <h1 className="text-2xl font-semibold text-foreground md:text-3xl">{t("climate.title")}</h1>
+                  <p className="text-sm text-muted-foreground">{t("climate.subtitle")}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", dashboardToneClasses[forecastStateTone])}>
+                    {forecastStateLabel}
+                  </Badge>
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", dashboardToneClasses[alerts.length > 0 ? "warning" : "good"])}>
+                    Alerts: {alerts.length}
+                  </Badge>
+                  <Badge className={cn("border px-3 py-1 text-xs font-medium", dashboardToneClasses[decisionSupport.riskAlert.level === "Red" ? "critical" : decisionSupport.riskAlert.level === "Orange" ? "warning" : "good"])}>
+                    Risk: {decisionSupport.riskAlert.level}
+                  </Badge>
+                </div>
+              </div>
 
-        {/* Stat cards */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {selectedFarm
+                      ? [selectedFarm.county, selectedFarm.subCounty, selectedFarm.ward].filter(Boolean).join(" / ")
+                      : t("climate.signals.selectFarm")}
+                  </p>
+                </div>
+                <p className="mt-1 text-lg font-semibold text-foreground">
+                  {selectedFarm?.name || t("climate.farmSelector.placeholder")}
+                </p>
+                <p className="mt-1 text-sm text-foreground/80">{weekSummary}</p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+                  {t("climate.form.title")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setDetailsOpen((prev) => !prev)}>
+                  {detailsOpen ? "Hide details" : "View details"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleUpgrade}>
+                  {t("climate.premium.upgrade")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Climate pulse</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <CloudSun className="h-4 w-4 text-muted-foreground" />
+                  <span>Forecast status</span>
+                </div>
+                <Badge className={cn("border px-2.5 py-0.5 text-xs", dashboardToneClasses[forecastStateTone])}>
+                  {forecastStateLabel}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Leaf className="h-4 w-4 text-muted-foreground" />
+                  <span>Primary crop</span>
+                </div>
+                <Badge variant="secondary" className="text-xs">{cropLabel}</Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3">
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                  <span>Recent alerts</span>
+                </div>
+                <span className="text-xs font-semibold text-foreground">{alerts.length}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-1 duration-500">
           {headerStats.map((stat) => (
-            <div key={stat.label} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
-              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.bg}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-            </div>
+            <Card key={stat.label} className="border-border/60 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{stat.label}</p>
+                    <p className="truncate text-lg font-semibold text-foreground">{stat.value}</p>
+                  </div>
+                  <div className={`rounded-lg p-2 ${stat.bg}`}>
+                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </div>
-      </div>
+        </section>
 
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-4">
         {isOffline && (
           <Alert>
             <WifiOff className="h-4 w-4" />
@@ -992,101 +1086,135 @@ export default function ClimatePage() {
                 </CardContent>
               </Card>
 
-              <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Detailed forecasts & AI advisory</p>
-                  <p className="text-xs text-muted-foreground">Forecasts, signals, AI advisory, and full alerts.</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDetailsOpen((prev) => !prev)}
-                >
-                  {detailsOpen ? "Hide details" : "View details"}
-                </Button>
-              </div>
+              <Card className="border-border/60 bg-gradient-to-br from-muted/40 via-card to-card">
+                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">Detailed forecasts & AI advisory</p>
+                    <p className="text-xs text-muted-foreground">Forecasts, signals, AI advisory, and full alerts.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDetailsOpen((prev) => !prev)}
+                  >
+                    {detailsOpen ? "Hide details" : "View details"}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
 
-            <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
-              <CollapsibleContent className="space-y-4 pt-4">
-            <div className="sticky top-0 z-20 -mx-4 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>
-                      {selectedFarm
-                        ? [
-                            selectedFarm.county,
-                            selectedFarm.subCounty,
-                            selectedFarm.ward,
-                          ]
-                            .filter(Boolean)
-                            .join(" / ")
-                        : t("climate.signals.selectFarm")}
-                    </span>
-                  </div>
-                  <h2 className="text-lg font-semibold">
-                    {selectedFarm?.name || t("climate.farmSelector.placeholder")}
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {t("climate.form.cropsLabel")}:
-                    </span>
-                    {selectedFarm?.crops?.length ? (
-                      selectedFarm.crops.slice(0, 4).map((crop) => (
-                        <Badge key={crop} variant="secondary" className="text-xs">
-                          {crop}
-                        </Badge>
-                      ))
-                    ) : (
+                        <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+              <CollapsibleContent className="space-y-6 pt-2">
+
+                {/* Details section header */}
+                <Card className="border-border/60 bg-gradient-to-br from-info/5 via-card to-card shadow-sm">
+                  <CardContent className="p-4 md:p-5">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">
+                            {selectedFarm
+                              ? [selectedFarm.county, selectedFarm.subCounty, selectedFarm.ward].filter(Boolean).join(" / ")
+                              : t("climate.signals.selectFarm")}
+                          </p>
+                        </div>
+                        <p className="text-base font-semibold text-foreground">
+                          {selectedFarm?.name || t("climate.farmSelector.placeholder")}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {selectedFarm?.crops?.length ? (
+                            selectedFarm.crops.slice(0, 4).map((crop) => (
+                              <Badge key={crop} variant="secondary" className="text-xs">{crop}</Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{t("climate.locationHeader.cropsEmpty")}</span>
+                          )}
+                          {selectedFarm?.crops && selectedFarm.crops.length > 4 && (
+                            <Badge variant="outline" className="text-xs">+{selectedFarm.crops.length - 4}</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {[
+                          { icon: Sun, label: t("climate.locationHeader.range", { days: headerSummary.days || 0 }), color: "text-warning", bg: "bg-warning/10" },
+                          { icon: Thermometer, label: headerSummary.avgMax != null ? `${headerSummary.avgMax}°C` : "--", color: "text-primary", bg: "bg-primary/10" },
+                          { icon: CloudRain, label: headerSummary.totalRain != null ? `${headerSummary.totalRain} mm` : "--", color: "text-info", bg: "bg-info/10" },
+                          { icon: Droplet, label: headerSummary.avgChance != null ? `${headerSummary.avgChance}%` : "--", color: "text-success", bg: "bg-success/10" },
+                        ].map((item, i) => (
+                          <div key={i} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-2.5 py-2">
+                            <div className={cn("flex h-6 w-6 items-center justify-center rounded-md", item.bg)}>
+                              <item.icon className={cn("h-3.5 w-3.5", item.color)} />
+                            </div>
+                            <span className="text-xs font-medium text-foreground">{item.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                    <h2 className="text-lg font-semibold">
+                      {selectedFarm?.name || t("climate.farmSelector.placeholder")}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        {t("climate.locationHeader.cropsEmpty")}
+                        {t("climate.form.cropsLabel")}:
                       </span>
-                    )}
-                    {selectedFarm?.crops && selectedFarm.crops.length > 4 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{selectedFarm.crops.length - 4}
-                      </Badge>
-                    )}
+                      {selectedFarm?.crops?.length ? (
+                        selectedFarm.crops.slice(0, 4).map((crop) => (
+                          <Badge key={crop} variant="secondary" className="text-xs">
+                            {crop}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {t("climate.locationHeader.cropsEmpty")}
+                        </span>
+                      )}
+                      {selectedFarm?.crops && selectedFarm.crops.length > 4 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{selectedFarm.crops.length - 4}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <div className="flex items-center gap-2 rounded-full border border-border/60 px-3 py-1">
-                    <Sun className="h-4 w-4 text-warning" />
-                    <span>
-                      {t("climate.locationHeader.range", {
-                        days: headerSummary.days || 0,
-                      })}
-                    </span>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <div className="flex items-center gap-2 rounded-full border border-border/60 px-3 py-1">
+                      <Sun className="h-4 w-4 text-warning" />
+                      <span>
+                        {t("climate.locationHeader.range", {
+                          days: headerSummary.days || 0,
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
+                      <Thermometer className="h-4 w-4 text-primary" />
+                      <span>
+                        {headerSummary.avgMax != null
+                          ? `${headerSummary.avgMax}C avg max`
+                          : "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
+                      <CloudRain className="h-4 w-4 text-info" />
+                      <span>
+                        {headerSummary.totalRain != null
+                          ? `${headerSummary.totalRain} mm total`
+                          : "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
+                      <Droplet className="h-4 w-4 text-success" />
+                      <span>
+                        {headerSummary.avgChance != null
+                          ? `${headerSummary.avgChance}% rain`
+                          : "--"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
-                    <Thermometer className="h-4 w-4 text-primary" />
-                    <span>
-                      {headerSummary.avgMax != null
-                        ? `${headerSummary.avgMax}C avg max`
-                        : "--"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
-                    <CloudRain className="h-4 w-4 text-info" />
-                    <span>
-                      {headerSummary.totalRain != null
-                        ? `${headerSummary.totalRain} mm total`
-                        : "--"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
-                    <Droplet className="h-4 w-4 text-success" />
-                    <span>
-                      {headerSummary.avgChance != null
-                        ? `${headerSummary.avgChance}% rain`
-                        : "--"}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
 
             {keyAlertSignals.length > 0 && (
@@ -1390,15 +1518,15 @@ export default function ClimatePage() {
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4 rounded-2xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-card p-4 md:p-6">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                  <Bell className="h-3.5 w-3.5 text-primary" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-info/10">
+                  <Bell className="h-3.5 w-3.5 text-info" />
                 </div>
                 <h2 className="text-base font-semibold text-foreground">{t("climate.alertsSection.title")}</h2>
               </div>
               <div className="grid gap-4 lg:grid-cols-2">
-                <Card className="border-border/60">
+                <Card className="border-border/60 bg-background/80 shadow-sm">
                   <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle className="text-base">{t("climate.weatherAlerts.title")}</CardTitle>
@@ -1415,7 +1543,7 @@ export default function ClimatePage() {
                       </Alert>
                     )}
 
-                    <div className="rounded-md border border-border/60 p-3 text-sm">
+                    <div className="rounded-xl border border-border/60 bg-card/70 p-3 text-sm">
                       <p className="text-muted-foreground">{t("climate.weatherAlerts.locationLabel")}</p>
                       <p className="font-semibold">{alertsLocationName}</p>
                       <p className="text-xs text-muted-foreground">
@@ -1428,8 +1556,8 @@ export default function ClimatePage() {
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2 rounded-xl border border-border/60 bg-card/70 p-3 sm:flex-row sm:gap-6">
+                      <div className="flex items-center gap-2 rounded-lg bg-background/70 px-2.5 py-2">
                         <Checkbox
                           id="alerts-frost"
                           checked={alertsForm.wantsFrost}
@@ -1439,7 +1567,7 @@ export default function ClimatePage() {
                         />
                         <Label htmlFor="alerts-frost">{t("climate.weatherAlerts.frostLabel")}</Label>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 rounded-lg bg-background/70 px-2.5 py-2">
                         <Checkbox
                           id="alerts-rain"
                           checked={alertsForm.wantsRain}
@@ -1454,7 +1582,7 @@ export default function ClimatePage() {
                     <Separator />
 
                     <Tabs defaultValue="email">
-                      <TabsList className="grid w-full grid-cols-2">
+                      <TabsList className="grid w-full grid-cols-2 rounded-lg bg-muted/70 p-1">
                         <TabsTrigger value="email">{t("climate.weatherAlerts.emailTab")}</TabsTrigger>
                         <TabsTrigger value="whatsapp">{t("climate.weatherAlerts.whatsappTab")}</TabsTrigger>
                       </TabsList>
@@ -1488,6 +1616,7 @@ export default function ClimatePage() {
                           </p>
                         )}
                         <Button
+                          className="w-full sm:w-auto"
                           type="button"
                           onClick={handleSubscribeEmail}
                           disabled={
@@ -1532,6 +1661,7 @@ export default function ClimatePage() {
                           </p>
                         )}
                         <Button
+                          className="w-full sm:w-auto"
                           type="button"
                           onClick={handleSubscribeWhatsApp}
                           disabled={
@@ -1550,7 +1680,7 @@ export default function ClimatePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-border/60">
+                <Card className="border-border/60 bg-background/80 shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-base">{t("climate.alertsSection.notifications")}</CardTitle>
                     <p className="text-sm text-muted-foreground">
@@ -1558,7 +1688,7 @@ export default function ClimatePage() {
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
+                    <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/70 p-3">
                       <div>
                         <p className="text-sm font-semibold">{t("climate.sms.title")}</p>
                         <p className="text-xs text-muted-foreground">
@@ -1593,10 +1723,10 @@ export default function ClimatePage() {
                       {alerts.length === 0 ? (
                         <p className="text-xs text-muted-foreground">{t("climate.advisory.noAlerts")}</p>
                       ) : (
-                        <div className="space-y-3 border-l border-border/60 pl-3">
+                        <div className="space-y-3 rounded-xl border border-border/60 bg-card/60 p-3">
                           {alerts.slice(0, 4).map((alert) => (
                             <div key={alert.id} className="relative space-y-1">
-                              <span className="absolute -left-4 top-1 h-2 w-2 rounded-full bg-primary" />
+                              <span className="absolute -left-2 top-1 h-2 w-2 rounded-full bg-primary" />
                               <div className="flex items-center gap-2">
                                 <Badge className="text-xs" variant="outline">
                                   {t(`climate.alerts.${alert.type}`)}
@@ -1803,3 +1933,4 @@ export default function ClimatePage() {
     </div>
   );
 }
+
