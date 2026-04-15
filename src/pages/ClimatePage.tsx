@@ -1154,68 +1154,6 @@ export default function ClimatePage() {
                     </div>
                   </CardContent>
                 </Card>
-                    <h2 className="text-lg font-semibold">
-                      {selectedFarm?.name || t("climate.farmSelector.placeholder")}
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {t("climate.form.cropsLabel")}:
-                      </span>
-                      {selectedFarm?.crops?.length ? (
-                        selectedFarm.crops.slice(0, 4).map((crop) => (
-                          <Badge key={crop} variant="secondary" className="text-xs">
-                            {crop}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          {t("climate.locationHeader.cropsEmpty")}
-                        </span>
-                      )}
-                      {selectedFarm?.crops && selectedFarm.crops.length > 4 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{selectedFarm.crops.length - 4}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <div className="flex items-center gap-2 rounded-full border border-border/60 px-3 py-1">
-                      <Sun className="h-4 w-4 text-warning" />
-                      <span>
-                        {t("climate.locationHeader.range", {
-                          days: headerSummary.days || 0,
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
-                      <Thermometer className="h-4 w-4 text-primary" />
-                      <span>
-                        {headerSummary.avgMax != null
-                          ? `${headerSummary.avgMax}C avg max`
-                          : "--"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
-                      <CloudRain className="h-4 w-4 text-info" />
-                      <span>
-                        {headerSummary.totalRain != null
-                          ? `${headerSummary.totalRain} mm total`
-                          : "--"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1">
-                      <Droplet className="h-4 w-4 text-success" />
-                      <span>
-                        {headerSummary.avgChance != null
-                          ? `${headerSummary.avgChance}% rain`
-                          : "--"}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
             {keyAlertSignals.length > 0 && (
               <div className="space-y-3">
