@@ -68,6 +68,11 @@ import { HourlyForecastPanel } from "@/components/climate/HourlyForecastPanel";
 import { UVIndexCard } from "@/components/climate/UVIndexCard";
 import { EvapotranspirationCard } from "@/components/climate/EvapotranspirationCard";
 import { DewPointHumidityCard } from "@/components/climate/DewPointHumidityCard";
+import { MultiFarmComparisonPanel } from "@/components/climate/MultiFarmComparisonPanel";
+import { FarmHealthHistoryChart } from "@/components/climate/FarmHealthHistoryChart";
+import { SoilTypeCard } from "@/components/climate/SoilTypeCard";
+import { CropGrowthStageTracker } from "@/components/climate/CropGrowthStageTracker";
+import { FarmSizeCard } from "@/components/climate/FarmSizeCard";
 import { FrostRiskCard } from "@/components/climate/FrostRiskCard";
 import { RainOutlookCard } from "@/components/climate/RainOutlookCard";
 import { AdvisoryCard } from "@/components/climate/AdvisoryCard";
@@ -1566,6 +1571,46 @@ export default function ClimatePage() {
                 onUpgrade={handleUpgrade}
               />
             </div>
+
+
+                {/* Batch 6 — Farm Management Upgrades */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/10">
+                      <MapPin className="h-3.5 w-3.5 text-warning" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground">Farm Management</h2>
+                      <p className="text-xs text-muted-foreground">Multi-farm comparison, health history, soil type, growth tracking, and size estimates</p>
+                    </div>
+                  </div>
+                  <MultiFarmComparisonPanel
+                    farms={visibleFarms}
+                    selectedFarmId={selectedFarmId}
+                    onSelectFarm={setSelectedFarmId}
+                  />
+                  <FarmHealthHistoryChart
+                    farmName={selectedFarm?.name}
+                    currentScore={climateSignals.length
+                      ? Math.round(
+                          climateSignals
+                            .filter((s) => ["heat-stress","cold-stress","rainfall-trend","irrigation-pressure","disease-pressure","harvest-disruption"].includes(s.id))
+                            .reduce((sum, s) => sum + ({good:95,low:80,medium:50,warning:40,high:20,critical:5}[s.level] ?? 50), 0) /
+                          Math.max(1, climateSignals.filter((s) => ["heat-stress","cold-stress","rainfall-trend","irrigation-pressure","disease-pressure","harvest-disruption"].includes(s.id)).length)
+                        )
+                      : 72
+                    }
+                  />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <SoilTypeCard />
+                    <FarmSizeCard currentCrop={selectedFarm?.crops?.[0] ?? aiCrop} />
+                  </div>
+                  <CropGrowthStageTracker
+                    farms={visibleFarms}
+                    selectedFarmId={selectedFarmId}
+                  />
+                </div>
+
 
             {/* Batch 3 — AI & Advisory Enhancements */}
             <div className="space-y-3">
