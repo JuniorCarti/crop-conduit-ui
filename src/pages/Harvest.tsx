@@ -51,6 +51,11 @@ import { BuyerPreOrderMatching } from "@/components/harvest/BuyerPreOrderMatchin
 import { GroupSellingCoordinator } from "@/components/harvest/GroupSellingCoordinator";
 import { PriceLockCommitment } from "@/components/harvest/PriceLockCommitment";
 import { RevenueForecast } from "@/components/harvest/RevenueForecast";
+import { HarvestCountdownTimer } from "@/components/harvest/HarvestCountdownTimer";
+import { WhatsAppHarvestAlert } from "@/components/harvest/WhatsAppHarvestAlert";
+import { HarvestCertificateGenerator } from "@/components/harvest/HarvestCertificateGenerator";
+import { TraceabilityQRCode } from "@/components/harvest/TraceabilityQRCode";
+import { PreHarvestChecklist } from "@/components/harvest/PreHarvestChecklist";
 
 type ScheduleFormState = {
   cropId: string;
@@ -627,6 +632,25 @@ export default function Harvest() {
             myQuantityKg={selectedSchedule?.expectedYield}
           />
           <PriceLockCommitment schedules={schedules} />
+        </div>
+
+        {/* Batch 4 — Notifications & Compliance */}
+        <HarvestCountdownTimer schedules={schedules} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <WhatsAppHarvestAlert
+            schedule={selectedSchedule}
+            farmLocation={selectedSchedule
+              ? `${(selectedSchedule as any).county ?? ""} / ${(selectedSchedule as any).ward ?? selectedSchedule.field}`
+              : undefined
+            }
+          />
+          <HarvestCertificateGenerator
+            schedule={selectedSchedule}
+          />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TraceabilityQRCode schedule={selectedSchedule} />
+          <PreHarvestChecklist />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
