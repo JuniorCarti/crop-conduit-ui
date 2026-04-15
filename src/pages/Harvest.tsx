@@ -46,6 +46,11 @@ import { QualityGradingLog } from "@/components/harvest/QualityGradingLog";
 import { HarvestCostCalculator } from "@/components/harvest/HarvestCostCalculator";
 import { BatchSplitting } from "@/components/harvest/BatchSplitting";
 import { WorkerAttendanceTracker } from "@/components/harvest/WorkerAttendanceTracker";
+import { BestMarketRecommender } from "@/components/harvest/BestMarketRecommender";
+import { BuyerPreOrderMatching } from "@/components/harvest/BuyerPreOrderMatching";
+import { GroupSellingCoordinator } from "@/components/harvest/GroupSellingCoordinator";
+import { PriceLockCommitment } from "@/components/harvest/PriceLockCommitment";
+import { RevenueForecast } from "@/components/harvest/RevenueForecast";
 
 type ScheduleFormState = {
   cropId: string;
@@ -601,6 +606,28 @@ export default function Harvest() {
           <BatchSplitting schedules={schedules} />
         </div>
         <WorkerAttendanceTracker workers={workers} />
+
+        {/* Batch 3 — Market & Buyer Integration */}
+        <RevenueForecast
+          schedules={schedules}
+        />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <BestMarketRecommender
+            cropName={selectedSchedule?.cropName}
+            quantityKg={selectedSchedule?.expectedYield}
+          />
+          <BuyerPreOrderMatching
+            cropName={selectedSchedule?.cropName}
+            quantityKg={selectedSchedule?.expectedYield}
+          />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <GroupSellingCoordinator
+            cropName={selectedSchedule?.cropName}
+            myQuantityKg={selectedSchedule?.expectedYield}
+          />
+          <PriceLockCommitment schedules={schedules} />
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="outline">Harvest</Badge>
