@@ -1,5 +1,6 @@
 import type { CropPrice } from "@/services/api";
 import { normalizeCommodity } from "@/lib/normalizeCommodity";
+import { computeEconomicAdjustment, type EconomicSignal } from "@/services/economicSignalsService";
 
 export type DecisionSupportConfidence = "High" | "Medium" | "Low";
 
@@ -21,6 +22,7 @@ export interface DecisionSupportInput {
   };
   forecastDaily?: DecisionSupportForecastDay[];
   marketOracleData?: CropPrice[] | null;
+  economicSignals?: EconomicSignal[];
 }
 
 export interface DecisionSupportOutput {
@@ -238,15 +240,26 @@ export const buildDecisionSupport = (input: DecisionSupportInput): DecisionSuppo
     const demand = changePct != null && changePct >= 8 ? "High" : changePct != null && changePct <= -5 ? "Low" : "Moderate";
 
     if (price != null) {
+      // Apply economic signals adjustment on top of raw model price
+      const economicAdj = input.economicSignals?.length
+        ? computeEconomicAdjustment(price, input.economicSignals)
+        : null;
+      const adjustedPrice = economicAdj ? economicAdj.adjustedPrice : price;
+      const economicNote = economicAdj && Math.abs(economicAdj.adjustmentPct) >= 1
+        ? ` (${economicAdj.adjustmentPct > 0 ? "+" : ""}${economicAdj.adjustmentPct}% economic adjustment)`
+        : "";
+
       marketSignal = {
-        summary: "Market Oracle price signal",
+        summary: `Market Oracle price signal${economicNote}`,
         bestMarket: "Market Oracle (aggregate)",
-        price,
+        price: adjustedPrice,
         changePct,
         volatility,
         demand,
         transportTip: changePct != null && changePct >= 5
           ? "Consider group transport to capture higher prices."
+          : economicAdj && economicAdj.adjustmentPct > 5
+          ? "Economic pressures are raising transport costs — book early."
           : "Plan transport early to avoid last-minute costs.",
       };
 

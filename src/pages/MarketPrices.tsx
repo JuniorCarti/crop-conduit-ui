@@ -26,6 +26,7 @@ import { ForwardContractsFutures } from "@/components/marketPrices/ForwardContra
 import { ProduceAuctionSystem } from "@/components/marketPrices/ProduceAuctionSystem";
 import { BuyerSubscriptionModel } from "@/components/marketPrices/BuyerSubscriptionModel";
 import { ProduceExchangePlatform } from "@/components/marketPrices/ProduceExchangePlatform";
+import { EconomicSignalsPanel } from "@/components/marketPrices/EconomicSignalsPanel";
 
 export default function MarketPrices() {
   const [selectedCommodity, setSelectedCommodity] = useState<string>("");
@@ -50,6 +51,7 @@ export default function MarketPrices() {
           </TabsList>
 
           <TabsContent value="table" className="space-y-4">
+            <EconomicSignalsPanel commodity={selectedCommodity || "Tomatoes"} />
             <MarketPriceTable
               initialFilters={{
                 commodity: selectedCommodity || undefined,
