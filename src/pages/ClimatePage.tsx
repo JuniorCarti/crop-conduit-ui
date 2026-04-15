@@ -1277,15 +1277,6 @@ export default function ClimatePage() {
                   </div>
                 </div>
 
-                          </div>
-                          <Badge className={signalTone[signal.level]}>{signal.badgeText}</Badge>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
 
 
