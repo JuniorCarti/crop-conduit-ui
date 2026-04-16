@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -75,6 +75,7 @@ import OrgImpact from "./pages/org/OrgImpact";
 import OrgReports from "./pages/org/OrgReports";
 import TradePage from "./pages/org/TradePage";
 import OrgInternationalMarketsPage from "./pages/org/OrgInternationalMarketsPage";
+import { BuyerLayout } from "@/components/buyer/BuyerLayout";
 import { PartnerLayout } from "@/components/partner/PartnerLayout";
 import PartnerOverview from "./pages/partner/PartnerOverview";
 import PartnerSponsorships from "./pages/partner/PartnerSponsorships";
@@ -494,69 +495,27 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/buyer/dashboard"
+                  path="/buyer"
                   element={
                     <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerDashboardPage />
+                      <div className="flex">
+                        <BuyerLayout />
+                        <main className="flex-1 ml-64">
+                          <Outlet />
+                        </main>
+                      </div>
                     </RoleGuard>
                   }
-                />
-                <Route
-                  path="/buyer/verification-pending"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerVerificationPendingPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/trade"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerTradeHome />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/trade/listings/:listingId"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerTradeListingDetails />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/trade/bids"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerTradeBids />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/trade/contracts"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerTradeContracts />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/trade/wallet"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerTradeWallet />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/trade/settings"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerTradeSettings />
-                    </RoleGuard>
-                  }
-                />
+                >
+                  <Route index element={<Navigate to="/buyer/dashboard" replace />} />
+                  <Route path="dashboard" element={<BuyerDashboardPage />} />
+                  <Route path="verification-pending" element={<BuyerVerificationPendingPage />} />
+                  <Route path="trade" element={<BuyerTradeHome />} />
+                  <Route path="trade/listings/:listingId" element={<BuyerTradeListingDetails />} />
+                  <Route path="trade/bids" element={<BuyerTradeBids />} />
+                  <Route path="trade/contracts" element={<BuyerTradeContracts />} />
+                  <Route path="trade/wallet" element={<BuyerTradeWallet />} />
+                  <Route path="trade/settings" element={<BuyerTradeSettings />} />
                 <Route
                   path="/cooperatives"
                   element={
@@ -682,104 +641,19 @@ const App = () => (
                   }
                 />
                 <Route path="/profile" element={<ProfileRouter />} />
-                <Route
-                  path="/buyer/profile"
-                  element={
-                    <RoleGuard allowed={["buyer", "admin"]} redirectTo="/profile">
-                      <BuyerProfile />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/billing"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerBillingPage />
-                    </RoleGuard>
-                  }
-                />
-                {/* Buyer Portal Feature Mockups - Batch 1 */}
-                <Route
-                  path="/buyer/analytics"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerAnalyticsDashboard />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/reports"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerCustomReports />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/demand-planning"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerDemandPlanning />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/logistics"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerLogisticsTracking />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/suppliers"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerSupplierRelationshipManagement />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/purchase-orders"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerPurchaseOrderManagement />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/quality"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerQualityManagement />
-                    </RoleGuard>
-                  }
-                />
-                {/* Buyer Portal Feature Mockups - Batch 2 */}
-                <Route
-                  path="/buyer/financial"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerFinancialManagement />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/market-intelligence"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerMarketIntelligence />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/buyer/collaboration"
-                  element={
-                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
-                      <BuyerCollaborationCommunication />
-                    </RoleGuard>
-                  }
-                />
+                  <Route path="profile" element={<BuyerProfile />} />
+                  <Route path="billing" element={<BuyerBillingPage />} />
+                  <Route path="analytics" element={<BuyerAnalyticsDashboard />} />
+                  <Route path="reports" element={<BuyerCustomReports />} />
+                  <Route path="demand-planning" element={<BuyerDemandPlanning />} />
+                  <Route path="logistics" element={<BuyerLogisticsTracking />} />
+                  <Route path="suppliers" element={<BuyerSupplierRelationshipManagement />} />
+                  <Route path="purchase-orders" element={<BuyerPurchaseOrderManagement />} />
+                  <Route path="quality" element={<BuyerQualityManagement />} />
+                  <Route path="financial" element={<BuyerFinancialManagement />} />
+                  <Route path="market-intelligence" element={<BuyerMarketIntelligence />} />
+                  <Route path="collaboration" element={<BuyerCollaborationCommunication />} />
+                </Route>
                 <Route path="/upgrade" element={<Upgrade />} />
                 <Route
                   path="/transport"
