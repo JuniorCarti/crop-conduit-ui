@@ -14,42 +14,42 @@ or
 yarn dev
 ```
 
-Your app will start on `http://localhost:5173` (or the port shown in your terminal)
+Your app will start on `http://localhost:8080`
 
 ---
 
 ## Step 2: Access the Buyer Portal Mockups
 
-All mockups are accessible at these URLs. **You need to be logged in as a buyer** to access them.
+All mockups are accessible at these URLs on **http://localhost:8080**. **You need to be logged in as a buyer** to access them.
 
 ### **BATCH 1 - Analytics & Operations (7 Features)**
 
 1. **Analytics Dashboard**
-   - URL: `http://localhost:5173/buyer/analytics`
+   - URL: `http://localhost:8080/buyer/analytics`
    - Features: Spend analysis, price trends, supplier scorecards, ROI tracking
 
 2. **Custom Reports**
-   - URL: `http://localhost:5173/buyer/reports`
+   - URL: `http://localhost:8080/buyer/reports`
    - Features: Report templates, scheduling, export, email delivery
 
 3. **Demand Planning**
-   - URL: `http://localhost:5173/buyer/demand-planning`
+   - URL: `http://localhost:8080/buyer/demand-planning`
    - Features: Forecasting, inventory optimization, seasonal planning
 
 4. **Logistics & Delivery Tracking**
-   - URL: `http://localhost:5173/buyer/logistics`
+   - URL: `http://localhost:8080/buyer/logistics`
    - Features: Real-time tracking, delivery history, route optimization
 
 5. **Supplier Relationship Management**
-   - URL: `http://localhost:5173/buyer/suppliers`
+   - URL: `http://localhost:8080/buyer/suppliers`
    - Features: Performance scorecards, collaboration, onboarding, development
 
 6. **Purchase Order Management**
-   - URL: `http://localhost:5173/buyer/purchase-orders`
+   - URL: `http://localhost:8080/buyer/purchase-orders`
    - Features: PO creation, approval workflows, templates, recurring orders
 
 7. **Quality Management**
-   - URL: `http://localhost:5173/buyer/quality`
+   - URL: `http://localhost:8080/buyer/quality`
    - Features: Quality scorecards, inspections, NCRs, CAPA tracking
 
 ---
@@ -57,15 +57,15 @@ All mockups are accessible at these URLs. **You need to be logged in as a buyer*
 ### **BATCH 2 - Financial & Market Intelligence (3 Features)**
 
 8. **Financial Management**
-   - URL: `http://localhost:5173/buyer/financial`
+   - URL: `http://localhost:8080/buyer/financial`
    - Features: Invoicing, payments, cost analysis, budget tracking, payment methods
 
 9. **Market Intelligence**
-   - URL: `http://localhost:5173/buyer/market-intelligence`
+   - URL: `http://localhost:8080/buyer/market-intelligence`
    - Features: Price monitoring, market trends, benchmarking, supplier intelligence
 
 10. **Collaboration & Communication**
-    - URL: `http://localhost:5173/buyer/collaboration`
+    - URL: `http://localhost:8080/buyer/collaboration`
     - Features: Team management, RBAC, messaging, documents, announcements
 
 ---
@@ -74,9 +74,9 @@ All mockups are accessible at these URLs. **You need to be logged in as a buyer*
 
 If you're not logged in:
 
-1. Go to `http://localhost:5173/login`
+1. Go to `http://localhost:8080/login`
 2. Use your buyer account credentials
-3. Or create a new buyer account at `http://localhost:5173/buyer-registration`
+3. Or create a new buyer account at `http://localhost:8080/buyer-registration`
 
 ---
 
@@ -101,13 +101,13 @@ If you're not logged in:
 
 These pages were already in your app:
 
-- **Buyer Dashboard**: `/buyer/dashboard`
-- **Buyer Profile**: `/buyer/profile`
-- **Buyer Billing**: `/buyer/billing`
-- **Buyer Trade**: `/buyer/trade`
-- **Buyer Trade Bids**: `/buyer/trade/bids`
-- **Buyer Trade Contracts**: `/buyer/trade/contracts`
-- **Buyer Trade Wallet**: `/buyer/trade/wallet`
+- **Buyer Dashboard**: `http://localhost:8080/buyer/dashboard`
+- **Buyer Profile**: `http://localhost:8080/buyer/profile`
+- **Buyer Billing**: `http://localhost:8080/buyer/billing`
+- **Buyer Trade**: `http://localhost:8080/buyer/trade`
+- **Buyer Trade Bids**: `http://localhost:8080/buyer/trade/bids`
+- **Buyer Trade Contracts**: `http://localhost:8080/buyer/trade/contracts`
+- **Buyer Trade Wallet**: `http://localhost:8080/buyer/trade/wallet`
 
 ---
 
@@ -143,7 +143,7 @@ Each mockup includes:
 
 ### Page doesn't load
 - Check the browser console for errors
-- Make sure the dev server is running
+- Make sure the dev server is running on port 8080
 - Try refreshing the page
 
 ### Styles look broken
@@ -163,10 +163,13 @@ For more details, see:
 
 ## 🚀 Next Steps
 
-1. **Explore all 10 mockups** on localhost
-2. **Provide feedback** on the UI/UX
-3. **Plan backend integration** for each feature
-4. **Create Batch 3** (Mobile, Integration, Risk, ESG, Search, Alerts)
+1. **Start dev server**: `npm run dev`
+2. **Navigate to**: `http://localhost:8080`
+3. **Login as buyer**
+4. **Visit any URL above** to see the mockups
+5. **Explore all 10 features**
+6. **Provide feedback** on the UI/UX
+7. **Plan backend integration** for each feature
 
 ---
 
