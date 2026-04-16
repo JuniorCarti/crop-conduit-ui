@@ -107,6 +107,16 @@ import BuyerProfile from "./pages/BuyerProfile";
 import BuyerDashboardPage from "./pages/buyer/BuyerDashboardPage";
 import BuyerBillingPage from "./pages/buyer/BuyerBillingPage";
 import BuyerVerificationPendingPage from "./pages/buyer/BuyerVerificationPendingPage";
+import BuyerAnalyticsDashboard from "./pages/buyer/BuyerAnalyticsDashboard";
+import BuyerCustomReports from "./pages/buyer/BuyerCustomReports";
+import BuyerDemandPlanning from "./pages/buyer/BuyerDemandPlanning";
+import BuyerLogisticsTracking from "./pages/buyer/BuyerLogisticsTracking";
+import BuyerSupplierRelationshipManagement from "./pages/buyer/BuyerSupplierRelationshipManagement";
+import BuyerPurchaseOrderManagement from "./pages/buyer/BuyerPurchaseOrderManagement";
+import BuyerQualityManagement from "./pages/buyer/BuyerQualityManagement";
+import BuyerFinancialManagement from "./pages/buyer/BuyerFinancialManagement";
+import BuyerMarketIntelligence from "./pages/buyer/BuyerMarketIntelligence";
+import BuyerCollaborationCommunication from "./pages/buyer/BuyerCollaborationCommunication";
 import Partnerships from "./pages/Partnerships";
 import Policies from "./pages/Policies";
 import DataPrivacyPolicy from "./pages/policies/DataPrivacyPolicy";
@@ -685,6 +695,88 @@ const App = () => (
                   element={
                     <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
                       <BuyerBillingPage />
+                    </RoleGuard>
+                  }
+                />
+                {/* Buyer Portal Feature Mockups - Batch 1 */}
+                <Route
+                  path="/buyer/analytics"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerAnalyticsDashboard />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/reports"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerCustomReports />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/demand-planning"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerDemandPlanning />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/logistics"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerLogisticsTracking />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/suppliers"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerSupplierRelationshipManagement />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/purchase-orders"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerPurchaseOrderManagement />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/quality"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerQualityManagement />
+                    </RoleGuard>
+                  }
+                />
+                {/* Buyer Portal Feature Mockups - Batch 2 */}
+                <Route
+                  path="/buyer/financial"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerFinancialManagement />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/market-intelligence"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerMarketIntelligence />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/buyer/collaboration"
+                  element={
+                    <RoleGuard allowed={["buyer"]} redirectTo="/unauthorized">
+                      <BuyerCollaborationCommunication />
                     </RoleGuard>
                   }
                 />
