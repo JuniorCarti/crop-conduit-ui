@@ -43,8 +43,8 @@ export function Navbar() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={`sticky top-0 z-50 transition-all duration-300 ${
         isOverlay
-          ? "border-b border-white/8 bg-black/25 text-white backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,0.05)]"
-          : "border-b border-white/60 bg-white/85 text-foreground backdrop-blur-xl shadow-sm"
+          ? "border-b border-white/10 bg-black/25 text-white backdrop-blur-2xl shadow-[0_8px_30px_rgba(0,0,0,0.18)]"
+          : "border-b border-border/60 bg-white/90 text-foreground backdrop-blur-2xl shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
       }`}
     >
       <div className="app-page-shell grid items-center gap-6 py-4 lg:grid-cols-[auto_1fr_auto]">
@@ -63,20 +63,22 @@ export function Navbar() {
         </Link>
 
         <nav
-          className={`hidden items-center justify-center gap-4 text-sm font-medium lg:flex ${
-            isOverlay ? "text-white/80" : "text-muted-foreground"
+          className={`hidden items-center justify-center gap-5 text-sm font-medium lg:flex ${
+            isOverlay ? "text-white/70" : "text-muted-foreground"
           }`}
         >
           {navItems.map((item) => {
             const isActive = isHome && item.label === "Home";
             const activeClass = isActive
-              ? "relative after:absolute after:-bottom-2 after:left-0 after:h-[2px] after:w-full after:rounded-full after:bg-[#9BE15D]"
+              ? "relative after:absolute after:-bottom-1.5 after:left-0 after:h-[2px] after:w-full after:rounded-full after:bg-emerald-400"
               : "";
             return item.to ? (
               <Link
                 key={item.label}
                 to={item.to}
-                className={`transition-colors duration-200 ${activeClass} ${isOverlay ? "text-white/75 hover:text-white" : "hover:text-foreground"}`}
+                className={`transition-colors duration-200 ${activeClass} ${
+                  isOverlay ? "text-white/70 hover:text-white" : "hover:text-foreground"
+                }`}
               >
                 {item.label}
               </Link>
@@ -87,9 +89,11 @@ export function Navbar() {
                 className={
                   item.isButton
                     ? isOverlay
-                      ? "rounded-full border border-white/20 bg-white/8 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition duration-200 hover:border-white/35 hover:bg-white/15"
+                      ? "rounded-full border border-white/18 bg-white/8 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition-all duration-200 hover:border-white/30 hover:bg-white/14 hover:text-white"
                       : "rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
-                    : `transition-colors duration-200 ${activeClass} ${isOverlay ? "text-white/75 hover:text-white" : "hover:text-foreground"}`
+                    : `transition-colors duration-200 ${activeClass} ${
+                        isOverlay ? "text-white/70 hover:text-white" : "hover:text-foreground"
+                      }`
                 }
               >
                 {item.label}
@@ -103,7 +107,7 @@ export function Navbar() {
             to="/login"
             className={
               isOverlay
-                ? "inline-flex items-center justify-center rounded-full border border-white/20 bg-white/8 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur-sm transition duration-200 hover:border-white/35 hover:bg-white/15 hover:text-white"
+                ? "inline-flex items-center justify-center rounded-full border border-white/18 bg-white/6 px-5 py-2 text-sm font-semibold text-white/85 backdrop-blur-md transition-all duration-200 hover:border-white/30 hover:bg-white/12 hover:text-white"
                 : "agri-btn-secondary"
             }
           >
