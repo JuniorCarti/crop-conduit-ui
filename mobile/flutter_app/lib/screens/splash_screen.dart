@@ -1,9 +1,6 @@
 import 'dart:async';
-
-import 'package:crop_conduit_flutter/screens/onboarding_screen.dart';
-import 'package:crop_conduit_flutter/theme/app_theme.dart';
-import 'package:crop_conduit_flutter/widgets/auth_shell.dart';
 import 'package:flutter/material.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,13 +9,26 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-  Timer? _transitionTimer;
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    _transitionTimer = Timer(const Duration(seconds: 2), () {
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _scale = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
+    );
+    _ctrl.forward();
+
+    Timer(const Duration(seconds: 3), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(OnboardingScreen.routeName);
     });
@@ -26,136 +36,176 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void dispose() {
-    _transitionTimer?.cancel();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          const AuthBackdrop(
-            primaryColor: AppTheme.primary,
-            secondaryColor: AppTheme.secondary,
-            tertiaryColor: Color(0xFF60A5FA),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1B5E20),
+              Color(0xFF2E7D32),
+              Color(0xFF388E3C),
+              Color(0xFF43A047),
+            ],
+            stops: [0.0, 0.35, 0.65, 1.0],
           ),
-          SafeArea(
-            child: Center(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 1100),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.scale(
-                      scale: 0.9 + (value * 0.1),
-                      child: child,
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 152,
-                        height: 152,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppTheme.primary.withValues(alpha: 0.9),
-                              AppTheme.secondary.withValues(alpha: 0.9),
-                            ],
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x26000000),
-                              blurRadius: 28,
-                              offset: Offset(0, 18),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Image.asset(
-                            'assets/brand/agrismart-mark.png',
-                            height: 86,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Crop Conduit',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineLarge
-                            ?.copyWith(color: AppTheme.textPrimary),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'A modern farm logistics and market workspace.',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      AuthSurfaceCard(
-                        padding: const EdgeInsets.all(18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                AuthPill(
-                                  icon: Icons.lock_rounded,
-                                  label: 'Secure access',
-                                  color: AppTheme.primary,
-                                  filled: true,
-                                ),
-                                SizedBox(width: 10),
-                                AuthPill(
-                                  icon: Icons.auto_awesome_rounded,
-                                  label: 'Fast setup',
-                                  color: AppTheme.secondary,
-                                  filled: true,
+        ),
+        child: Stack(
+          children: [
+            // Subtle background circles
+            Positioned(
+              top: -80,
+              right: -60,
+              child: _GlowCircle(
+                size: 260,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+            Positioned(
+              bottom: -100,
+              left: -80,
+              child: _GlowCircle(
+                size: 320,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+            Positioned(
+              top: 200,
+              left: -40,
+              child: _GlowCircle(
+                size: 180,
+                color: Colors.white.withValues(alpha: 0.04),
+              ),
+            ),
+
+            // Main content
+            SafeArea(
+              child: Center(
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: ScaleTransition(
+                    scale: _scale,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Logo container
+                          Container(
+                            width: 110,
+                            height: 110,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 12),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(999),
-                              child: const LinearProgressIndicator(
-                                minHeight: 7,
-                                value: 0.72,
-                                backgroundColor: Color(0xFFE7ECE5),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.primary,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(26),
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Image.asset(
+                                  'assets/brand/agrismart_logo.png',
+                                  fit: BoxFit.contain,
+                                  color: Colors.white,
+                                  colorBlendMode: BlendMode.srcIn,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Preparing your workspace...',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // App name
+                          const Text(
+                            'AgriSmart Kenya',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                              height: 1.1,
                             ),
-                          ],
-                        ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          // Tagline
+                          Text(
+                            'Climate & Market Intelligence',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withValues(alpha: 0.75),
+                              letterSpacing: 0.2,
+                              height: 1.4,
+                            ),
+                          ),
+
+                          const SizedBox(height: 52),
+
+                          // Loading indicator
+                          SizedBox(
+                            width: 120,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(99),
+                              child: LinearProgressIndicator(
+                                minHeight: 3,
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.2,
+                                ),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowCircle extends StatelessWidget {
+  const _GlowCircle({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
       ),
     );
   }
