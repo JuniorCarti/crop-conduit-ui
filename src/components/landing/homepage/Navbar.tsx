@@ -41,10 +41,10 @@ export function Navbar() {
       initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`sticky top-0 z-50 transition ${
+      className={`sticky top-0 z-50 transition-all duration-300 ${
         isOverlay
-          ? "border-b border-white/10 bg-black/30 text-white backdrop-blur-lg"
-          : "border-b border-white/60 bg-white/80 text-foreground backdrop-blur-xl shadow-sm"
+          ? "border-b border-white/8 bg-black/25 text-white backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,0.05)]"
+          : "border-b border-white/60 bg-white/85 text-foreground backdrop-blur-xl shadow-sm"
       }`}
     >
       <div className="app-page-shell grid items-center gap-6 py-4 lg:grid-cols-[auto_1fr_auto]">
@@ -76,7 +76,7 @@ export function Navbar() {
               <Link
                 key={item.label}
                 to={item.to}
-                className={`transition ${activeClass} ${isOverlay ? "hover:text-white" : "hover:text-foreground"}`}
+                className={`transition-colors duration-200 ${activeClass} ${isOverlay ? "text-white/75 hover:text-white" : "hover:text-foreground"}`}
               >
                 {item.label}
               </Link>
@@ -87,9 +87,9 @@ export function Navbar() {
                 className={
                   item.isButton
                     ? isOverlay
-                      ? "rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-white/20"
-                      : "rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
-                    : `transition ${activeClass} ${isOverlay ? "hover:text-white" : "hover:text-foreground"}`
+                      ? "rounded-full border border-white/20 bg-white/8 px-4 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition duration-200 hover:border-white/35 hover:bg-white/15"
+                      : "rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
+                    : `transition-colors duration-200 ${activeClass} ${isOverlay ? "text-white/75 hover:text-white" : "hover:text-foreground"}`
                 }
               >
                 {item.label}
@@ -103,7 +103,7 @@ export function Navbar() {
             to="/login"
             className={
               isOverlay
-                ? "agri-btn-secondary border-white/40 bg-white/10 text-white hover:bg-white/20"
+                ? "inline-flex items-center justify-center rounded-full border border-white/20 bg-white/8 px-5 py-2 text-sm font-semibold text-white/90 backdrop-blur-sm transition duration-200 hover:border-white/35 hover:bg-white/15 hover:text-white"
                 : "agri-btn-secondary"
             }
           >
