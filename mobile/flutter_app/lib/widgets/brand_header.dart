@@ -20,7 +20,7 @@ class BrandHeader extends StatelessWidget {
       crossAxisAlignment: align,
       children: [
         Image.asset(
-          'assets/brand/agrismart-full.png',
+          'assets/brand/agrismart_logo.png',
           height: logoHeight,
           fit: BoxFit.contain,
         ),
