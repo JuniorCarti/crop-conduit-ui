@@ -1,36 +1,47 @@
 ﻿import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Leaf, CloudRain, Thermometer, TrendingUp, Sprout, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  Leaf,
+  CloudRain,
+  Thermometer,
+  TrendingUp,
+  Sprout,
+  Zap,
+} from "lucide-react";
 
+/* ─── Animation helpers ─────────────────────────────────────── */
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 28 },
+  initial: { opacity: 0, y: 32 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay },
+  transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1], delay },
 });
 
 const floatAnim = {
   animate: {
-    y: [0, -10, 0],
-    transition: { duration: 5, repeat: Infinity, ease: "easeInOut" },
+    y: [0, -12, 0],
+    transition: { duration: 6, repeat: Infinity, ease: "easeInOut" },
   },
 };
 
-const pulseAnim = {
+const livePulse = (delay = 0) => ({
   animate: {
-    scale: [1, 1.4, 1],
-    opacity: [0.7, 1, 0.7],
-    transition: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+    scale: [1, 1.5, 1],
+    opacity: [0.6, 1, 0.6],
+    transition: { duration: 2.2, repeat: Infinity, ease: "easeInOut", delay },
   },
-};
+});
 
+/* ─── Data ───────────────────────────────────────────────────── */
 const intelligenceData = [
   {
     icon: CloudRain,
     label: "Rainfall Forecast",
     value: "84%",
     status: "Favorable",
-    color: "text-sky-400",
-    bg: "bg-sky-400/10",
+    color: "text-sky-300",
+    bg: "bg-sky-400/8",
+    border: "border-sky-400/15",
     dot: "bg-sky-400",
   },
   {
@@ -38,17 +49,19 @@ const intelligenceData = [
     label: "Frost Alert",
     value: "Moderate",
     status: "Risk",
-    color: "text-amber-400",
-    bg: "bg-amber-400/10",
+    color: "text-amber-300",
+    bg: "bg-amber-400/8",
+    border: "border-amber-400/15",
     dot: "bg-amber-400",
   },
   {
     icon: TrendingUp,
-    label: "Maize Price",
+    label: "Maize Market",
     value: "KES 4,500",
     status: "↑ 3.2%",
-    color: "text-emerald-400",
-    bg: "bg-emerald-400/10",
+    color: "text-emerald-300",
+    bg: "bg-emerald-400/8",
+    border: "border-emerald-400/15",
     dot: "bg-emerald-400",
   },
   {
@@ -56,8 +69,9 @@ const intelligenceData = [
     label: "AI Planting",
     value: "Favorable",
     status: "Recommended",
-    color: "text-lime-400",
-    bg: "bg-lime-400/10",
+    color: "text-lime-300",
+    bg: "bg-lime-400/8",
+    border: "border-lime-400/15",
     dot: "bg-lime-400",
   },
 ];
@@ -70,6 +84,7 @@ const trustBadges = [
   "Plogging Kenya",
 ];
 
+/* ─── Component ──────────────────────────────────────────────── */
 export function Hero() {
   return (
     <section
@@ -77,15 +92,15 @@ export function Hero() {
       className="relative flex min-h-screen items-center overflow-hidden text-white"
       style={{ backgroundImage: "url('/images/africa.jpg')" }}
     >
-      {/* Background video with subtle zoom */}
+      {/* ── Background video — slow cinematic zoom-out ── */}
       <motion.div
         className="absolute inset-0"
-        initial={{ scale: 1.08 }}
+        initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 8, ease: "easeOut" }}
+        transition={{ duration: 10, ease: "easeOut" }}
       >
         <video
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover brightness-90"
           autoPlay
           muted
           loop
@@ -100,41 +115,54 @@ export function Hero() {
         </video>
       </motion.div>
 
-      {/* Layered overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/20" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+      {/* ── Layered overlays ── */}
+      {/* Left-to-right: heavy dark on left, fades right */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/15" />
+      {/* Top-to-bottom: subtle vignette */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/50" />
 
-      {/* Atmospheric green glow */}
-      <div className="pointer-events-none absolute -bottom-20 -left-20 h-96 w-96 rounded-full bg-emerald-600/20 blur-[120px]" />
-      <div className="pointer-events-none absolute top-1/4 left-1/3 h-64 w-64 rounded-full bg-emerald-500/10 blur-[100px]" />
-      <div className="pointer-events-none absolute bottom-1/3 right-1/4 h-48 w-48 rounded-full bg-lime-400/8 blur-[80px]" />
+      {/* ── Atmospheric green glow ── */}
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-[500px] w-[500px] rounded-full bg-emerald-600/18 blur-[140px]" />
+      <div className="pointer-events-none absolute left-1/4 top-1/3 h-72 w-72 rounded-full bg-emerald-500/8 blur-[110px]" />
+      <div className="pointer-events-none absolute bottom-1/4 right-1/3 h-56 w-56 rounded-full bg-lime-400/6 blur-[90px]" />
 
-      {/* Main content */}
+      {/* ── Main content shell ── */}
       <div className="relative app-page-shell flex min-h-screen items-center">
-        <div className="flex w-full flex-col items-start justify-between gap-12 lg:flex-row lg:items-center">
+        <div className="flex w-full flex-col items-start justify-between gap-10 py-32 lg:flex-row lg:items-center lg:py-0">
 
-          {/* ── Left: Text content ── */}
-          <div className="max-w-lg flex-shrink-0 pb-8 pt-28 lg:pb-0 lg:pt-0">
+          {/* ════════════════════════════════════════
+              LEFT — Text content
+          ════════════════════════════════════════ */}
+          <div className="w-full max-w-[520px] flex-shrink-0">
 
-            {/* Badge */}
+            {/* Platform badge */}
             <motion.div {...fadeUp(0)}>
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300 backdrop-blur-sm">
-                <motion.span {...pulseAnim} className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <Leaf className="h-3 w-3" />
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-500/8 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300 backdrop-blur-md">
+                <motion.span
+                  {...livePulse(0)}
+                  className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+                />
+                <Leaf className="h-3 w-3 opacity-80" />
                 Farm Intelligence Platform
               </span>
             </motion.div>
 
-            {/* Headline */}
+            {/* ── Headline ── */}
             <motion.h1
-              {...fadeUp(0.1)}
-              className="mt-5 font-heading text-[2.6rem] font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-[3.25rem]"
+              {...fadeUp(0.12)}
+              className="mt-6 font-heading font-bold tracking-[-0.02em] leading-[1.06]"
             >
-              The Command Center
-              <br />
-              <span className="mt-1 block">
+              {/* Line 1 — smaller weight */}
+              <span className="block text-[2.15rem] font-semibold text-white/90 sm:text-[2.6rem] md:text-[3rem]">
+                The Command Center
+              </span>
+              {/* Line 2 — dominant */}
+              <span className="block text-[2.4rem] sm:text-[3rem] md:text-[3.5rem]">
                 for{" "}
-                <span className="agri-animated-highlight">
+                <span
+                  className="agri-animated-highlight"
+                  style={{ WebkitBackgroundClip: "text", backgroundClip: "text" }}
+                >
                   Modern Agriculture
                 </span>
               </span>
@@ -142,41 +170,49 @@ export function Hero() {
 
             {/* Subtitle */}
             <motion.p
-              {...fadeUp(0.2)}
-              className="mt-5 max-w-md text-[15px] leading-relaxed text-white/65"
+              {...fadeUp(0.22)}
+              className="mt-5 max-w-[420px] text-[15px] leading-[1.75] text-white/60"
             >
               Climate & market intelligence for resilient smallholder farming
               across Africa — powered by AI.
             </motion.p>
 
-            {/* CTAs */}
-            <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-wrap items-center gap-3">
+            {/* ── CTA buttons ── */}
+            <motion.div
+              {...fadeUp(0.32)}
+              className="mt-8 flex flex-wrap items-center gap-3"
+            >
+              {/* Primary */}
               <Link
                 to="/signup"
-                className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-lime-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/40 transition duration-300 hover:-translate-y-0.5 hover:shadow-emerald-700/50 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-lime-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-800/40 hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
               >
-                <Zap className="h-4 w-4" />
-                Start Farming Smarter
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                {/* Subtle inner glow on hover */}
+                <span className="absolute inset-0 rounded-full bg-white/0 transition-all duration-300 group-hover:bg-white/8" />
+                <Zap className="relative h-3.5 w-3.5" />
+                <span className="relative">Start Farming Smarter</span>
+                <ArrowRight className="relative h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
+
+              {/* Secondary */}
               <Link
                 to="/login"
-                className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/8 px-5 py-3 text-sm font-semibold text-white/90 backdrop-blur-sm transition duration-300 hover:border-white/35 hover:bg-white/15 hover:text-white"
+                className="inline-flex items-center justify-center rounded-full border border-white/18 bg-white/6 px-6 py-3 text-sm font-semibold text-white/85 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/12 hover:text-white hover:-translate-y-0.5"
               >
                 Sign In
               </Link>
             </motion.div>
 
-            {/* Trust indicators */}
-            <motion.div {...fadeUp(0.4)} className="mt-9 space-y-2.5">
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">
+            {/* ── Trust indicators ── */}
+            <motion.div {...fadeUp(0.42)} className="mt-10 space-y-3">
+              <p className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-white/30">
                 Trusted by farmers, innovators & climate resilience communities
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 {trustBadges.map((badge) => (
                   <span
                     key={badge}
-                    className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-white/45 backdrop-blur-sm transition hover:border-white/20 hover:text-white/60"
+                    className="rounded-lg border border-white/8 bg-white/4 px-3 py-1 text-[11px] font-medium text-white/38 backdrop-blur-sm transition-all duration-200 hover:border-white/18 hover:text-white/55"
                   >
                     {badge}
                   </span>
@@ -185,86 +221,112 @@ export function Hero() {
             </motion.div>
           </div>
 
-          {/* ── Right: Floating Intelligence Card ── */}
+          {/* ════════════════════════════════════════
+              RIGHT — Floating AI Intelligence Card
+          ════════════════════════════════════════ */}
           <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
-            className="hidden w-full max-w-[300px] flex-shrink-0 pb-8 pt-28 lg:block lg:pb-0 lg:pt-0"
+            initial={{ opacity: 0, x: 48, y: 8 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
+            className="hidden w-full max-w-[290px] flex-shrink-0 lg:block"
           >
-            <motion.div {...floatAnim}>
-              {/* Card */}
-              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/8 p-5 shadow-2xl shadow-black/40 backdrop-blur-2xl">
-                {/* Card glow */}
-                <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-emerald-500/15 blur-[40px]" />
+            {/* Ambient glow behind card */}
+            <div className="pointer-events-none absolute -inset-8 rounded-3xl bg-emerald-500/10 blur-[50px]" />
+
+            <motion.div {...floatAnim} className="relative">
+              {/* ── Card ── */}
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+
+                {/* Inner top-right glow */}
+                <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-emerald-500/20 blur-[35px]" />
+                <div className="pointer-events-none absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-lime-400/10 blur-[30px]" />
 
                 {/* Card header */}
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+                    <p className="text-[9.5px] font-semibold uppercase tracking-[0.22em] text-white/35">
                       AgriSmart AI
                     </p>
-                    <p className="mt-0.5 text-sm font-semibold text-white">
+                    <p className="mt-0.5 text-[13px] font-semibold text-white/90">
                       Field Intelligence
                     </p>
                   </div>
-                  <div className="flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1">
-                    <motion.span {...pulseAnim} className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    <span className="text-[10px] font-semibold text-emerald-400">Live</span>
+                  <div className="flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2.5 py-1 backdrop-blur-sm">
+                    <motion.span
+                      {...livePulse(0)}
+                      className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+                    />
+                    <span className="text-[10px] font-semibold text-emerald-400">
+                      Live
+                    </span>
                   </div>
                 </div>
 
+                {/* Divider */}
+                <div className="mb-3.5 h-px bg-white/6" />
+
                 {/* Intelligence rows */}
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {intelligenceData.map((item, i) => (
                     <motion.div
                       key={item.label}
-                      initial={{ opacity: 0, x: 16 }}
+                      initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 + i * 0.1, duration: 0.5, ease: "easeOut" }}
-                      className={`flex items-center justify-between rounded-xl border border-white/6 ${item.bg} px-3.5 py-2.5`}
+                      transition={{
+                        delay: 0.55 + i * 0.1,
+                        duration: 0.5,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
+                      className={`flex items-center justify-between rounded-xl border ${item.border} ${item.bg} px-3.5 py-2.5`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className={`flex h-7 w-7 items-center justify-center rounded-lg bg-white/8`}>
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/6">
                           <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
                         </div>
                         <div>
-                          <p className="text-[10px] text-white/45">{item.label}</p>
-                          <p className="text-xs font-semibold text-white">{item.value}</p>
+                          <p className="text-[9.5px] text-white/40">{item.label}</p>
+                          <p className="text-[12px] font-semibold text-white/90">
+                            {item.value}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <motion.span
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 }}
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{
+                            duration: 2.8,
+                            repeat: Infinity,
+                            delay: i * 0.5,
+                          }}
                           className={`h-1.5 w-1.5 rounded-full ${item.dot}`}
                         />
-                        <span className={`text-[10px] font-medium ${item.color}`}>{item.status}</span>
+                        <span className={`text-[10px] font-medium ${item.color}`}>
+                          {item.status}
+                        </span>
                       </div>
                     </motion.div>
                   ))}
                 </div>
 
                 {/* Card footer */}
-                <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-3">
-                  <p className="text-[10px] text-white/30">Updated just now</p>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-white/30">Powered by</span>
-                    <span className="text-[10px] font-semibold text-emerald-400/70">AgriSmart AI</span>
-                  </div>
+                <div className="mt-4 flex items-center justify-between border-t border-white/6 pt-3">
+                  <p className="text-[9.5px] text-white/25">Updated just now</p>
+                  <p className="text-[9.5px] font-semibold text-emerald-400/60">
+                    AgriSmart AI
+                  </p>
                 </div>
               </div>
 
-              {/* Subtle reflection */}
-              <div className="mx-4 h-3 rounded-b-2xl bg-white/5 blur-sm" />
+              {/* Card reflection */}
+              <div className="mx-6 h-2.5 rounded-b-2xl bg-white/4 blur-[3px]" />
             </motion.div>
           </motion.div>
 
         </div>
       </div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
+      {/* ── Bottom fade into next section ── */}
+      <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/50 to-transparent" />
     </section>
   );
 }
