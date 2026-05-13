@@ -1,8 +1,209 @@
-import 'package:crop_conduit_flutter/screens/auth/auth_screens.dart';
-import 'package:crop_conduit_flutter/theme/app_theme.dart';
-import 'package:crop_conduit_flutter/widgets/auth_shell.dart';
 import 'package:flutter/material.dart';
+import 'auth/login_screen.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Data model
+// ─────────────────────────────────────────────────────────────────────────────
+class _OnboardingData {
+  const _OnboardingData({
+    required this.title,
+    required this.subtitle,
+    required this.accentColor,
+    required this.bgGradient,
+    required this.card,
+  });
+
+  final String title;
+  final String subtitle;
+  final Color accentColor;
+  final List<Color> bgGradient;
+  final _IntelCard card;
+}
+
+class _IntelCard {
+  const _IntelCard({
+    required this.eyebrow,
+    required this.heading,
+    required this.rows,
+    required this.footer,
+  });
+
+  final String eyebrow;
+  final String heading;
+  final List<_IntelRow> rows;
+  final String footer;
+}
+
+class _IntelRow {
+  const _IntelRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.status,
+    required this.statusColor,
+    required this.rowColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String status;
+  final Color statusColor;
+  final Color rowColor;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Onboarding content
+// ─────────────────────────────────────────────────────────────────────────────
+final _pages = [
+  // ── Screen 1: Climate Intelligence ──────────────────────────────────────
+  _OnboardingData(
+    title: 'Climate Intelligence\nfor Farmers',
+    subtitle:
+        'Receive rainfall forecasts, drought alerts, and planting recommendations in real time.',
+    accentColor: const Color(0xFF1B5E20),
+    bgGradient: const [Color(0xFF1B3A2A), Color(0xFF2E5E3E), Color(0xFF3A7A50)],
+    card: const _IntelCard(
+      eyebrow: 'AGRISMART AI',
+      heading: 'Field Intelligence',
+      rows: [
+        _IntelRow(
+          icon: Icons.water_drop_rounded,
+          label: 'Rainfall Forecast',
+          value: '84%',
+          status: 'Favorable',
+          statusColor: Color(0xFF38BDF8),
+          rowColor: Color(0x1538BDF8),
+        ),
+        _IntelRow(
+          icon: Icons.thermostat_rounded,
+          label: 'Frost Alert',
+          value: 'Moderate',
+          status: 'Risk',
+          statusColor: Color(0xFFFBBF24),
+          rowColor: Color(0x15FBBF24),
+        ),
+        _IntelRow(
+          icon: Icons.trending_up_rounded,
+          label: 'Maize Price',
+          value: 'KES 4,500',
+          status: '↑ 3.2%',
+          statusColor: Color(0xFF4ADE80),
+          rowColor: Color(0x154ADE80),
+        ),
+        _IntelRow(
+          icon: Icons.eco_rounded,
+          label: 'AI Planting',
+          value: 'Favorable',
+          status: 'Recommended',
+          statusColor: Color(0xFFA3E635),
+          rowColor: Color(0x15A3E635),
+        ),
+      ],
+      footer: 'Updated just now',
+    ),
+  ),
+
+  // ── Screen 2: Market Access ──────────────────────────────────────────────
+  _OnboardingData(
+    title: 'Better\nMarket Access',
+    subtitle:
+        'Track crop prices, connect with buyers, and sell produce smarter.',
+    accentColor: const Color(0xFF1565C0),
+    bgGradient: const [Color(0xFF0D2B4E), Color(0xFF1565C0), Color(0xFF1976D2)],
+    card: const _IntelCard(
+      eyebrow: 'AGRISMART MARKET',
+      heading: 'Price Intelligence',
+      rows: [
+        _IntelRow(
+          icon: Icons.grain_rounded,
+          label: 'Maize — Nairobi',
+          value: 'KES 4,500/bag',
+          status: '↑ 5.1%',
+          statusColor: Color(0xFF4ADE80),
+          rowColor: Color(0x154ADE80),
+        ),
+        _IntelRow(
+          icon: Icons.spa_rounded,
+          label: 'Tomatoes — Mombasa',
+          value: 'KES 3,200/crate',
+          status: '↓ 2.3%',
+          statusColor: Color(0xFFF87171),
+          rowColor: Color(0x15F87171),
+        ),
+        _IntelRow(
+          icon: Icons.grass_rounded,
+          label: 'Beans — Kisumu',
+          value: 'KES 6,800/bag',
+          status: '↑ 8.4%',
+          statusColor: Color(0xFF4ADE80),
+          rowColor: Color(0x154ADE80),
+        ),
+        _IntelRow(
+          icon: Icons.people_rounded,
+          label: 'Active Buyers',
+          value: '1,240',
+          status: 'Online',
+          statusColor: Color(0xFF38BDF8),
+          rowColor: Color(0x1538BDF8),
+        ),
+      ],
+      footer: 'Live market data',
+    ),
+  ),
+
+  // ── Screen 3: Transport & Logistics ─────────────────────────────────────
+  _OnboardingData(
+    title: 'Transport\n& Logistics',
+    subtitle:
+        'Connect with trusted drivers and move produce from farms to markets efficiently.',
+    accentColor: const Color(0xFF4527A0),
+    bgGradient: const [Color(0xFF1A0A3E), Color(0xFF4527A0), Color(0xFF5E35B1)],
+    card: const _IntelCard(
+      eyebrow: 'AGRISMART LOGISTICS',
+      heading: 'Fleet Intelligence',
+      rows: [
+        _IntelRow(
+          icon: Icons.local_shipping_rounded,
+          label: 'Active Drivers',
+          value: '38 Online',
+          status: 'Available',
+          statusColor: Color(0xFF4ADE80),
+          rowColor: Color(0x154ADE80),
+        ),
+        _IntelRow(
+          icon: Icons.route_rounded,
+          label: 'Nairobi → Mombasa',
+          value: '490 km',
+          status: 'En Route',
+          statusColor: Color(0xFF38BDF8),
+          rowColor: Color(0x1538BDF8),
+        ),
+        _IntelRow(
+          icon: Icons.inventory_2_rounded,
+          label: 'Cargo in Transit',
+          value: '12.4 tonnes',
+          status: 'On Track',
+          statusColor: Color(0xFFA3E635),
+          rowColor: Color(0x15A3E635),
+        ),
+        _IntelRow(
+          icon: Icons.verified_rounded,
+          label: 'Deliveries Today',
+          value: '24 Completed',
+          status: '100%',
+          statusColor: Color(0xFF4ADE80),
+          rowColor: Color(0x154ADE80),
+        ),
+      ],
+      footer: 'Real-time tracking',
+    ),
+  ),
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main screen
+// ─────────────────────────────────────────────────────────────────────────────
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -13,41 +214,22 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _controller = PageController();
+  final _controller = PageController();
   int _page = 0;
 
-  final List<_OnboardingItem> items = const [
-    _OnboardingItem(
-      title: 'Connect farmers, buyers, and drivers in one flow',
-      description:
-          'Coordinate production, transport, and sales without the usual back-and-forth.',
-      asset: 'assets/brand/agrismart-farm-intelligence.png',
-      accent: AppTheme.primary,
-      icon: Icons.agriculture_rounded,
-      highlights: ['Role-based access', 'Verified network', 'Quick setup'],
-      badge: 'Team workflow',
-    ),
-    _OnboardingItem(
-      title: 'Track logistics in real time',
-      description:
-          'Manage pickup schedules, delivery progress, and crop movement with fewer handoffs.',
-      asset: 'assets/brand/agrismart-mark.png',
-      accent: Color(0xFF2563EB),
-      icon: Icons.local_shipping_rounded,
-      highlights: ['Live routes', 'Delivery proof', 'Dispatch updates'],
-      badge: 'Fleet visibility',
-    ),
-    _OnboardingItem(
-      title: 'Grow with reliable market insights',
-      description:
-          'Use clean workflows and fast account setup to act on market opportunities with confidence.',
-      asset: 'assets/brand/agrismart-full.png',
-      accent: AppTheme.secondary,
-      icon: Icons.auto_graph_rounded,
-      highlights: ['Market signals', 'Price intelligence', 'Faster decisions'],
-      badge: 'Smart growth',
-    ),
-  ];
+  void _goToAuth() =>
+      Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
+
+  void _next() {
+    if (_page < _pages.length - 1) {
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    } else {
+      _goToAuth();
+    }
+  }
 
   @override
   void dispose() {
@@ -55,284 +237,198 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _next() {
-    if (_page < items.length - 1) {
-      _controller.nextPage(
-        duration: const Duration(milliseconds: 320),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
-    Navigator.of(context).pushReplacementNamed(AuthLandingScreen.routeName);
+  @override
+  Widget build(BuildContext context) {
+    final current = _pages[_page];
+
+    return Scaffold(
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: current.bgGradient,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // ── Top bar ────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Image.asset(
+                      'assets/brand/agrismart_logo.png',
+                      height: 32,
+                      fit: BoxFit.contain,
+                      color: Colors.white,
+                      colorBlendMode: BlendMode.srcIn,
+                    ),
+                    TextButton(
+                      onPressed: _goToAuth,
+                      child: Text(
+                        'Skip',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Pages ──────────────────────────────────────────
+              Expanded(
+                child: PageView.builder(
+                  controller: _controller,
+                  onPageChanged: (i) => setState(() => _page = i),
+                  itemCount: _pages.length,
+                  itemBuilder: (_, i) => _OnboardingPage(data: _pages[i]),
+                ),
+              ),
+
+              // ── Bottom controls ────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 36),
+                child: Column(
+                  children: [
+                    // Dots
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(_pages.length, (i) {
+                        final active = i == _page;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 280),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: active ? 24 : 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: active
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        );
+                      }),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Buttons
+                    Row(
+                      children: [
+                        if (_page > 0) ...[
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => _controller.previousPage(
+                                duration: const Duration(milliseconds: 350),
+                                curve: Curves.easeOutCubic,
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                minimumSize: const Size(0, 52),
+                              ),
+                              child: const Text('Back'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: _next,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: current.accentColor,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              minimumSize: const Size(0, 52),
+                            ),
+                            child: Text(
+                              _page == _pages.length - 1
+                                  ? 'Get Started'
+                                  : 'Next',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Single onboarding page
+// ─────────────────────────────────────────────────────────────────────────────
+class _OnboardingPage extends StatelessWidget {
+  const _OnboardingPage({required this.data});
+
+  final _OnboardingData data;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      child: Column(
         children: [
-          const AuthBackdrop(
-            primaryColor: AppTheme.primary,
-            secondaryColor: AppTheme.secondary,
-            tertiaryColor: Color(0xFF2563EB),
+          // ── Intelligence card ──────────────────────────────────
+          Expanded(
+            flex: 6,
+            child: Center(child: _IntelligenceCard(card: data.card)),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      AuthPill(
-                        icon: Icons.timeline_rounded,
-                        label: 'Step ${_page + 1}/3',
-                        color: items[_page].accent,
-                        filled: true,
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(
-                            context,
-                          ).pushReplacementNamed(AuthLandingScreen.routeName);
-                        },
-                        child: const Text('Skip'),
-                      ),
-                    ],
+
+          const SizedBox(height: 24),
+
+          // ── Text ───────────────────────────────────────────────
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data.title,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.15,
+                    letterSpacing: -0.3,
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: PageView.builder(
-                      controller: _controller,
-                      onPageChanged: (index) => setState(() => _page = index),
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: AuthSurfaceCard(
-                            padding: const EdgeInsets.all(22),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                item.accent.withValues(alpha: 0.14),
-                                Colors.white,
-                                item.accent.withValues(alpha: 0.05),
-                              ],
-                            ),
-                            borderColor: item.accent.withValues(alpha: 0.16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    AuthPill(
-                                      icon: item.icon,
-                                      label: item.badge,
-                                      color: item.accent,
-                                      filled: true,
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      '0${index + 1}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(
-                                            color: item.accent,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-                                Container(
-                                  height: 250,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        item.accent.withValues(alpha: 0.22),
-                                        Colors.white,
-                                        item.accent.withValues(alpha: 0.08),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(28),
-                                    border: Border.all(
-                                      color: item.accent.withValues(
-                                        alpha: 0.12,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      Positioned(
-                                        top: -22,
-                                        left: -18,
-                                        child: Container(
-                                          width: 120,
-                                          height: 120,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: item.accent.withValues(
-                                              alpha: 0.12,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: -28,
-                                        right: -14,
-                                        child: Container(
-                                          width: 140,
-                                          height: 140,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: item.accent.withValues(
-                                              alpha: 0.08,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(30),
-                                          child: Image.asset(
-                                            item.asset,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 16,
-                                        right: 16,
-                                        bottom: 16,
-                                        child: AuthSurfaceCard(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 12,
-                                          ),
-                                          borderRadius: 20,
-                                          backgroundColor: Colors.white
-                                              .withValues(alpha: 0.9),
-                                          borderColor: item.accent.withValues(
-                                            alpha: 0.10,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  'Designed for modern farm teams.',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .labelLarge
-                                                      ?.copyWith(
-                                                        color: AppTheme
-                                                            .textPrimary,
-                                                      ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Icon(
-                                                Icons.arrow_forward_rounded,
-                                                color: item.accent,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 22),
-                                Text(
-                                  item.title,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall,
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  item.description,
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(
-                                        color: AppTheme.textMuted,
-                                        height: 1.45,
-                                      ),
-                                ),
-                                const SizedBox(height: 18),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: item.highlights
-                                      .map(
-                                        (highlight) => AuthPill(
-                                          icon: Icons.check_rounded,
-                                          label: highlight,
-                                          color: item.accent,
-                                          filled: true,
-                                        ),
-                                      )
-                                      .toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  data.subtitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.white.withValues(alpha: 0.7),
+                    height: 1.6,
                   ),
-                  const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      items.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 260),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _page == index ? 28 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _page == index
-                              ? items[_page].accent
-                              : items[_page].accent.withValues(alpha: 0.22),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.of(
-                              context,
-                            ).pushReplacementNamed(AuthLandingScreen.routeName);
-                          },
-                          child: const Text('Skip'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _next,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: items[_page].accent,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: Text(
-                            _page == items.length - 1 ? 'Get started' : 'Next',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -341,22 +437,294 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-class _OnboardingItem {
-  const _OnboardingItem({
-    required this.title,
-    required this.description,
-    required this.asset,
-    required this.accent,
-    required this.icon,
-    required this.highlights,
-    required this.badge,
-  });
+// ─────────────────────────────────────────────────────────────────────────────
+// Intelligence card widget — mirrors the web hero floating card
+// ─────────────────────────────────────────────────────────────────────────────
+class _IntelligenceCard extends StatelessWidget {
+  const _IntelligenceCard({required this.card});
 
-  final String title;
-  final String description;
-  final String asset;
-  final Color accent;
-  final IconData icon;
-  final List<String> highlights;
-  final String badge;
+  final _IntelCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        // Glassmorphism
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 40,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              // ── Card header ──────────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.eyebrow,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white.withValues(alpha: 0.45),
+                            letterSpacing: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          card.heading,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Live badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4ADE80).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color: const Color(0xFF4ADE80).withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _PulseDot(color: const Color(0xFF4ADE80)),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Live',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF4ADE80),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+              Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              const SizedBox(height: 8),
+
+              // ── Rows — expand to fill remaining space ─────────
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: card.rows
+                      .map((row) => _IntelRowWidget(row: row))
+                      .toList(),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+              Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+              const SizedBox(height: 8),
+
+              // ── Footer ───────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    card.footer,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Powered by ',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        const TextSpan(
+                          text: 'AgriSmart AI',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF4ADE80),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Single intelligence row
+// ─────────────────────────────────────────────────────────────────────────────
+class _IntelRowWidget extends StatelessWidget {
+  const _IntelRowWidget({required this.row});
+
+  final _IntelRow row;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: row.rowColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(row.icon, size: 15, color: row.statusColor),
+          ),
+
+          const SizedBox(width: 10),
+
+          // Label + value
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  row.label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.5),
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  row.value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Status
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _PulseDot(color: row.statusColor),
+              const SizedBox(width: 4),
+              Text(
+                row.status,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: row.statusColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animated pulse dot
+// ─────────────────────────────────────────────────────────────────────────────
+class _PulseDot extends StatefulWidget {
+  const _PulseDot({required this.color});
+
+  final Color color;
+
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _anim,
+      child: Container(
+        width: 7,
+        height: 7,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: widget.color,
+        ),
+      ),
+    );
+  }
 }
