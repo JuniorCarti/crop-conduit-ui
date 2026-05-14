@@ -38,7 +38,7 @@ class RegistrationPathScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Image.asset(
                     'assets/brand/agrismart_logo.png',
-                    height: 28,
+                    height: 40,
                     fit: BoxFit.contain,
                   ),
                 ],
