@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/floating_bottom_nav.dart';
 import 'transport_portal_screen.dart';
 import 'transport_fleet_screen.dart';
 import 'transport_shipments_screen.dart';
@@ -53,45 +54,17 @@ class _TransportShellState extends State<TransportShell> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AppTheme.border, width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppTheme.surface,
-        selectedItemColor: AppTheme.driverColor,
-        unselectedItemColor: AppTheme.textMuted,
-        selectedFontSize: 12,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Portal',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car_rounded),
-            label: 'Fleet',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory_2_rounded),
-            label: 'Shipments',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.gavel_rounded),
-            label: 'Bids',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_rounded),
-            label: 'More',
-          ),
-        ],
-      ),
+    return FloatingBottomNav(
+      currentIndex: _currentIndex,
+      onTap: (index) => setState(() => _currentIndex = index),
+      activeColor: AppTheme.driverColor,
+      items: const [
+        FloatingNavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded),
+        FloatingNavItem(icon: Icons.directions_car_outlined, activeIcon: Icons.directions_car_rounded),
+        FloatingNavItem(icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2_rounded),
+        FloatingNavItem(icon: Icons.gavel_outlined, activeIcon: Icons.gavel_rounded),
+        FloatingNavItem(icon: Icons.menu_rounded, activeIcon: Icons.menu_rounded),
+      ],
     );
   }
 
