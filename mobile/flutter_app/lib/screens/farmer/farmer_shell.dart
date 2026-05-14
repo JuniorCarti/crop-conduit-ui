@@ -203,7 +203,7 @@ class _FarmerShellState extends State<FarmerShell> {
                   }),
                   _drawerItem(Icons.logout_rounded, 'Logout', () {
                     Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/role-selection',
+                      '/login',
                       (route) => false,
                     );
                   }),

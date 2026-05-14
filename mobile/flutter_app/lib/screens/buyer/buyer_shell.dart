@@ -200,7 +200,7 @@ class _BuyerShellState extends State<BuyerShell> {
                   }),
                   _drawerItem(Icons.logout_rounded, 'Logout', () {
                     Navigator.of(context).pushNamedAndRemoveUntil(
-                      '/role-selection',
+                      '/login',
                       (route) => false,
                     );
                   }),
