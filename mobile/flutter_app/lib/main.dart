@@ -5,6 +5,7 @@ import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/registration_path_screen.dart';
+import 'screens/auth/forgot_password_screen.dart';
 import 'screens/auth/farmer/farmer_registration_screen.dart';
 import 'screens/auth/buyer/buyer_registration_screen.dart';
 import 'screens/auth/transport/transport_registration_screen.dart';
@@ -45,6 +46,7 @@ class AgriSmartApp extends StatelessWidget {
         // ── Auth ────────────────────────────────────────────────
         LoginScreen.routeName: (_) => const LoginScreen(),
         RegistrationPathScreen.routeName: (_) => const RegistrationPathScreen(),
+        ForgotPasswordScreen.routeName: (_) => const ForgotPasswordScreen(),
 
         // ── Registration ────────────────────────────────────────
         FarmerRegistrationScreen.routeName: (_) =>
