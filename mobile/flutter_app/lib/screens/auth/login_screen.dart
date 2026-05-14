@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/agri_widgets.dart';
 import 'registration_path_screen.dart';
+import 'forgot_password_screen.dart';
 import '../farmer/farmer_shell.dart';
 import '../buyer/buyer_shell.dart';
 import '../transport/transport_shell.dart';
@@ -101,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: Image.asset(
                     'assets/brand/agrismart_logo.png',
-                    height: 36,
+                    height: 64,
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -209,9 +210,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      // TODO: navigate to reset password
-                    },
+                    onPressed: () => Navigator.of(context).pushNamed(
+                      ForgotPasswordScreen.routeName,
+                    ),
                     child: const Text('Forgot password?'),
                   ),
                 ),
