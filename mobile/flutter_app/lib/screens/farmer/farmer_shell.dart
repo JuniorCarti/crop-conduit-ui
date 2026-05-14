@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/floating_bottom_nav.dart';
 import 'farmer_dashboard_screen.dart';
 import 'farmer_market_screen.dart';
 import 'farmer_climate_screen.dart';
@@ -57,45 +58,17 @@ class _FarmerShellState extends State<FarmerShell> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AppTheme.border, width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppTheme.surface,
-        selectedItemColor: AppTheme.primary,
-        unselectedItemColor: AppTheme.textMuted,
-        selectedFontSize: 12,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trending_up_rounded),
-            label: 'Market',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.cloud_rounded),
-            label: 'Climate',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grass_rounded),
-            label: 'Harvest',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_rounded),
-            label: 'More',
-          ),
-        ],
-      ),
+    return FloatingBottomNav(
+      currentIndex: _currentIndex,
+      onTap: (index) => setState(() => _currentIndex = index),
+      activeColor: AppTheme.farmerColor,
+      items: const [
+        FloatingNavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded),
+        FloatingNavItem(icon: Icons.trending_up_outlined, activeIcon: Icons.trending_up_rounded),
+        FloatingNavItem(icon: Icons.cloud_outlined, activeIcon: Icons.cloud_rounded),
+        FloatingNavItem(icon: Icons.grass_outlined, activeIcon: Icons.grass_rounded),
+        FloatingNavItem(icon: Icons.menu_rounded, activeIcon: Icons.menu_rounded),
+      ],
     );
   }
 
