@@ -429,6 +429,22 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="/climate"
+                  element={
+                    <RoleGuard allowed={["farmer", "admin"]} redirectTo="/marketplace">
+                      <ClimatePage />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/asha"
+                  element={
+                    <RoleGuard allowed={["farmer", "admin"]} redirectTo="/marketplace">
+                      <AshaVoice />
+                    </RoleGuard>
+                  }
+                />
+                <Route
                   path="/crops"
                   element={
                     <RoleGuard allowed={["farmer", "admin"]} redirectTo="/marketplace">
