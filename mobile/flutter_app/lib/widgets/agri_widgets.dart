@@ -479,11 +479,10 @@ class AgriGoogleButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Google G logo
-            SizedBox(
+            Image.asset(
+              'assets/images/google.png',
               width: 20,
               height: 20,
-              child: CustomPaint(painter: _GoogleLogoPainter()),
             ),
             const SizedBox(width: 10),
             Text(
@@ -499,58 +498,6 @@ class AgriGoogleButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GoogleLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..style = PaintingStyle.fill;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Blue
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -1.57,
-      3.14,
-      true,
-      paint,
-    );
-    // Red
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -1.57,
-      -1.57,
-      true,
-      paint,
-    );
-    // Yellow
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      1.57,
-      1.57,
-      true,
-      paint,
-    );
-    // Green
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      0,
-      1.57,
-      true,
-      paint,
-    );
-    // White center
-    paint.color = Colors.white;
-    canvas.drawCircle(center, radius * 0.55, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
