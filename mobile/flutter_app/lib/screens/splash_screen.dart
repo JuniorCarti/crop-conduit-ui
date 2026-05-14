@@ -99,8 +99,8 @@ class _SplashScreenState extends State<SplashScreen>
                         children: [
                           // Logo container
                           Container(
-                            width: 110,
-                            height: 110,
+                            width: 130,
+                            height: 130,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(28),
