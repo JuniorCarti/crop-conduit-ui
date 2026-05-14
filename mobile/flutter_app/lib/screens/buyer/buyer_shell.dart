@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/floating_bottom_nav.dart';
 import 'buyer_dashboard_screen.dart';
 import 'buyer_marketplace_screen.dart';
 import 'buyer_trade_screen.dart';
@@ -57,45 +58,17 @@ class _BuyerShellState extends State<BuyerShell> {
   }
 
   Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AppTheme.border, width: 1),
-        ),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppTheme.surface,
-        selectedItemColor: AppTheme.buyerColor,
-        unselectedItemColor: AppTheme.textMuted,
-        selectedFontSize: 12,
-        unselectedFontSize: 11,
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.store_rounded),
-            label: 'Marketplace',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.swap_horiz_rounded),
-            label: 'Trade',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping_rounded),
-            label: 'Logistics',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_rounded),
-            label: 'More',
-          ),
-        ],
-      ),
+    return FloatingBottomNav(
+      currentIndex: _currentIndex,
+      onTap: (index) => setState(() => _currentIndex = index),
+      activeColor: AppTheme.buyerColor,
+      items: const [
+        FloatingNavItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded),
+        FloatingNavItem(icon: Icons.store_outlined, activeIcon: Icons.store_rounded),
+        FloatingNavItem(icon: Icons.swap_horiz_outlined, activeIcon: Icons.swap_horiz_rounded),
+        FloatingNavItem(icon: Icons.local_shipping_outlined, activeIcon: Icons.local_shipping_rounded),
+        FloatingNavItem(icon: Icons.menu_rounded, activeIcon: Icons.menu_rounded),
+      ],
     );
   }
 
