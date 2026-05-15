@@ -57,10 +57,7 @@ export async function ensureAuthToken() {
   }
   persistToken(user, token);
 
-  console.log("Firebase user:", user);
-  console.log("Firebase token:", token);
-
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && import.meta.env.DEV) {
     (window as any).getFirebaseToken = async () => auth.currentUser?.getIdToken(true);
   }
 
