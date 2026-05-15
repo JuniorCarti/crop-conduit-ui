@@ -18,6 +18,16 @@ export default defineConfig(({ mode }) => ({
           target: "es2020",
           rollupOptions: {
             treeshake: true,
+            output: {
+              manualChunks: {
+                // Core vendor chunks
+                "vendor-react": ["react", "react-dom", "react-router-dom"],
+                "vendor-firebase": ["firebase/app", "firebase/auth", "firebase/firestore", "firebase/storage"],
+                "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-tabs", "@radix-ui/react-tooltip", "@radix-ui/react-select", "@radix-ui/react-popover"],
+                "vendor-charts": ["recharts", "d3-scale", "d3-shape", "d3-array"],
+                "vendor-utils": ["date-fns", "zustand", "@tanstack/react-query", "zod"],
+              },
+            },
           },
         }
       : {}),
