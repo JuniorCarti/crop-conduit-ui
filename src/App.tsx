@@ -130,9 +130,12 @@ import TransportPortal from "./pages/TransportPortal";
 import TransportMarketplace from "./pages/TransportMarketplace";
 import TransportDriverUpdate from "./pages/TransportDriverUpdate";
 
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <CartProvider>
@@ -587,6 +590,7 @@ const App = () => (
       </CartProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
