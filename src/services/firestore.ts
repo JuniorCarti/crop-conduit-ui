@@ -302,10 +302,6 @@ export async function createCrop(crop: Omit<Crop, "id" | "createdAt" | "updatedA
       createdAt: Timestamp.now(),
     };
 
-    // Debug log to show what's being sent to Firebase
-    console.log("[createCrop] Crop data being sent to Firestore:", cropData);
-    console.log("[createCrop] Checking for undefined values:", Object.keys(cropData).filter(key => cropData[key] === undefined));
-
     // Final safety check: remove any undefined values that might have slipped through
     const finalData: any = {};
     Object.keys(cropData).forEach(key => {
