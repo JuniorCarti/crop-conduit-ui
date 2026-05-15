@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,130 +8,140 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { PremiumRouteGuard } from "@/components/premium/PremiumRouteGuard";
-import Index from "./pages/Index";
-import Market from "./pages/Market";
-import Crops from "./pages/Crops";
-import Resources from "./pages/Resources";
-import Irrigation from "./pages/Irrigation";
-import Harvest from "./pages/Harvest";
-import Finance from "./pages/Finance";
-import MarketplaceEnhanced from "./pages/MarketplaceEnhanced";
-import ListingDetails from "./pages/ListingDetails";
-import Checkout from "./pages/Checkout";
-import MarketPrices from "./pages/MarketPrices";
-import MarketPricesEnhanced from "./pages/MarketPricesEnhanced";
-import Community from "./pages/Community";
-import CommunityMemberProfile from "./pages/CommunityMemberProfile";
-import Inbox from "./pages/Inbox";
-import Chat from "./pages/Chat";
-import NotFound from "./pages/NotFound";
-import FarmerRegistration from "./pages/FarmerRegistration";
-import RegistrationHub from "./pages/RegistrationHub";
-import BuyerRegistration from "./pages/BuyerRegistration";
-import OrgRegistration from "./pages/OrgRegistration";
-import TransportRegistration from "./pages/TransportRegistration";
-import AccessSummary from "./pages/AccessSummary";
-import SuperAdminPortal from "./pages/SuperAdminPortal";
-import Signup from "./pages/Signup";
-import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
-import Homepage from "./pages/Homepage";
-import ClimatePage from "./pages/ClimatePage";
-import Upgrade from "./pages/Upgrade";
-import AshaVoice from "./pages/AshaVoice";
-import ProfileRouter from "./pages/ProfileRouter";
-import Join from "./pages/Join";
-import AdminPortal from "./pages/AdminPortal";
-import { OrgLayout } from "@/components/org/OrgLayout";
-import OrgDashboard from "./pages/org/OrgDashboard";
-import OrgProfile from "./pages/org/OrgProfile";
-import OrgMembers from "./pages/org/OrgMembers";
-import OrgMarketDashboard from "./pages/org/OrgMarketDashboard";
-import OrgTraining from "./pages/org/OrgTraining";
-import OrgContracts from "./pages/org/OrgContracts";
-import OrgTraceability from "./pages/org/OrgTraceability";
-import OrgCredit from "./pages/org/OrgCredit";
-import OrgLoans from "./pages/org/OrgLoans";
-import OrgRiskAlerts from "./pages/org/OrgRiskAlerts";
-import OrgSubscription from "./pages/org/OrgSubscription";
-import OrgVerification from "./pages/org/OrgVerification";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { OrgTypeGuard } from "@/components/auth/OrgTypeGuard";
 import { OrgFeatureGuard } from "@/components/auth/OrgFeatureGuard";
 import { OrgApprovalGuard } from "@/components/auth/OrgApprovalGuard";
-import OrgAggregation from "./pages/org/OrgAggregation";
-import OrgPrices from "./pages/org/OrgPrices";
-import OrgBilling from "./pages/org/OrgBilling";
-import OrgTargetsRewards from "./pages/org/OrgTargetsRewards";
-import OrgCertificates from "./pages/org/OrgCertificates";
-import OrgUnderReview from "./pages/org/OrgUnderReview";
-import OrgStaff from "./pages/org/OrgStaff";
-import Cooperatives from "./pages/Cooperatives";
-import OrgSponsorships from "./pages/org/OrgSponsorships";
-import OrgSalesBatches from "./pages/org/OrgSalesBatches";
-import OrgRevenueModel from "./pages/org/OrgRevenueModel";
-import OrgImpact from "./pages/org/OrgImpact";
-import OrgReports from "./pages/org/OrgReports";
-import TradePage from "./pages/org/TradePage";
-import OrgInternationalMarketsPage from "./pages/org/OrgInternationalMarketsPage";
+import { GovTypeGuard } from "@/components/auth/GovTypeGuard";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { PremiumRouteGuard } from "@/components/premium/PremiumRouteGuard";
+import { OrgLayout } from "@/components/org/OrgLayout";
 import { BuyerLayout } from "@/components/buyer/BuyerLayout";
 import { PartnerLayout } from "@/components/partner/PartnerLayout";
-import PartnerOverview from "./pages/partner/PartnerOverview";
-import PartnerSponsorships from "./pages/partner/PartnerSponsorships";
-import PartnerImpact from "./pages/partner/PartnerImpact";
-import PartnerReports from "./pages/partner/PartnerReports";
-import { GovTypeGuard } from "@/components/auth/GovTypeGuard";
 import { GovLayout } from "@/components/gov/GovLayout";
-import GovOverview from "./pages/gov/GovOverview";
-import GovNationalStats from "./pages/gov/GovNationalStats";
-import GovMarkets from "./pages/gov/GovMarkets";
-import GovClimate from "./pages/gov/GovClimate";
-import GovFoodSecurity from "./pages/gov/GovFoodSecurity";
-import GovCooperatives from "./pages/gov/GovCooperatives";
-import GovCooperativeDetail from "./pages/gov/GovCooperativeDetail";
-import GovValueChains from "./pages/gov/GovValueChains";
-import GovReports from "./pages/gov/GovReports";
-import GovAlerts from "./pages/gov/GovAlerts";
-import GovSettings from "./pages/gov/GovSettings";
-import GovUnderReview from "./pages/gov/GovUnderReview";
-import Unauthorized from "./pages/Unauthorized";
-import BuyerTradeHome from "./pages/buyer/BuyerTradeHome";
-import BuyerTradeListingDetails from "./pages/buyer/BuyerTradeListingDetails";
-import BuyerTradeBids from "./pages/buyer/BuyerTradeBids";
-import BuyerTradeContracts from "./pages/buyer/BuyerTradeContracts";
-import BuyerTradeWallet from "./pages/buyer/BuyerTradeWallet";
-import BuyerTradeSettings from "./pages/buyer/BuyerTradeSettings";
-import FarmerBids from "./pages/farmer/FarmerBids";
-import FarmerBidDetails from "./pages/farmer/FarmerBidDetails";
-import BuyerProfile from "./pages/BuyerProfile";
-import BuyerDashboardPage from "./pages/buyer/BuyerDashboardPage";
-import BuyerBillingPage from "./pages/buyer/BuyerBillingPage";
-import BuyerVerificationPendingPage from "./pages/buyer/BuyerVerificationPendingPage";
-import BuyerAnalyticsDashboard from "./pages/buyer/BuyerAnalyticsDashboard";
-import BuyerCustomReports from "./pages/buyer/BuyerCustomReports";
-import BuyerDemandPlanning from "./pages/buyer/BuyerDemandPlanning";
-import BuyerLogisticsTracking from "./pages/buyer/BuyerLogisticsTracking";
-import BuyerSupplierRelationshipManagement from "./pages/buyer/BuyerSupplierRelationshipManagement";
-import BuyerPurchaseOrderManagement from "./pages/buyer/BuyerPurchaseOrderManagement";
-import BuyerQualityManagement from "./pages/buyer/BuyerQualityManagement";
-import BuyerFinancialManagement from "./pages/buyer/BuyerFinancialManagement";
-import BuyerMarketIntelligence from "./pages/buyer/BuyerMarketIntelligence";
-import BuyerCollaborationCommunication from "./pages/buyer/BuyerCollaborationCommunication";
-import Partnerships from "./pages/Partnerships";
-import Policies from "./pages/Policies";
-import DataPrivacyPolicy from "./pages/policies/DataPrivacyPolicy";
-import SecurityPolicy from "./pages/policies/SecurityPolicy";
-import ResponsibleAIPolicy from "./pages/policies/ResponsibleAIPolicy";
-import TransparencyPolicy from "./pages/policies/TransparencyPolicy";
-import DataOwnershipPolicy from "./pages/policies/DataOwnershipPolicy";
-import PartnershipEthicsPolicy from "./pages/policies/PartnershipEthicsPolicy";
-import TransportPortal from "./pages/TransportPortal";
-import TransportMarketplace from "./pages/TransportMarketplace";
-import TransportDriverUpdate from "./pages/TransportDriverUpdate";
-
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+
+// Lazy-loaded page imports
+const Index = lazy(() => import("./pages/Index"));
+const Market = lazy(() => import("./pages/Market"));
+const Crops = lazy(() => import("./pages/Crops"));
+const Resources = lazy(() => import("./pages/Resources"));
+const Irrigation = lazy(() => import("./pages/Irrigation"));
+const Harvest = lazy(() => import("./pages/Harvest"));
+const Finance = lazy(() => import("./pages/Finance"));
+const MarketplaceEnhanced = lazy(() => import("./pages/MarketplaceEnhanced"));
+const ListingDetails = lazy(() => import("./pages/ListingDetails"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const MarketPrices = lazy(() => import("./pages/MarketPrices"));
+const MarketPricesEnhanced = lazy(() => import("./pages/MarketPricesEnhanced"));
+const Community = lazy(() => import("./pages/Community"));
+const CommunityMemberProfile = lazy(() => import("./pages/CommunityMemberProfile"));
+const Inbox = lazy(() => import("./pages/Inbox"));
+const Chat = lazy(() => import("./pages/Chat"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const FarmerRegistration = lazy(() => import("./pages/FarmerRegistration"));
+const RegistrationHub = lazy(() => import("./pages/RegistrationHub"));
+const BuyerRegistration = lazy(() => import("./pages/BuyerRegistration"));
+const OrgRegistration = lazy(() => import("./pages/OrgRegistration"));
+const TransportRegistration = lazy(() => import("./pages/TransportRegistration"));
+const AccessSummary = lazy(() => import("./pages/AccessSummary"));
+const SuperAdminPortal = lazy(() => import("./pages/SuperAdminPortal"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Login = lazy(() => import("./pages/Login"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Homepage = lazy(() => import("./pages/Homepage"));
+const ClimatePage = lazy(() => import("./pages/ClimatePage"));
+const Upgrade = lazy(() => import("./pages/Upgrade"));
+const AshaVoice = lazy(() => import("./pages/AshaVoice"));
+const ProfileRouter = lazy(() => import("./pages/ProfileRouter"));
+const Join = lazy(() => import("./pages/Join"));
+const AdminPortal = lazy(() => import("./pages/AdminPortal"));
+const OrgDashboard = lazy(() => import("./pages/org/OrgDashboard"));
+const OrgProfile = lazy(() => import("./pages/org/OrgProfile"));
+const OrgMembers = lazy(() => import("./pages/org/OrgMembers"));
+const OrgMarketDashboard = lazy(() => import("./pages/org/OrgMarketDashboard"));
+const OrgTraining = lazy(() => import("./pages/org/OrgTraining"));
+const OrgContracts = lazy(() => import("./pages/org/OrgContracts"));
+const OrgTraceability = lazy(() => import("./pages/org/OrgTraceability"));
+const OrgCredit = lazy(() => import("./pages/org/OrgCredit"));
+const OrgLoans = lazy(() => import("./pages/org/OrgLoans"));
+const OrgRiskAlerts = lazy(() => import("./pages/org/OrgRiskAlerts"));
+const OrgSubscription = lazy(() => import("./pages/org/OrgSubscription"));
+const OrgVerification = lazy(() => import("./pages/org/OrgVerification"));
+const OrgAggregation = lazy(() => import("./pages/org/OrgAggregation"));
+const OrgPrices = lazy(() => import("./pages/org/OrgPrices"));
+const OrgBilling = lazy(() => import("./pages/org/OrgBilling"));
+const OrgTargetsRewards = lazy(() => import("./pages/org/OrgTargetsRewards"));
+const OrgCertificates = lazy(() => import("./pages/org/OrgCertificates"));
+const OrgUnderReview = lazy(() => import("./pages/org/OrgUnderReview"));
+const OrgStaff = lazy(() => import("./pages/org/OrgStaff"));
+const Cooperatives = lazy(() => import("./pages/Cooperatives"));
+const OrgSponsorships = lazy(() => import("./pages/org/OrgSponsorships"));
+const OrgSalesBatches = lazy(() => import("./pages/org/OrgSalesBatches"));
+const OrgRevenueModel = lazy(() => import("./pages/org/OrgRevenueModel"));
+const OrgImpact = lazy(() => import("./pages/org/OrgImpact"));
+const OrgReports = lazy(() => import("./pages/org/OrgReports"));
+const TradePage = lazy(() => import("./pages/org/TradePage"));
+const OrgInternationalMarketsPage = lazy(() => import("./pages/org/OrgInternationalMarketsPage"));
+const PartnerOverview = lazy(() => import("./pages/partner/PartnerOverview"));
+const PartnerSponsorships = lazy(() => import("./pages/partner/PartnerSponsorships"));
+const PartnerImpact = lazy(() => import("./pages/partner/PartnerImpact"));
+const PartnerReports = lazy(() => import("./pages/partner/PartnerReports"));
+const GovOverview = lazy(() => import("./pages/gov/GovOverview"));
+const GovNationalStats = lazy(() => import("./pages/gov/GovNationalStats"));
+const GovMarkets = lazy(() => import("./pages/gov/GovMarkets"));
+const GovClimate = lazy(() => import("./pages/gov/GovClimate"));
+const GovFoodSecurity = lazy(() => import("./pages/gov/GovFoodSecurity"));
+const GovCooperatives = lazy(() => import("./pages/gov/GovCooperatives"));
+const GovCooperativeDetail = lazy(() => import("./pages/gov/GovCooperativeDetail"));
+const GovValueChains = lazy(() => import("./pages/gov/GovValueChains"));
+const GovReports = lazy(() => import("./pages/gov/GovReports"));
+const GovAlerts = lazy(() => import("./pages/gov/GovAlerts"));
+const GovSettings = lazy(() => import("./pages/gov/GovSettings"));
+const GovUnderReview = lazy(() => import("./pages/gov/GovUnderReview"));
+const Unauthorized = lazy(() => import("./pages/Unauthorized"));
+const BuyerTradeHome = lazy(() => import("./pages/buyer/BuyerTradeHome"));
+const BuyerTradeListingDetails = lazy(() => import("./pages/buyer/BuyerTradeListingDetails"));
+const BuyerTradeBids = lazy(() => import("./pages/buyer/BuyerTradeBids"));
+const BuyerTradeContracts = lazy(() => import("./pages/buyer/BuyerTradeContracts"));
+const BuyerTradeWallet = lazy(() => import("./pages/buyer/BuyerTradeWallet"));
+const BuyerTradeSettings = lazy(() => import("./pages/buyer/BuyerTradeSettings"));
+const FarmerBids = lazy(() => import("./pages/farmer/FarmerBids"));
+const FarmerBidDetails = lazy(() => import("./pages/farmer/FarmerBidDetails"));
+const BuyerProfile = lazy(() => import("./pages/BuyerProfile"));
+const BuyerDashboardPage = lazy(() => import("./pages/buyer/BuyerDashboardPage"));
+const BuyerBillingPage = lazy(() => import("./pages/buyer/BuyerBillingPage"));
+const BuyerVerificationPendingPage = lazy(() => import("./pages/buyer/BuyerVerificationPendingPage"));
+const BuyerAnalyticsDashboard = lazy(() => import("./pages/buyer/BuyerAnalyticsDashboard"));
+const BuyerCustomReports = lazy(() => import("./pages/buyer/BuyerCustomReports"));
+const BuyerDemandPlanning = lazy(() => import("./pages/buyer/BuyerDemandPlanning"));
+const BuyerLogisticsTracking = lazy(() => import("./pages/buyer/BuyerLogisticsTracking"));
+const BuyerSupplierRelationshipManagement = lazy(() => import("./pages/buyer/BuyerSupplierRelationshipManagement"));
+const BuyerPurchaseOrderManagement = lazy(() => import("./pages/buyer/BuyerPurchaseOrderManagement"));
+const BuyerQualityManagement = lazy(() => import("./pages/buyer/BuyerQualityManagement"));
+const BuyerFinancialManagement = lazy(() => import("./pages/buyer/BuyerFinancialManagement"));
+const BuyerMarketIntelligence = lazy(() => import("./pages/buyer/BuyerMarketIntelligence"));
+const BuyerCollaborationCommunication = lazy(() => import("./pages/buyer/BuyerCollaborationCommunication"));
+const Partnerships = lazy(() => import("./pages/Partnerships"));
+const Policies = lazy(() => import("./pages/Policies"));
+const DataPrivacyPolicy = lazy(() => import("./pages/policies/DataPrivacyPolicy"));
+const SecurityPolicy = lazy(() => import("./pages/policies/SecurityPolicy"));
+const ResponsibleAIPolicy = lazy(() => import("./pages/policies/ResponsibleAIPolicy"));
+const TransparencyPolicy = lazy(() => import("./pages/policies/TransparencyPolicy"));
+const DataOwnershipPolicy = lazy(() => import("./pages/policies/DataOwnershipPolicy"));
+const PartnershipEthicsPolicy = lazy(() => import("./pages/policies/PartnershipEthicsPolicy"));
+const TransportPortal = lazy(() => import("./pages/TransportPortal"));
+const TransportMarketplace = lazy(() => import("./pages/TransportMarketplace"));
+const TransportDriverUpdate = lazy(() => import("./pages/TransportDriverUpdate"));
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-3">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <p className="text-sm text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -143,6 +154,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
             <Routes>
             {/* Public Auth Routes */}
             <Route
@@ -585,6 +597,7 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </CartProvider>
