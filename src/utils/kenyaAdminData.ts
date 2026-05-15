@@ -1,4 +1,4 @@
-import countyCsv from "../../county.csv?raw";
+import countyCsv from "../data/county.csv?raw";
 
 export type KenyaAdminData = Record<string, Record<string, string[]>>;
 
