@@ -83,12 +83,10 @@ export async function initializeFCM(userId: string): Promise<void> {
     const token = await requestNotificationPermission();
     if (token) {
       await registerFCMToken(userId, token);
-      console.log("FCM token registered:", token);
     }
 
     // Listen for foreground messages
     onMessage(messaging, (payload) => {
-      console.log("Message received:", payload);
       toast.info(payload.notification?.title || "New notification", {
         description: payload.notification?.body,
       });
